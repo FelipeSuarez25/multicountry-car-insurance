@@ -9,14 +9,19 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { NgComponentOutlet } from '@angular/common';
 import { FieldTree, FormField, FormRoot, form, validate } from '@angular/forms/signals';
+import { LucideCircleAlert, LucideInfo } from '@lucide/angular';
 import { Router } from '@angular/router';
 import { CLOCK } from '../../core/clock';
 import { QuoteStore } from '../../core/quote-store';
 import type { FieldConfig, RawValues } from '../../shared/field-config.model';
 import { FALLBACK_MESSAGE } from '../../shared/field-config';
+import { iconForField } from '../../shared/field-icons';
 import { validateField } from '../../shared/field-validators';
 import { hydrate } from '../../shared/field-values';
+import { CustomSelect } from '../../shared/custom-select';
+import { DateField } from '../../shared/date-field';
 
 /**
  * The step 1 form (ADR-0004): Signal Forms over the shared validation core. The editing model is
@@ -26,13 +31,15 @@ import { hydrate } from '../../shared/field-values';
  */
 @Component({
   selector: 'app-quote-form',
-  imports: [FormField, FormRoot],
+  imports: [FormField, FormRoot, NgComponentOutlet, CustomSelect, DateField, LucideCircleAlert, LucideInfo],
   templateUrl: './quote-form.html',
   styleUrl: './quote-form.css',
 })
 export class QuoteForm implements OnInit {
   readonly configs = input.required<FieldConfig[]>();
   readonly countryCode = input.required<string>();
+  /** The country's locale tag, for the names of days and months in the calendar. */
+  readonly localeTag = input.required<string>();
 
   private readonly appRef = inject(ApplicationRef);
   private readonly injector = inject(Injector);
@@ -80,9 +87,11 @@ export class QuoteForm implements OnInit {
     );
 
     // The raw editing values are written to the wizard state on every change (ADR-0003). Keys of
-    // number and date fields are written only by `syncNative` (one writer per key, R3-F05):
-    // the browser may hold text the model does not, and the store must follow what the control reads.
-    const nativeKeys = new Set(configs.filter((c) => c.type === 'number' || c.type === 'date').map((c) => c.key));
+    // number fields are written only by `syncNative` (one writer per key, R3-F05): the browser may
+    // hold text the model does not, and the store must follow what the control reads. A date field
+    // is a text box whose unreadable text maps to '' in the model (ADR-0012 section 6), so the model
+    // is the truth for dates, selects and text alike.
+    const nativeKeys = new Set(configs.filter((c) => c.type === 'number').map((c) => c.key));
     let synced: RawValues = { ...model() };
     this.flushModel = () => {
       const current = model();
@@ -120,13 +129,12 @@ export class QuoteForm implements OnInit {
   }
 
   /**
-   * After every input on a number or date field, the only writer of that key in the store: text
-   * the browser cannot parse (`validity.badInput`) is stored as '' (a partly cleared date reads
-   * as '' too), anything else as the control reads it. The control's own model is left alone on
-   * purpose: writing '' to it makes Signal Forms write '' into the DOM, which erases the text the
-   * user typed (R1-F03). The text stays visible; the store, the storage and the output hold ''
-   * (a reload never restores a stale valid value), and the field is invalid through the Signal
-   * Forms parse error, so "Continuar" blocks.
+   * After every input on a number field, the only writer of that key in the store: text the
+   * browser cannot parse (`validity.badInput`) is stored as '', anything else as the control reads
+   * it. The control's own model is left alone on purpose: writing '' to it makes Signal Forms write
+   * '' into the DOM, which erases the text the user typed (R1-F03). The text stays visible; the
+   * store, the storage and the output hold '' (a reload never restores a stale valid value), and
+   * the field is invalid through the Signal Forms parse error, so "Continuar" blocks.
    */
   protected syncNative(event: Event, key: string): void {
     const el = event.target as HTMLInputElement;
@@ -148,8 +156,14 @@ export class QuoteForm implements OnInit {
     return errors[0]?.message ?? null;
   }
 
+  /** The icon component of a field by its key, or null (a checkbox has none). */
+  protected iconOf(config: FieldConfig): ReturnType<typeof iconForField> {
+    return iconForField(config);
+  }
+
   protected describedBy(config: FieldConfig, error: string | null): string | null {
     const ids = [
+      config.type === 'date' ? `${config.key}-hint` : '',
       config.helpText ? `${config.key}-help` : '',
       error ? `${config.key}-error` : '',
     ].filter(Boolean);

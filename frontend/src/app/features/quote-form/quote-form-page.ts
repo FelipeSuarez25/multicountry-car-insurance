@@ -27,6 +27,8 @@ export class QuoteFormPage {
   private readonly quote = inject(QuoteStore);
   private readonly heading = viewChild.required<ElementRef<HTMLHeadingElement>>('heading');
 
+  /** The field-shaped blocks of the loading skeleton: a label line and a control, per row. */
+  protected readonly skeletonRows = [1, 2, 3, 4, 5, 6];
   protected readonly status = signal<PageStatus>('loading');
   protected readonly configs = signal<FieldConfig[]>([]);
   protected readonly country: Country | undefined = this.countries.find(this.route.snapshot.paramMap.get('country') ?? '');
