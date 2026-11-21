@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Current step | 6 Review round 2 (gate attempt 2 passed after the R1 fixes) |
+| Current step | HC3 (review R2 APPROVED) |
 | Branch | feat/us-03-summary-payment |
 | PR | — |
 | Blockers | none |
-| **Next action** | code-reviewer runs review round 2 (verify the R1 fixes). |
+| **Next action** | human: HC3 (PR, manual QA per T-19, merge). |
 | Last updated | 2026-11-21 by orchestrator (Claude Opus 5.5) |
 
 ## Tasks
@@ -56,6 +56,7 @@ T-12 and T-15 on the terms-format ADR (US-03-Q-02); T-10..T-13 on the content-ty
 | 2026-11-21 | Gate (attempt 1) | **PASSED** (run by the orchestrator on a clean stack): frontend lint 0, build 0, unit 945/945; backend lint 0, build 0, 81/81; e2e 124/124 twice (7 files, US-01..US-03); `trace.sh` US-01/02/03 exit 0 (US-03: ACs without test 0); code scan exit 0 (6 known exceptions); log scan 23 = 23. Before the gate, two test defects found by the frontend-developer were confirmed by the orchestrator and fixed by the test-engineer (d530005) | orchestrator | d530005 |
 | 2026-11-21 | Review R1 decisions | **Decided**: F01 (major) the terms seed creates a country's terms only when that country has no terms document at all (draft or published); spec §7.3 note and a backend test. F02..F05 and F06 fixed now | Felipe Sabogal (human) | [R1](../../reviews/US-03-review-R1.md) |
 | 2026-11-21 | Gate (attempt 2, after R1 fixes) | **PASSED** (orchestrator, clean stack): frontend lint 0, build 0, unit 956/956; backend lint 0, build 0, 86/86; e2e 124/124 twice; `trace.sh` US-01/02 exit 0; US-03 exit 1 **only** because review R1 still lists F01 (major) as open, which the reviewer closes in R2 (ACs without test: 0); code scan exit 0 (6 known exceptions); log scan 23 = 23. R1 fixes: F01 6d4b236, F02 b3fdd45, F03 test-only (height kept on design grounds), F04 461500b, F05 16b77a3, F06 6341a57; R1 tests 092edd3, 398fbd3 | orchestrator | 54963e8 |
+| 2026-11-21 | Review R2 | **APPROVED**: all R1 findings fixed (F01 re-reproduced live: rename, replace and draft-only cases; F03 mutation-checked); 1 new nit R2-F01 (README said "Terms"; the admin shows "Términos y condiciones"), fixed by the orchestrator in this commit. `trace.sh US-03` exit 0 | code-reviewer | [R2](../../reviews/US-03-review-R2.md) |
 
 ## Session log
 

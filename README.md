@@ -108,7 +108,7 @@ For local development without Docker (`cd backend && npm run develop`), delete
 
 ## Editing the terms and conditions (for editors)
 
-In the Strapi admin, open **Terms** and edit the `body` field. It is a rich-text (blocks) field.
+In the Strapi admin, open **Content Manager → Términos y condiciones** and edit the `body` field. It is a rich-text (blocks) field.
 The summary page of the quote flow shows the following formatting ([ADR-0009](adr/0009-terms-rich-text-rendering.md)):
 
 | In the editor | On the site |
