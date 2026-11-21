@@ -48,6 +48,10 @@ A `minor`/`nit` may be closed as `won't fix` with a justification. A `blocker`/`
       network calls.
 - [ ] The Strapi public role only has the `find`/`findOne` permissions justified in the ADR.
 - [ ] No secrets or `.env` contents committed; `.env.example` holds fictitious values only.
+- [ ] Every `scan-secrets: allow (<reason>)` exception (listed by `scripts/scan-secrets.sh`) is
+      justified: the value is visibly fictitious and the reason holds. New exceptions are findings to confirm.
+- [ ] Every dependency in every `package.json` is pinned exactly (no `^`, `~` or ranges; `CLAUDE.md` §4),
+      and the lockfile is updated in the same commit.
 - [ ] Rich text from Strapi (terms, help texts) is rendered safely: no `bypassSecurityTrust*`, and
       `[innerHTML]` only with Angular sanitisation.
 - [ ] Sensitive data (document numbers) is masked as the spec says and is not logged to the console.
