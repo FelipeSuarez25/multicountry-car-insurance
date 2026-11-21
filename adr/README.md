@@ -7,15 +7,19 @@ Accepted ADRs are binding (`CLAUDE.md` §1, level 2) and are never rewritten; th
 
 | ADR | Title | Status | Date | Stories |
 |---|---|---|---|---|
-| [0001](0001-multi-country-content-strategy.md) | Multi-country content strategy and country context (includes wizard routes and step guards) | Accepted (amended by ADR-0006) | 2026-11-20 | US-01, US-02, US-03 |
+| [0001](0001-multi-country-content-strategy.md) | Multi-country content strategy and country context (includes wizard routes and step guards) | Accepted (amended by ADR-0006 and ADR-0011) | 2026-11-20 | US-01, US-02, US-03 |
 | [0002](0002-strapi-access-and-security.md) | Strapi access and security model | Accepted (amended by ADR-0005) | 2026-11-20 | US-01, US-02, US-03 |
 | [0003](0003-wizard-state-persistence.md) | Front-end persistence of the wizard state | Accepted | 2026-11-20 | US-01, US-02, US-03 |
-| [0004](0004-forms-library.md) | Forms library for the Strapi-driven step 1 form (Signal Forms over a shared validation core) | Accepted | 2026-11-20 | US-01 |
+| [0004](0004-forms-library.md) | Forms library for the Strapi-driven step 1 form (Signal Forms over a shared validation core) | Accepted (amended by ADR-0012) | 2026-11-20 | US-01 |
 | [0005](0005-e2e-token-scope-for-relations.md) | Scope of the temporary e2e API token when the created content has relations (amends ADR-0002) | Accepted | 2026-11-21 | US-01 |
 | [0006](0006-strapi-physical-model-adjustments.md) | Strapi physical model adjustments: typed validation-rule parameters and the country `localeTag` attribute (amends ADR-0001) | Accepted | 2026-11-21 | US-01, US-02 |
 | [0007](0007-simulated-price-rule.md) | Simulated price rule: formula and factors fixed in one pure front-end function | Accepted (option A, chosen by the human at HC2, 2026-11-21) | 2026-11-21 | US-02, US-03 |
 | [0008](0008-simulated-payment.md) | Simulated payment: a visible outcome choice, a front-end gateway boundary, no card data | Accepted | 2026-11-21 | US-03 |
 | [0009](0009-terms-rich-text-rendering.md) | Terms rich text: Strapi `blocks` rendered by a whitelist component through template bindings | Accepted | 2026-11-21 | US-03 |
+| [0010](0010-design-tokens-and-visual-language.md) | Design tokens and visual language: one token file in three tiers, static guard, dark theme, palette with contrast proof, Archivo + Atkinson Hyperlegible Next, `@lucide/angular`, own flag SVGs | Accepted | 2026-11-21 | US-04 |
+| [0011](0011-country-visuals-amends-adr-0001.md) | Country visuals (flag and accent) as a presentation-only front-end map (amends ADR-0001) | Accepted | 2026-11-21 | US-04 |
+| [0012](0012-accessible-select-and-date-picker.md) | Accessible custom select and date picker on `@angular/aria` and `@angular/cdk`, bound to Signal Forms (amends ADR-0004) | Accepted | 2026-11-21 | US-04 |
+| [0013](0013-motion-and-reduced-motion.md) | Motion with native `animate.enter` and CSS on duration tokens, enter-only step transition, reduced motion by construction | Accepted | 2026-11-21 | US-04 |
 
 ### Implementation notes on accepted ADRs (no decision change)
 
@@ -37,6 +41,12 @@ Numbers are assigned when an ADR is written; this order is only provisional.
 | Topic | Why it needs an ADR | Input |
 |---|---|---|
 | — | No pending ADR for US-01, US-02 or US-03 | — |
+
+Proposed on 2026-11-21 for US-04 (written in parallel with HC1 at the human's request; awaiting
+HC2): ADR-0010 (US-04-Q-01, Q-03, Q-08, Q-09, Q-10), ADR-0011 (US-04-Q-02; amends ADR-0001 if
+accepted), ADR-0012 (US-04-Q-04, Q-05, Q-11..Q-13; amends ADR-0004 if accepted) and ADR-0013
+(US-04-Q-14, Q-16). The index rows of ADR-0001 and ADR-0004 change to "amended by" only when the
+amending ADR is accepted.
 
 Covered since 2026-11-21 for US-03 (both Accepted at HC2 by the human, 2026-11-21): the simulated
 payment (ADR-0008; US-03-Q-01) and the terms rich-text format and rendering (ADR-0009;
