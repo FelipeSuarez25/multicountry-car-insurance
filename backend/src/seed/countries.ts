@@ -3,7 +3,7 @@ export interface SeedCountry {
   code: string;
   name: string;
   currencyCode: string;
-  /** BCP 47 tag. Stored as `localeTag`: `locale` is a reserved Strapi attribute, the API still answers `locale`. */
+  /** BCP 47 tag. Stored and exposed as `localeTag` (`locale` is a reserved Strapi attribute; ADR-0006). */
   localeTag: string;
   sortOrder: number;
 }
