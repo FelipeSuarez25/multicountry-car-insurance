@@ -7,12 +7,12 @@
 
 | Field | Value |
 |---|---|
-| Current step | 4 Implementation (tests first done, 4d75937) |
+| Current step | 4 Implementation done; two tests reported as wrong (see Blockers) |
 | Branch | feat/us-04-design-system |
 | PR | — |
-| Blockers | none |
+| Blockers | 2 tests believed wrong, routed to the test-engineer: `date-field.spec.ts` US-04-AC-08 "unreadable text ... Continuar" (expects focus on the date box on an otherwise empty form, but ADR-0004 focuses the first invalid field, "Tipo de documento"); `summary-page.spec.ts` US-03-AC-03 "the confirmation shows no ... 'Tus datos'" (the step indicator, required by US-04-AC-13, shows "Tus datos" on the confirmation) |
 | **Next action** | frontend-developer implements US-04 to make the tests pass; then the gate (step 5). |
-| Last updated | 2026-11-21 by test-engineer (Claude Sonnet 5.5) |
+| Last updated | 2026-11-21 by frontend-developer (Claude Sonnet 5.5) |
 
 ## Tasks
 
@@ -36,14 +36,14 @@ T-16..T-23 depend on the ADRs (T-02..T-05); T-12 and T-13 depend on US-04-Q-04 a
 | US-04-T-13 | Adapt existing e2e helpers and specs exactly as spec §11.1 (`support/form.ts`, `support/plans.ts`, `us-01-data-form-co`, `us-01-country-context`, `us-01-03-full-flow-co`) | US-04-AC-11 | test-engineer | done (red): `frontend/e2e/support/{form,plans}.ts`, `us-01-data-form-co.spec.ts`, `us-01-country-context.spec.ts`, `us-01-03-full-flow-co.spec.ts`, `us-01-security.spec.ts` (leak list) | (this commit) |
 | US-04-T-14 | New e2e `frontend/e2e/us-04-design-system.spec.ts`: stored object (AC-11), select and calendar with a real keyboard, typed date in two locales, panels at three viewports, step transition DOM sampling, plan card click, reduced motion, responsive matrix, request origins and fonts, focus indicators of new controls | US-04-AC-05, US-04-AC-06, US-04-AC-08, US-04-AC-09, US-04-AC-11, US-04-AC-12, US-04-AC-14, US-04-AC-16, US-04-AC-17, US-04-AC-18, US-04-AC-19, US-04-AC-20 | test-engineer | done (red): `frontend/e2e/us-04-design-system.spec.ts`, `frontend/e2e/support/design.ts` (not run: no stack in this session; `playwright test --list` loads 8 files, 168 tests) | (this commit) |
 | US-04-T-15 | Component tests: flags and country chooser (names unchanged, fallback), wizard header, step indicator, skeletons with live text kept, plan cards, field icons and default, heading outline per page, icons hidden; also the AC-03 and AC-17 static guards where they need a component | US-04-AC-03, US-04-AC-04, US-04-AC-13, US-04-AC-15, US-04-AC-16, US-04-AC-20 | test-engineer | done (red): `frontend/src/app/features/country/country-chooser-page.spec.ts`, `frontend/src/app/shared/{wizard-chrome,country-visuals,field-icons}.spec.ts`, AC-04/AC-13/AC-15/AC-16/AC-20 blocks appended to the three page specs | (this commit) |
-| US-04-T-16 | Token file, global styles, theme, fonts (self-hosted), focus styles, forced-colors fallbacks; restyle existing pages through tokens only | US-04-AC-01, US-04-AC-02, US-04-AC-19, US-04-AC-23 | frontend-developer | todo | |
-| US-04-T-17 | Icon setup and field-key icon map; flags and country visuals; wizard header; step indicator | US-04-AC-03, US-04-AC-04, US-04-AC-13 | frontend-developer | todo | |
-| US-04-T-18 | Custom select (select-only and searchable), panel as popover or bottom sheet | US-04-AC-05, US-04-AC-06, US-04-AC-07, US-04-AC-12 | frontend-developer | todo | |
-| US-04-T-19 | Date field: typed entry parse/format, calendar dialog with year selector, disabled days from the field validator, bottom sheet | US-04-AC-08, US-04-AC-09, US-04-AC-10, US-04-AC-12 | frontend-developer | todo | |
-| US-04-T-20 | Integrate the custom controls into the step 1 form per the ADR (Signal Forms binding, `focusBoundControl`, `aria-*`), with stored values unchanged | US-04-AC-11 | frontend-developer | todo | |
-| US-04-T-21 | Plan list redesign: interactive cards, recommended gradient and glow, check-circle lists, responsive grid | US-04-AC-16, US-04-AC-18 | frontend-developer | todo | |
-| US-04-T-22 | Summary, payment and confirmation redesign: segmented simulation group, micro-animations, confirmation check | US-04-AC-18, US-04-AC-23 | frontend-developer | todo | |
-| US-04-T-23 | Skeletons, step enter transition, state styles, soft error feedback, reduced motion | US-04-AC-14, US-04-AC-15, US-04-AC-17 | frontend-developer | todo | |
+| US-04-T-16 | Token file, global styles, theme, fonts (self-hosted), focus styles, forced-colors fallbacks; restyle existing pages through tokens only | US-04-AC-01, US-04-AC-02, US-04-AC-19, US-04-AC-23 | frontend-developer | done | e2079d0 |
+| US-04-T-17 | Icon setup and field-key icon map; flags and country visuals; wizard header; step indicator | US-04-AC-03, US-04-AC-04, US-04-AC-13 | frontend-developer | done | 059c1fd |
+| US-04-T-18 | Custom select (select-only and searchable), panel as popover or bottom sheet | US-04-AC-05, US-04-AC-06, US-04-AC-07, US-04-AC-12 | frontend-developer | done | 51fedba, 94dd193 |
+| US-04-T-19 | Date field: typed entry parse/format, calendar dialog with year selector, disabled days from the field validator, bottom sheet | US-04-AC-08, US-04-AC-09, US-04-AC-10, US-04-AC-12 | frontend-developer | done | e749a97, b4cafae |
+| US-04-T-20 | Integrate the custom controls into the step 1 form per the ADR (Signal Forms binding, `focusBoundControl`, `aria-*`), with stored values unchanged | US-04-AC-11 | frontend-developer | done | 3a370f9 |
+| US-04-T-21 | Plan list redesign: interactive cards, recommended gradient and glow, check-circle lists, responsive grid | US-04-AC-16, US-04-AC-18 | frontend-developer | done | 8d1d105 |
+| US-04-T-22 | Summary, payment and confirmation redesign: segmented simulation group, micro-animations, confirmation check | US-04-AC-18, US-04-AC-23 | frontend-developer | done | 941b1d7 |
+| US-04-T-23 | Skeletons, step enter transition, state styles, soft error feedback, reduced motion | US-04-AC-14, US-04-AC-15, US-04-AC-17 | frontend-developer | done | e2079d0, 3a370f9, 8d1d105, 941b1d7, 96129dc |
 | US-04-T-24 | After screenshots in `docs/qa/US-04/after/` (names of AC-22) and README table | US-04-AC-22 | orchestrator | todo | |
 | US-04-T-25 | HC3 manual checks: visual review CO/CL at three sizes, keyboard only, screen reader on select, calendar and indicator, originality; phone check that the searchable select's bottom sheet fits above the on-screen keyboard (AC-12) | US-04-AC-20, US-04-AC-22, US-04-AC-23 | human (HC3) | todo | |
 | US-04-T-26 | After HC1 (if US-04-Q-21 default holds): one Review log row in US-01, US-02 and US-03 specs pointing to what US-04 supersedes | US-04-AC-11 | spec-writer | done (Review log rows in US-01, US-02 and US-03 specs) | (this commit) |
