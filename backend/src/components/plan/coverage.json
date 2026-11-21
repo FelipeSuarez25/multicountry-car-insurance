@@ -1,0 +1,11 @@
+{
+  "collectionName": "components_plan_coverages",
+  "info": {
+    "displayName": "Cobertura",
+    "description": "Una línea de cobertura de un plan."
+  },
+  "options": {},
+  "attributes": {
+    "label": { "type": "string", "required": true, "minLength": 1 }
+  }
+}

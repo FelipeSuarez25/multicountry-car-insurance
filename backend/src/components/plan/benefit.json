@@ -1,0 +1,11 @@
+{
+  "collectionName": "components_plan_benefits",
+  "info": {
+    "displayName": "Beneficio",
+    "description": "Una línea de beneficio de un plan."
+  },
+  "options": {},
+  "attributes": {
+    "label": { "type": "string", "required": true, "minLength": 1 }
+  }
+}
