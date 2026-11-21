@@ -7,12 +7,13 @@
  * requests, so a test that awaits it before answering the request never finishes. `drain()`
  * answers requests as they appear until the application has been idle for a few macrotasks.
  *
- * It matches requests by URL only (`/api/countries`, `/api/form-fields` and `/api/plans` with
+ * It matches requests by URL only (`/api/countries`, `/api/form-fields`, `/api/plans` and `/api/terms` with
  * `filters[country][code][$eq]=<CODE>`), so the tests do not depend on how the API client is built.
  */
 import { HttpTestingController, TestRequest } from '@angular/common/http/testing';
 import { vi } from 'vitest';
 import { seedPlanItems } from './plan-fixtures';
+import { seedTermsItems } from './terms-fixtures';
 import { seedCountryItems, seedStrapiItems, strapiListResponse, type StrapiItem } from './seed-fixtures';
 
 export type Behaviour = StrapiItem[] | 'error' | 'hang';
@@ -21,8 +22,8 @@ export interface RecordedRequest {
   method: string;
   /** The URL with its query string, percent-decoded (brackets and `$` readable). */
   url: string;
-  kind: 'countries' | 'form-fields' | 'plans' | 'other';
-  /** For `form-fields` and `plans`: the value of `filters[country][code][$eq]`. */
+  kind: 'countries' | 'form-fields' | 'plans' | 'terms' | 'other';
+  /** For `form-fields`, `plans` and `terms`: the value of `filters[country][code][$eq]`. */
   countryCode?: string;
   /** True when the request carried an `Authorization` header. */
   hasAuthorization: boolean;
@@ -42,6 +43,8 @@ export class ContentServer {
   fields: Record<string, Behaviour> = { CO: seedStrapiItems('CO'), CL: seedStrapiItems('CL') };
   /** What `/api/plans` answers per country code (US-02): the offered seed plans by default. */
   plans: Record<string, Behaviour> = { CO: seedPlanItems('CO'), CL: seedPlanItems('CL') };
+  /** What `/api/terms` answers per country code (US-03): the published seed terms by default. */
+  terms: Record<string, Behaviour> = { CO: seedTermsItems('CO'), CL: seedTermsItems('CL') };
   readonly requests: RecordedRequest[] = [];
 
   constructor(private readonly http: HttpTestingController) {}
@@ -83,6 +86,12 @@ export class ContentServer {
       const code = /filters\[country\]\[code\]\[\$eq\]=([^&]+)/.exec(url)?.[1];
       this.requests.push({ method: 'GET', url, kind: 'plans', countryCode: code, hasAuthorization });
       this.respond(req, (code !== undefined ? this.plans[code] : undefined) ?? []);
+      return;
+    }
+    if (req.request.method === 'GET' && /^(https?:\/\/[^/]+)?\/api\/terms(\?|$)/.test(url)) {
+      const code = /filters\[country\]\[code\]\[\$eq\]=([^&]+)/.exec(url)?.[1];
+      this.requests.push({ method: 'GET', url, kind: 'terms', countryCode: code, hasAuthorization });
+      this.respond(req, (code !== undefined ? this.terms[code] : undefined) ?? []);
       return;
     }
     this.requests.push({ method: req.request.method, url, kind: 'other', hasAuthorization });
