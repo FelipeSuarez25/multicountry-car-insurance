@@ -425,7 +425,9 @@ describe('ADR-0009 parseRichTextBlocks (US-03-AC-13 whitelist, degradation and m
 
     it('US-03-R1-F04 a body of 200 000 paragraphs and one of 200 000 list items do not throw either', () => {
       expect(() => parseRichTextBlocks(Array.from({ length: 200_000 }, () => paragraph(text('p'))))).not.toThrow();
-      expect(() => parseRichTextBlocks([list('unordered', ...Array.from({ length: 200_000 }, () => listItem(text('i'))))])).not.toThrow();
+      // Built without a spread: 200 000 call arguments would throw while building the input, not in the parser.
+      const bigList: WireNode = { type: 'list', format: 'unordered', children: Array.from({ length: 200_000 }, () => listItem(text('i'))) };
+      expect(() => parseRichTextBlocks([bigList])).not.toThrow();
     });
   });
 });
