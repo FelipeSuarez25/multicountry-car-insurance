@@ -35,7 +35,7 @@
           @case ('number') {
             <input
               type="number"
-              (input)="onNumberInput(config.key, $event)"
+              (beforeinput)="flushBindings()"
               [id]="id"
               [formField]="text(config.key)"
               [attr.placeholder]="config.placeholder ?? null"

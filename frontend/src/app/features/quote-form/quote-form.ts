@@ -1,4 +1,5 @@
 import {
+  ApplicationRef,
   Component,
   Injector,
   OnInit,
@@ -7,7 +8,6 @@ import {
   input,
   signal,
   untracked,
-  type WritableSignal,
 } from '@angular/core';
 import { FieldTree, FormField, FormRoot, form, validate } from '@angular/forms/signals';
 import { Router } from '@angular/router';
@@ -33,18 +33,17 @@ export class QuoteForm implements OnInit {
   readonly configs = input.required<FieldConfig[]>();
   readonly countryCode = input.required<string>();
 
+  private readonly appRef = inject(ApplicationRef);
   private readonly injector = inject(Injector);
   private readonly clock = inject(CLOCK);
   private readonly quote = inject(QuoteStore);
   private readonly router = inject(Router);
 
   protected form!: FieldTree<RawValues>;
-  private model!: WritableSignal<RawValues>;
 
   ngOnInit(): void {
     const configs = this.configs();
     const model = signal<RawValues>(hydrate(configs, this.quote.values()));
-    this.model = model;
     this.form = form(
       model,
       (root) => {
@@ -97,22 +96,21 @@ export class QuoteForm implements OnInit {
   }
 
   /**
-   * A number input the browser cannot parse (`1e`) reads back as '' and Signal Forms keeps the
-   * previous text in the model. That stale text would later be written back into the DOM by the
-   * deferred control binding, replacing what the user is typing, so the model follows the
-   * input: unparseable counts as empty (spec AC-09).
+   * Runs before the browser applies a keystroke to a number input. Signal Forms writes the model
+   * back into the DOM from a deferred flush; if that flush is still pending when the next key
+   * makes the text unparseable (`1` then `e`), it would overwrite the text being typed with the
+   * stale model value. Flushing now makes it a no-op (the DOM already holds that value), so the
+   * typed text stays visible. The model is never touched here.
    */
-  protected onNumberInput(key: string, event: Event): void {
-    const input = event.target;
-    if (input instanceof HTMLInputElement && input.validity.badInput && this.model()[key] !== '') {
-      this.model.update((values) => ({ ...values, [key]: '' }));
-    }
+  protected flushBindings(): void {
+    this.appRef.tick();
   }
 
   /**
-   * The message to show (spec AC-09): input the browser cannot parse never reaches the model (it
-   * keeps the last parseable text) but Signal Forms reports a parse error without a message, so
-   * that case is evaluated as an empty value: `requiredMessage ?? errorMessage`.
+   * The message to show (spec AC-09): input the browser cannot parse keeps the last parseable text
+   * in the model and Signal Forms reports a parse error without a message, so that case is
+   * evaluated as an empty value: `requiredMessage ?? errorMessage`. The field stays invalid while
+   * the unparseable text is on screen, so "Continuar" never accepts it.
    */
   protected errorOf(config: FieldConfig): string | null {
     const state = this.form[config.key]();
