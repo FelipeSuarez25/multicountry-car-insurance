@@ -36,6 +36,7 @@
             <input
               type="number"
               (beforeinput)="flushBindings()"
+              (input)="syncNumber($event, config.key)"
               [id]="id"
               [formField]="text(config.key)"
               [attr.placeholder]="config.placeholder ?? null"

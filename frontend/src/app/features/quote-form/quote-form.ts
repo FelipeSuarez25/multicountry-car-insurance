@@ -57,15 +57,18 @@ export class QuoteForm implements OnInit {
       {
         injector: this.injector,
         submission: {
-          action: async () => {
+          // Validity is decided on the store values (an unparseable number is '' there), not on
+          // the field states: a parse error on an optional field must not block (R2-F01).
+          ignoreValidators: 'all',
+          action: async (root) => {
             if (this.quote.completeStep1(configs) !== null) {
               await this.router.navigate(['/', this.countryCode().toLowerCase(), 'planes']);
+              return undefined;
             }
-            return undefined;
-          },
-          onInvalid: (root) => {
-            const first = configs.find((config) => root[config.key]().invalid());
+            const values = this.quote.values();
+            const first = configs.find((config) => validateField(config, values[config.key], this.clock()) !== null);
             if (first) root[first.key]().focusBoundControl();
+            return undefined;
           },
         },
       },
@@ -107,19 +110,28 @@ export class QuoteForm implements OnInit {
   }
 
   /**
-   * The message to show (spec AC-09): input the browser cannot parse keeps the last parseable text
-   * in the model and Signal Forms reports a parse error without a message, so that case is
-   * evaluated as an empty value: `requiredMessage ?? errorMessage`. The field stays invalid while
-   * the unparseable text is on screen, so "Continuar" never accepts it.
+   * After every input on a number field: text the browser cannot parse (`validity.badInput`) is
+   * stored as '' (R2-F01), parseable text as typed. The control's own model is left alone on
+   * purpose: writing '' to it makes Signal Forms write '' into the DOM, which erases the text the
+   * user typed (R1-F03). Validation, the store, the storage and the output all see ''.
+   */
+  protected syncNumber(event: Event, key: string): void {
+    const el = event.target as HTMLInputElement;
+    this.quote.setValue(key, el.validity.badInput ? '' : el.value);
+  }
+
+  /**
+   * The message to show (spec AC-09): unparseable number text is an empty value, so it shows
+   * `requiredMessage ?? errorMessage` when the field is required and nothing when it is optional.
    */
   protected errorOf(config: FieldConfig): string | null {
     const state = this.form[config.key]();
-    if (!state.touched() || !state.invalid()) return null;
+    if (!state.touched()) return null;
     const errors = state.errors();
     if (errors.some((error) => error.kind === 'parse')) {
-      return validateField(config, '', this.clock()) ?? config.errorMessage;
+      return validateField(config, '', this.clock());
     }
-    return errors[0]?.message ?? null;
+    return state.invalid() ? (errors[0]?.message ?? null) : null;
   }
 
   protected describedBy(config: FieldConfig, error: string | null): string | null {
