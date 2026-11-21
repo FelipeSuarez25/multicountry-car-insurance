@@ -1,0 +1,23 @@
+{
+  "collectionName": "components_form_select_options",
+  "info": {
+    "displayName": "Opción de lista",
+    "description": "Una opción de un campo de tipo select."
+  },
+  "options": {},
+  "attributes": {
+    "value": {
+      "type": "string",
+      "required": true
+    },
+    "label": {
+      "type": "string",
+      "required": true
+    },
+    "sortOrder": {
+      "type": "integer",
+      "required": true,
+      "default": 0
+    }
+  }
+}

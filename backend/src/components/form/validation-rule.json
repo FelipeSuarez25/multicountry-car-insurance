@@ -1,0 +1,33 @@
+{
+  "collectionName": "components_form_validation_rules",
+  "info": {
+    "displayName": "Regla de validación",
+    "description": "Regla estructurada. minLength, maxLength, min, max y pattern usan value; minAge usa years; yearRange usa maxYearsOld y maxYearsAhead; rutCheckDigit no lleva parámetros."
+  },
+  "options": {},
+  "attributes": {
+    "kind": {
+      "type": "enumeration",
+      "enum": ["minLength", "maxLength", "min", "max", "pattern", "minAge", "yearRange", "rutCheckDigit"],
+      "required": true
+    },
+    "value": {
+      "type": "json"
+    },
+    "years": {
+      "type": "integer",
+      "min": 1
+    },
+    "maxYearsOld": {
+      "type": "integer",
+      "min": 0
+    },
+    "maxYearsAhead": {
+      "type": "integer",
+      "min": 0
+    },
+    "message": {
+      "type": "string"
+    }
+  }
+}
