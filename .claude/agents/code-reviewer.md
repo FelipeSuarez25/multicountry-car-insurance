@@ -9,6 +9,7 @@ skills:
   - review-checklist
   - strapi-content-modeling
   - dynamic-form-fields
+  - frontend-design
 hooks:
   PreToolUse:
     - matcher: "Write|Edit|NotebookEdit"

@@ -8,6 +8,7 @@ color: purple
 skills:
   - adr-madr
   - strapi-content-modeling
+  - frontend-design
 hooks:
   PreToolUse:
     - matcher: "Write|Edit|NotebookEdit"
