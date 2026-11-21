@@ -59,6 +59,7 @@ No subagent transcript contained the address. Later exports use `scripts/redact-
 
 <!-- scan-findings: 23 -->
 
-**Procedure from now on** (`session-handoff` skill): `scripts/scan-logs.sh` enforces it, failing when the number of `SECRET?` lines differs from the `scan-findings` count above. run the scanner on the **full** export and
-read the **complete** output. The number of `SECRET?` lines must equal the number of findings
-classified in this table before a log is committed.
+**Procedure from now on** (`session-handoff` skill): run `scripts/scan-logs.sh` on the full export
+and read its complete output. It fails when the number of unmarked findings (`SECRET?` lines)
+differs from the `scan-findings` count above. Classify every new finding without printing its value,
+record it in this table and update the count before a log is committed.
