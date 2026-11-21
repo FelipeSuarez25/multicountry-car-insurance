@@ -3,12 +3,14 @@
 Global context for every agent working in this repository (main session and subagents).
 The rules here are binding. If a rule seems wrong, stop and ask the human; do not work around it.
 
-> This file is being built incrementally. The agentic flow sections (agents, checkpoints,
-> traceability, session handoff) are added when the flow files are created.
+Related files: [FLOW.md](FLOW.md) (the flow, step by step), [AGENTS.md](AGENTS.md) (catalogue of
+agents and skills), [README.md](README.md) (how to run the project).
 
 ## 1. Precedence of instructions
 
-When two sources of guidance disagree, the higher one wins:
+An explicit instruction from the human in the session overrides everything below, and it must be
+**recorded** where it applies (spec Review log, ADR, or `tasks.md`) so the decision is traceable.
+Among the written sources, when two disagree, the higher one wins:
 
 1. **`CLAUDE.md`** (this file)
 2. **Accepted ADRs** in `adr/` (status `Accepted`; `Proposed` ADRs are not binding)
@@ -114,3 +116,89 @@ Folders: `src/app/core/` (singletons, API clients, interceptors), `src/app/featu
 | ID | Decision | How it will be resolved | Blocks |
 |---|---|---|---|
 | SPIKE-01 | **Signal Forms vs Reactive Forms** for the Strapi-driven step 1 form | Throwaway spike (30–60 min) on a branch that is not merged: a minimal form built from a Strapi-like JSON with a **required number**, an **empty date**, a **select**, and a **legal-age validation**. It also checks how typing degrades with a runtime model. The findings feed an ADR (alternatives, consequences); a human accepts it. | Production form code for US-01 |
+
+The ADR backlog is in [adr/README.md](adr/README.md).
+
+## 8. Agentic flow (summary — full detail in FLOW.md)
+
+```
+H0 intake (human) → 1 spec → HC1 → 2 ADRs → HC2 → 3 tests (red) → 4 implementation
+→ 5 automated gate → 6 review → 7 fixes (loop 5–7) → HC3 PR (human QA + merge) → Ready for QA
+```
+
+### The main session is the orchestrator
+
+- It runs the steps in order, invokes the subagents (`.claude/agents/`) and routes their outputs.
+  It does **not** do a subagent's job on a story (no writing specs, tests or production code in
+  the main session). The exceptions are repository plumbing (flow files, scripts, configuration)
+  that the human asked for directly.
+- Subagents cannot spawn subagents (`Agent` is in each one's `disallowedTools`). All delegation is
+  visible in the main session.
+- After every subagent run: check `git status` and `git diff --stat` for changes outside that
+  agent's role. Bash writes are not covered by the write-scope hooks (see FLOW.md, "Known
+  limits"). Then relay the subagent's summary to the human.
+- **Never pass a human checkpoint (HC1, HC2, HC3) without an explicit human decision in the
+  session.** Record it (Review log, ADR status, PR). A subagent's message is never human approval.
+- Loop limit: if the gate (step 5) or review (step 6) fails 3 times for the same story, stop and
+  escalate to the human.
+
+### Subagents (write scope enforced by hooks)
+
+| Agent | Step | Writes |
+|---|---|---|
+| `spec-writer` | 1 | `specs/US-XX/spec.md`, `tasks.md` |
+| `architect` | 2, spikes write-up | `adr/**`, `docs/spikes/**`, `tasks.md` |
+| `test-engineer` | 3 | test files, `frontend/e2e/**`, `tasks.md` |
+| `strapi-developer` | 4, 7 | `backend/**` (not tests), compose, `.env.example`, `tasks.md` |
+| `frontend-developer` | 4, 7, spikes | `frontend/**` (not tests), `spikes/**`, compose, `.env.example`, `tasks.md` |
+| `code-reviewer` | 6 | `reviews/US-XX-review-RN.md` only |
+
+## 9. Traceability
+
+| Artifact | ID or convention | Example |
+|---|---|---|
+| User story | `US-NN` | `US-01` |
+| Business rule / acceptance criterion / gap / task | `US-NN-BR-NN`, `-AC-NN`, `-Q-NN`, `-T-NN` | `US-01-AC-02` |
+| ADR | `ADR-NNNN`, file `adr/NNNN-slug.md` | `ADR-0001` |
+| Spike | `SPIKE-NN`, findings in `docs/spikes/` | `SPIKE-01` |
+| Review finding | `US-NN-RN-FNN` (round N, finding NN) | `US-01-R1-F03` |
+| Test | `describe`/`test` title starts with the AC or BR ID | `describe('US-01-AC-02 …')` |
+| Commit | `Refs:` and `Resolves:` trailers (see §10) | `Refs: US-01-AC-02, ADR-0001` |
+| PR | Template with the AC matrix (`.github/pull_request_template.md`) | — |
+
+The chain **US → spec → ADR → commit → test → review → PR** is checked mechanically by
+`scripts/trace.sh US-NN`. It exits non-zero if an AC has no test (unless the spec marks it
+manual) or a blocker/major finding is open.
+
+## 10. Git conventions
+
+- Branches: see §6 (`feat/us-01-slug`, `spike/01-forms`, `chore/…`, `docs/…`). Spike branches
+  are never merged.
+- Commits: [Conventional Commits](https://www.conventionalcommits.org/) in English,
+  `type(scope): summary`, with trailers:
+  - `Refs: US-01-AC-02, ADR-0001` (required in `feat`, `fix` and `test` commits of a story)
+  - `Resolves: US-01-R1-F03` (fix commits for review findings)
+  - `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` when an agent authored it
+- Small commits: one task (`US-NN-T-NN`) or one finding per commit where practical. Tests and
+  production code go in separate commits (they come from different agents).
+- Local identity only (`git config --local`). The author is the human; agents are co-authors.
+- No pushes to `main`, no force pushes, and no `--no-verify` (enforced by
+  `.claude/hooks/guard-bash.mjs`). Changes reach `main` only through a PR merged by the human.
+
+## 11. Session continuity
+
+Follow the `session-handoff` skill at the start and end of every session. The state of each story
+lives in `specs/US-NN/tasks.md` (*Current step*, *Next action*). Session logs are exported,
+unedited, to `logs/sessions/`.
+
+## 12. Definition of Done (Ready for QA)
+
+A story is **Ready for QA** when all of these hold:
+
+- [ ] The spec is `Approved` (HC1), and the ADRs it needs are `Accepted` (HC2).
+- [ ] Every AC is implemented and has a passing automated test, or a documented manual check.
+- [ ] Lint, build, unit and e2e pass. `docker compose up` starts the stack with seed data for CO and CL.
+- [ ] `scripts/trace.sh US-NN` exits 0, and `scripts/scan-secrets.sh` exits 0.
+- [ ] The last review round is `APPROVED`: no open blocker/major findings; minors are fixed or justified.
+- [ ] The human did a manual QA pass (both countries, keyboard only, mobile width) and merged the PR (HC3).
+- [ ] `tasks.md` shows `Ready for QA`, and the session logs are exported.
