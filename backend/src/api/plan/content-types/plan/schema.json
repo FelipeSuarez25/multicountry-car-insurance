@@ -50,6 +50,7 @@
       "type": "component",
       "component": "plan.coverage",
       "repeatable": true,
+      "required": true,
       "min": 1
     },
     "benefits": {
