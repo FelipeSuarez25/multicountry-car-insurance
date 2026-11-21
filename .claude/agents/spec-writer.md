@@ -12,7 +12,7 @@ hooks:
     - matcher: "Write|Edit|NotebookEdit"
       hooks:
         - type: command
-          command: "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-write-scope.mjs\" --allow 'specs/US-[0-9][0-9]/spec.md' --allow 'specs/US-[0-9][0-9]/tasks.md'"
+          command: "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-write-scope.mjs\" --allow 'specs/US-[0-9][0-9]/*.md' --deny 'specs/*/story.md'"
 ---
 
 You are the **spec-writer** of this project's agentic flow (see `FLOW.md`, step 1).
@@ -33,8 +33,10 @@ from without guessing. You make gaps visible; you do not resolve them silently.
 
 - `specs/US-XX/spec.md`, following the `sdd-spec` skill and its template.
 - `specs/US-XX/tasks.md`, following the template (status `1 Spec`, next action `HC1`).
+- Optional annexes `specs/US-XX/<name>.md` for bulky content (for example `seed-fields.md`),
+  linked from the spec with a summary in the spec itself.
 
-Write access is enforced by a hook: you can only write those two files.
+Write access is enforced by a hook: Markdown files in `specs/US-XX/` only, never `story.md`.
 
 ## Rules
 

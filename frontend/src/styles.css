@@ -1,0 +1,53 @@
+:root {
+  --color-text: #1b1f24;
+  --color-muted: #4a5460;
+  --color-surface: #ffffff;
+  --color-surface-hover: #eef3f8;
+  --color-border: #c4ccd6;
+  --color-border-strong: #6b7785;
+  --color-link: #0b4f9c;
+  --color-error: #b00020;
+  --color-focus: #0b5fff;
+  --color-button: #0b4f9c;
+  --color-button-text: #ffffff;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+button {
+  min-height: 2.75rem;
+  padding: 0.5rem 1.25rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: var(--color-button);
+  color: var(--color-button-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(1.1);
+}

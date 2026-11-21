@@ -1,0 +1,49 @@
+services:
+  strapi:
+    build:
+      context: ./backend
+    ports:
+      # Localhost only: the dev admin password is public in the repo (US-01-R1-F07). The browser
+      # reaches the content API through `web`; the host (e2e tests, admin panel) uses this port.
+      # IPv4 loopback is enough: browsers and Node 24 (autoSelectFamily) fall back from ::1 to
+      # 127.0.0.1 for `localhost`. An earlier extra [::1] binding rested on a misdiagnosis (FLOW.md).
+      - "127.0.0.1:1337:1337"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 1337
+      # Empty values make the entrypoint generate dev-only secrets (kept in the volume).
+      APP_KEYS: ${APP_KEYS:-}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:-}
+      API_TOKEN_SALT: ${API_TOKEN_SALT:-}
+      TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT:-}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+      JWT_SECRET: ${JWT_SECRET:-}
+      # Development super admin, created on first start when no admin exists (ADR-0002).
+      # Clearly fictitious, dev-only defaults so that one command works; override them in .env.
+      STRAPI_ADMIN_EMAIL: ${STRAPI_ADMIN_EMAIL:-dev.admin@example.com}
+      STRAPI_ADMIN_PASSWORD: ${STRAPI_ADMIN_PASSWORD:-DevOnly-Passw0rd}
+      # CORS allow-list (comma-separated origins). Empty: the browser uses the same-origin proxy.
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+    volumes:
+      - strapi-data:/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:1337/_health').then(r=>process.exit(r.status===204?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  # nginx serving the Angular build and proxying /api to Strapi (ADR-0002). The image is built
+  # from ./frontend; the upstream address is applied at container start by the nginx template.
+  web:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    environment:
+      STRAPI_UPSTREAM: http://strapi:1337
+    depends_on:
+      strapi:
+        condition: service_healthy
+
+volumes:
+  strapi-data:

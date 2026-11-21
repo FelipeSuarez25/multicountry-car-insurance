@@ -1,0 +1,18 @@
+<main class="country-page" [attr.aria-busy]="countries.status() === 'loading' ? 'true' : null">
+  @switch (countries.status()) {
+    @case ('error') {
+      <app-load-error message="No pudimos cargar la lista de países. Intenta de nuevo." (retry)="retry()" />
+    }
+    @case ('ready') {
+      <h1 tabindex="-1">Este país no está disponible.</h1>
+      <ul class="country-page__list">
+        @for (country of countries.countries(); track country.code) {
+          <li><a [routerLink]="['/', country.code.toLowerCase(), 'datos']">{{ country.name }}</a></li>
+        }
+      </ul>
+    }
+    @default {
+      <p role="status">Cargando…</p>
+    }
+  }
+</main>

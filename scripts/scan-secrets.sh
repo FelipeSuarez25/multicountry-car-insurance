@@ -7,6 +7,11 @@
 #
 # Exit 1 if anything is found. This is a safety net, not a replacement for a real scanner
 # (e.g. gitleaks), which a team setup should add (see FLOW.md, "team of 5").
+#
+# Exceptions: a line is skipped only if it carries an explicit, justified marker on the same line:
+#   scan-secrets: allow (<reason>)        e.g. // scan-secrets: allow (fictitious value, negative test)
+# Allowed lines are counted and listed in the output so reviewers see every exception
+# (human decision, 2026-11-20).
 
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
@@ -32,6 +37,7 @@ else
 fi
 
 found=0
+allowed=0
 for f in "${files[@]}"; do
   [ -f "$f" ] || continue
   case "$f" in
@@ -43,6 +49,12 @@ for f in "${files[@]}"; do
     pattern="${rule#*|}"
     while IFS=: read -r line _; do
       [ -n "$line" ] || continue
+      # Explicit, justified exception on the same line (reason in parentheses is mandatory).
+      if sed -n "${line}p" "$f" | grep -qE 'scan-secrets: allow \([^)]+\)'; then
+        echo "ALLOWED $f:$line  [$name] (explicit scan-secrets: allow marker)"
+        allowed=$((allowed + 1))
+        continue
+      fi
       # .env.example may contain assignments, but only with obvious placeholder values.
       if [ "$allow_placeholders" = 1 ] && sed -n "${line}p" "$f" | grep -qiE 'change[-_]?me|example|placeholder|toBeModified|fake|dummy'; then
         continue
@@ -57,4 +69,4 @@ if [ "$found" = 1 ]; then
   echo "Potential secrets found. Do not commit; report to the human." >&2
   exit 1
 fi
-echo "scan-secrets: no findings in ${#files[@]} file(s)."
+echo "scan-secrets: no findings in ${#files[@]} file(s); explicit exceptions: ${allowed}."

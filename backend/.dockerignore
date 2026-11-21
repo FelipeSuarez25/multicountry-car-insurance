@@ -1,0 +1,10 @@
+node_modules
+.tmp
+.cache
+.strapi
+dist
+build
+.env
+.env.*
+!.env.example
+tests

@@ -14,7 +14,7 @@ Templates: `.claude/skills/sdd-spec/templates/`.
 
 | Story | Title | Status |
 |---|---|---|
-| US-01 | Policyholder and vehicle data form | H0 done (story.md) — next: 1 Spec |
+| US-01 | Policyholder and vehicle data form | Spec v0.3 **Approved** (HC1 r3), ADR-0001..0004 Accepted (HC2) — next: 3 Tests |
 | US-02 | Plan list | H0 done (story.md) |
 | US-03 | Summary and payment | H0 done (story.md) |
 
