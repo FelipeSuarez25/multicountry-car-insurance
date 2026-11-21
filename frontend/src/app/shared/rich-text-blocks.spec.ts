@@ -199,17 +199,31 @@ describe('ADR-0009 parseRichTextBlocks (US-03-AC-13 whitelist, degradation and m
       expect(warn).not.toHaveBeenCalled();
     });
 
-    it('ADR-0009 a list nested far too deep keeps a bounded depth: the deeper lists are dropped with the warning "list-depth"', () => {
-      let node: WireNode = list('unordered', listItem(text('fondo')));
-      for (let level = 0; level < 9; level++) node = list('unordered', listItem(text(`nivel ${level}`)), node);
-      const blocks = parse([node]);
-      const depthOf = (l: RichTextList): number => 1 + Math.max(0, ...l.items.flatMap((i) => i.lists.map(depthOf)));
-      const total = depthOf((blocks[0] as ListBlock).list);
-      // The ADR says "nested more than 6 levels deep": the cut is at 6 levels of nesting, that is 6 or 7 lists.
-      expect(total).toBeGreaterThanOrEqual(6);
-      expect(total).toBeLessThanOrEqual(7);
+    const build = (levels: number): WireNode => {
+      let inner: WireNode = list('unordered', listItem(text(`nivel ${levels}`)));
+      for (let level = levels - 1; level >= 1; level--) inner = list('unordered', listItem(text(`nivel ${level}`)), inner);
+      return inner;
+    };
+    const depthOf = (l: RichTextList): number => 1 + Math.max(0, ...l.items.flatMap((i) => i.lists.map(depthOf)));
+
+    it('ADR-0009 six levels of lists render, with no warning', () => {
+      const blocks = parse([build(6)]);
+      expect(depthOf((blocks[0] as ListBlock).list)).toBe(6);
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it('ADR-0009 the 7th level is dropped with the warning "list-depth" and its text is never logged', () => {
+      const blocks = parse([build(7)]);
+      expect(depthOf((blocks[0] as ListBlock).list)).toBe(6);
+      expect(JSON.stringify(blocks)).not.toContain('nivel 7');
       expect(warned()).toContain('list-depth');
-      expect(warned()).not.toContain('fondo');
+      expect(warned()).not.toContain('nivel');
+    });
+
+    it('ADR-0009 a much deeper list keeps exactly 6 levels', () => {
+      const blocks = parse([build(12)]);
+      expect(depthOf((blocks[0] as ListBlock).list)).toBe(6);
+      expect(warned()).toContain('list-depth');
     });
   });
 

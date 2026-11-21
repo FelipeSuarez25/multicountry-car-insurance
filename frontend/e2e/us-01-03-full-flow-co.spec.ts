@@ -427,12 +427,14 @@ test.describe('US-03-AC-01 / US-03-AC-02 / US-03-AC-05 / US-03-AC-13 / US-03-AC-
     await expect(pagar(page)).toBeEnabled();
   });
 
-  test('US-03-AC-13 "Condiciones principales" is a heading inside the terms (level 3 or deeper), the three conditions are items of one bulleted list, and "ficticio" is bold', async ({ page }) => {
+  test('US-03-AC-13 "Condiciones principales" is an h4 inside the terms, whose title is an h3, the three conditions are items of one bulleted list, and "ficticio" is bold', async ({ page }) => {
     const region = page.getByRole('region', { name: CO_TERMS_TITLE });
     const inner = region.getByRole('heading', { name: 'Condiciones principales' });
     await expect(inner).toBeVisible();
     const level = await inner.evaluate((el) => Number(el.tagName.substring(1)));
-    expect(level, 'a heading below the section heading "Términos y condiciones" (h2)').toBeGreaterThan(2);
+    expect(level, 'the body heading is an h4 (ADR-0009, headingLevel 4)').toBe(4);
+    await expect(page.getByRole('heading', { level: 3, name: CO_TERMS_TITLE })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Términos y condiciones', exact: true })).toBeVisible();
     await expect(region.getByRole('list')).toHaveCount(1);
     await expect(region.getByRole('listitem')).toHaveCount(3);
     await expect(region.getByRole('listitem').first()).toContainText('La vigencia de la póliza');

@@ -223,6 +223,18 @@ describe('US-03-AC-01 / US-03-AC-06 the rows of the summary', () => {
       expect(JSON.stringify(rows)).not.toContain('valor huérfano');
     });
 
+    it('US-03-AC-06 a select value with no matching option is shown raw: the row is kept with the value as stored', () => {
+      const row = co(withValues({ city: 'ZZZ' })).holder.find((r) => r.key === 'city');
+      expect(row?.value).toBe('ZZZ');
+    });
+
+    it('US-03-AC-06 an invalid date string is shown raw: the row is kept with the value as stored', () => {
+      for (const bad of ['no-es-una-fecha', '1990-13-45', '15/05/1990']) {
+        const row = co(withValues({ birthDate: bad })).holder.find((r) => r.key === 'birthDate');
+        expect(row?.value, bad).toBe(bad);
+      }
+    });
+
     it('US-03-AC-06 a configured field with no entry in the output has no row', () => {
       const rest: Step1Output['values'] = { ...CO_EXPECTED_OUTPUT.values };
       delete rest['vehicleYear'];

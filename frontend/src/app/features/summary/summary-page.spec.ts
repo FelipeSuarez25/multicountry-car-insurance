@@ -382,14 +382,15 @@ describe('US-03 step 3 page: the summary and the payment (component tests throug
       expect(region?.getAttribute('tabindex')).toBe('0');
     });
 
-    it('US-03-AC-13 "Condiciones principales" is a heading inside the terms, below the section heading (level 3 or deeper), and below the terms title when that is a heading', async () => {
+    it('US-03-AC-13 "Condiciones principales" is a heading inside the terms: the terms title is an h3 under the h2 and the body heading is an h4', async () => {
       await openCo();
       const region = regionNamed(app.root, CO_TERMS_TITLE) as HTMLElement;
       const inner = headingsIn(region).find((h) => normalise(h.textContent) === 'Condiciones principales') as HTMLElement;
       expect(inner).toBeDefined();
-      expect(headingLevel(inner)).toBeGreaterThan(2);
-      const titleHeading = headingsIn(app.root).find((h) => normalise(h.textContent) === CO_TERMS_TITLE);
-      if (titleHeading) expect(headingLevel(inner)).toBeGreaterThan(headingLevel(titleHeading) as number);
+      expect(headingLevel(inner)).toBe(4);
+      const titleHeading = headingsIn(app.root).find((h) => normalise(h.textContent) === CO_TERMS_TITLE) as HTMLElement;
+      expect(titleHeading, 'the terms title is a heading').toBeDefined();
+      expect(headingLevel(titleHeading)).toBe(3);
     });
 
     it('US-03-AC-13 the three conditions are items of one bulleted list and "ficticio" is bold', async () => {
