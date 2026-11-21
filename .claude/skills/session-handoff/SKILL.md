@@ -34,7 +34,11 @@ without this procedure loses context.
    - Readable export: the **human** runs `/export logs/sessions/YYYY-MM-DD-<id8>.txt`
      (plain text).
    - Copy only `*.jsonl` session files. Never copy anything else from `~/.claude`.
-3. Run the secret scan on the new log files (`scripts/scan-secrets.sh logs/sessions/<files>`).
+3. Run `scripts/scan-logs.sh`: it scans every transcript and fails unless the number of unmarked findings equals the `<!-- scan-findings: N -->` count in `logs/sessions/README.md`.
+   **Read the complete output; never truncate it** (no `tail`, no `head`). Count the `SECRET?`
+   lines, classify every one of them without printing values, and record them in
+   `logs/sessions/README.md` (Scan exceptions). The count must match before you commit. A single
+   truncated read once hid 22 of 23 findings (FLOW.md).
    - If it finds something: **do not commit the log and do not edit it.** Report it to the human,
      who decides (rotate the secret, then commit the log with a note in
      `logs/sessions/README.md`).

@@ -4,9 +4,13 @@ import type { Core } from '@strapi/strapi';
  * ADR-0002 / US-01-T-18: the public role is reconciled to exactly the permissions below on every
  * start. Nothing is configured by hand in the admin panel.
  *
- * US-02 adds `api::plan.plan.find` and US-03 `api::terms.terms.find`, each through its own spec.
+ * US-02 added `api::plan.plan.find`; US-03 adds `api::terms.terms.find`, each through its own spec.
  */
-export const PUBLIC_PERMISSIONS = ['api::country.country.find', 'api::form-field.form-field.find'];
+export const PUBLIC_PERMISSIONS = [
+  'api::country.country.find',
+  'api::form-field.form-field.find',
+  'api::plan.plan.find',
+];
 
 const PERMISSION = 'plugin::users-permissions.permission';
 const ROLE = 'plugin::users-permissions.role';

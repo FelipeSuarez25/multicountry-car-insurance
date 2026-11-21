@@ -9,14 +9,14 @@ import type { FieldConfig, RawValue, RawValues } from './field-config.model';
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const INTEGER = /^-?\d+$/;
 
-interface YearMonthDay {
+export interface YearMonthDay {
   year: number;
   month: number;
   day: number;
 }
 
 /** Strict ISO `YYYY-MM-DD` parse: rejects impossible dates such as 2010-02-30. */
-function parseIsoDate(text: string): YearMonthDay | null {
+export function parseIsoDate(text: string): YearMonthDay | null {
   const m = ISO_DATE.exec(text);
   if (!m) return null;
   const [year, month, day] = [Number(m[1]), Number(m[2]), Number(m[3])];
@@ -26,7 +26,7 @@ function parseIsoDate(text: string): YearMonthDay | null {
 }
 
 /** Completed years on the local calendar date of `today`. */
-function ageOn(birth: YearMonthDay, today: Date): number {
+export function ageOn(birth: YearMonthDay, today: Date): number {
   const month = today.getMonth() + 1;
   const birthdayPassed = month > birth.month || (month === birth.month && today.getDate() >= birth.day);
   return today.getFullYear() - birth.year - (birthdayPassed ? 0 : 1);

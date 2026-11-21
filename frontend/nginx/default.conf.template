@@ -15,8 +15,8 @@ server {
 
     # --- Content API: read-only, allow-listed, never cached ---------------------------------
 
-    # Allow-list (US-01): the published countries and form fields. US-02 and US-03 extend it.
-    location ~ ^/api/(countries|form-fields)/?$ {
+    # Allow-list (US-01): the published countries and form fields; US-02 adds the plans. US-03 extends it.
+    location ~ ^/api/(countries|form-fields|plans)/?$ {
         # Only GET (and the implicit HEAD) reaches Strapi.
         if ($request_method !~ ^(GET|HEAD)$) {
             add_header Cache-Control "no-store" always;

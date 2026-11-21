@@ -7,6 +7,11 @@ import { CLOCK } from './clock';
 const STORAGE_KEY = 'quote-wizard';
 const VERSION = 1;
 
+/** The step 2 choice stored next to the step 1 values (spec 7.4). */
+export interface ChosenPlan {
+  key: string;
+}
+
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /**
@@ -20,11 +25,14 @@ export class QuoteStore {
   private readonly countrySignal = signal<string | null>(null);
   private readonly valuesSignal = signal<RawValues>({});
   private readonly outputSignal = signal<Step1Output | null>(null);
+  private readonly planSignal = signal<ChosenPlan | null>(null);
   private warnedAboutStorage = false;
 
   readonly country = this.countrySignal.asReadonly();
   readonly values = this.valuesSignal.asReadonly();
   readonly step1Output = this.outputSignal.asReadonly();
+  /** The chosen plan: its key only, never names or prices (ADR-0003, US-02-BR-07). */
+  readonly plan = this.planSignal.asReadonly();
 
   constructor() {
     this.restore();
@@ -35,6 +43,7 @@ export class QuoteStore {
     if (this.countrySignal() !== code) {
       this.valuesSignal.set({});
       this.outputSignal.set(null);
+      this.planSignal.set(null);
       this.countrySignal.set(code);
       this.clearStorage();
     }
@@ -45,6 +54,21 @@ export class QuoteStore {
     this.valuesSignal.update((values) => ({ ...values, [key]: value }));
     this.outputSignal.set(null);
     this.persist();
+  }
+
+  /** Chooses a plan, replacing any earlier choice; written to storage at once. */
+  choosePlan(key: string): void {
+    this.planSignal.set({ key });
+    this.persist();
+  }
+
+  /** Clears the choice when its key is not among the plans offered in this page load. */
+  prunePlan(offeredKeys: readonly string[]): void {
+    const chosen = this.planSignal();
+    if (chosen && !offeredKeys.includes(chosen.key)) {
+      this.planSignal.set(null);
+      this.persist();
+    }
   }
 
   /** Drops values of keys no longer configured and clears select values whose option is gone. */
@@ -95,9 +119,10 @@ export class QuoteStore {
     }
     this.countrySignal.set(entry.country);
     this.valuesSignal.set(entry.values);
+    this.planSignal.set(entry.plan);
   }
 
-  private parseEntry(raw: string): { country: string; values: RawValues } | null {
+  private parseEntry(raw: string): { country: string; values: RawValues; plan: ChosenPlan | null } | null {
     let parsed: unknown;
     try {
       parsed = JSON.parse(raw);
@@ -116,14 +141,18 @@ export class QuoteStore {
       if (typeof value !== 'string' && typeof value !== 'boolean') return null;
       values[key] = value;
     }
-    return { country, values };
+    const plan = parsed['plan'];
+    if (plan === undefined || plan === null) return { country, values, plan: null };
+    if (!isRecord(plan) || typeof plan['key'] !== 'string') return null;
+    return { country, values, plan: { key: plan['key'] } };
   }
 
   private persist(): void {
     const country = this.countrySignal();
     if (country === null) return;
+    const plan = this.planSignal();
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ version: VERSION, country, step1: { values: this.valuesSignal() } }));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ version: VERSION, country, step1: { values: this.valuesSignal() }, ...(plan ? { plan } : {}) }));
     } catch {
       this.warnStorageOnce();
     }

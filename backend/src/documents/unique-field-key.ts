@@ -2,14 +2,18 @@ import type { Core } from '@strapi/strapi';
 import { errors } from '@strapi/utils';
 
 /**
- * ADR-0001 / US-01-T-34: a `form-field` `key` is unique per country.
+ * ADR-0001 / US-01-T-34 / US-02-T-12: a `form-field` or `plan` `key` is unique per country.
  *
  * Strapi's `unique` is global (or per locale), never scoped by a relation, so it is enforced here,
  * as a Document Service middleware on create, update and publish. Drafts are compared because
  * every document always has a draft row, so the draft is the current state of the content.
  */
 
-const FORM_FIELD = 'api::form-field.form-field';
+/** Content types whose `key` is unique per country, with the message shown to the editor (Spanish). */
+const KEYED_TYPES: Record<string, (key: string) => string> = {
+  'api::form-field.form-field': (key) => `Ya existe un campo con la clave "${key}" en este país.`,
+  'api::plan.plan': (key) => `Ya existe un plan con la clave "${key}" en este país.`,
+};
 const GUARDED_ACTIONS = new Set(['create', 'update', 'publish']);
 
 type Relation = unknown;
@@ -29,10 +33,11 @@ function relatedDocumentId(value: Relation): string | undefined {
 
 export function registerUniqueFieldKey(strapi: Core.Strapi): void {
   strapi.documents.use(async (context, next) => {
-    if (context.uid !== FORM_FIELD || !GUARDED_ACTIONS.has(context.action)) return next();
+    const message = KEYED_TYPES[context.uid];
+    if (!message || !GUARDED_ACTIONS.has(context.action)) return next();
 
     const params = (context.params ?? {}) as { documentId?: string; data?: Record<string, unknown> };
-    const documents = strapi.documents(FORM_FIELD);
+    const documents = strapi.documents(context.uid as 'api::plan.plan');
     const data = params.data ?? {};
     let key = typeof data['key'] === 'string' ? data['key'] : undefined;
     let countryId = 'country' in data ? relatedDocumentId(data['country']) : undefined;
@@ -63,7 +68,7 @@ export function registerUniqueFieldKey(strapi: Core.Strapi): void {
         },
       });
       if (clash) {
-        throw new errors.ApplicationError(`Ya existe un campo con la clave "${key}" en este país.`);
+        throw new errors.ApplicationError(message(key));
       }
     }
     return next();
