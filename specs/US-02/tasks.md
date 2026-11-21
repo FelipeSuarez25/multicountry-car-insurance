@@ -7,12 +7,12 @@
 
 | Field | Value |
 |---|---|
-| Current step | 3 Tests written (red) |
+| Current step | 4 Implementation (backend first, then frontend) |
 | Branch | feat/us-02-plan-list |
 | PR | — |
 | Blockers | — (the orchestrator sets ADR-0007 to Accepted per the human's HC2 decision) |
-| **Next action** | Step 4: strapi-developer (T-11..T-14), then frontend-developer (T-15..T-21) implement until the US-02 tests are green. The orchestrator must run the frontend suite with the new red files excluded until their modules exist (see Gate history, 2026-11-21 step 3). |
-| Last updated | 2026-11-21 by test-engineer (Claude Sonnet 5.5) |
+| **Next action** | strapi-developer implements the plan type, seed, permissions and rules; then frontend-developer; then the gate. |
+| Last updated | 2026-11-21 by orchestrator (Claude Opus 5.5) |
 
 ## Tasks
 
@@ -56,6 +56,7 @@ ADR (US-02-Q-01).
 | 2026-11-21 | HC2 | Human chose **option A** for ADR-0007 (rule and factors fixed in one pure front-end function shared with US-03), not the proposed B. ADR-0007 revised by the architect (outcome A, strongest argument against now argues for B, B named as the upgrade path, spec impact: none); ADR-0001 note for US-02-Q-03 kept. Acceptance to be recorded by the orchestrator | Felipe Sabogal (human); revision by architect (Claude Opus 5.5) | [ADR-0007](../../adr/0007-simulated-price-rule.md) |
 | 2026-11-21 | HC2 | **Accepted**: ADR-0007 (option A: rule and factors fixed in one pure front-end function, reused by US-03); US-02-Q-03 recorded as an ADR-0001 implementation note | Felipe Sabogal (human) | adr/0007 |
 | 2026-11-21 | 3 Tests | Tests written, red for the right reason. Frontend: `npx tsc --noEmit -p tsconfig.spec.json` reports only TS2307 for the planned modules `price-rules`, `money-format`, `plan`, `plan.model`, `plan-api`, `summary-step-guard`; `plan-list-page.spec.ts` and `quote-store-plan.spec.ts` compile and fail at run time (no page, no `plan` in the store). `npm test` stops at the build on those TS2307, so the existing suite is verified with the new files excluded (`ng test --exclude`): 318 pass. **One US-01 test was replaced on purpose**: `quote-form-page.spec.ts` "the step 2 route has no page of its own" (US-01-Q-27, superseded because US-02 attaches its page) now asserts the step 2 heading; it is red until the page exists. Backend: `plan-rules.test.ts` fails in `beforeAll` only because `api::plan.plan` does not exist; the two existing backend files pass. E2E: `playwright test --list` loads the 6 files (78 tests). E2E and backend plan tests were not run against an implementation | test-engineer (Claude Sonnet 5.5) | commit `test(us-02): tests for the plan list` (this step) |
+| 2026-11-21 | Step 3 decisions | Accepted the test-engineer's six calls: (1) the US-01 'step 2 has no page' test replaced by 'plan list page shows'; (2) unexpected plans response shape → error state with Reintentar; (3) summary guard when the plans request fails → /planes; (4) basePrice max 2,147,483,647 enforced in Strapi too; (5) focus indicator on the native radio; (6) recommended visual style and screen-reader announcement are manual HC3 checks | Felipe Sabogal (human) | 56fa702 |
 
 ## Session log
 
