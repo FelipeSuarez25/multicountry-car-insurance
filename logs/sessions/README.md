@@ -57,6 +57,8 @@ No subagent transcript contained the address. Later exports use `scripts/redact-
 | 2026-11-21 | `subagents/agent-a69213286f947f6bb.jsonl:54` (one token, 2 matches) | `jwt` | **Real token**: a Strapi admin *refresh* token for the fictitious dev admin (`userId 1`) of the throwaway stack `mci-db` (R2-F04 persistence check). It **expired at 2026-11-21T16:16:25Z**, and it was signed with an `ADMIN_JWT_SECRET` generated inside that stack's volume, **which was deleted** (`down -v`), so it cannot be validated anywhere. | Accepted as an exception; the log stays unedited (Felipe Sabogal, 2026-11-21) |
 | 2026-11-21 | several subagent transcripts | `bearer-header` / `strapi-or-generic-secret-assignment` reported as `ALLOWED` | Lines that carry the repo's explicit `scan-secrets: allow (…)` markers | Already justified by the markers |
 
-**Procedure from now on** (`session-handoff` skill): run the scanner on the **full** export and
+<!-- scan-findings: 23 -->
+
+**Procedure from now on** (`session-handoff` skill): `scripts/scan-logs.sh` enforces it, failing when the number of `SECRET?` lines differs from the `scan-findings` count above. run the scanner on the **full** export and
 read the **complete** output. The number of `SECRET?` lines must equal the number of findings
 classified in this table before a log is committed.

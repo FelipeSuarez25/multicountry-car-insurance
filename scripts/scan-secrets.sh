@@ -32,14 +32,14 @@ RULES=(
 if [ $# -gt 0 ]; then
   files=("$@")
 else
-  # Default (the gate): every tracked and untracked, non-ignored file EXCEPT exported session logs.
-  # Logs quote fictitious values from the code and are checked separately, with every finding
-  # classified and recorded in logs/sessions/README.md (session-handoff skill). Mixing them in
-  # would let a new secret in the code hide among the accepted log findings.
-  # To scan logs: scripts/scan-secrets.sh $(git ls-files 'logs/sessions/*.jsonl')
+  # Default (the gate): every tracked and untracked, non-ignored file EXCEPT the exported session
+  # transcripts (logs/sessions/**/*.jsonl). Transcripts quote fictitious values from the code and are
+  # checked by scripts/scan-logs.sh against the findings recorded in logs/sessions/README.md. Mixing
+  # them in would let a new secret in the code hide among accepted log findings. Every other file
+  # under logs/ (README, /export text) is still scanned here.
   files=()
   while IFS= read -r f; do
-    case "$f" in logs/sessions/*) continue ;; esac
+    case "$f" in logs/sessions/*.jsonl) continue ;; esac
     files+=("$f")
   done < <(git ls-files --cached --others --exclude-standard)
 fi
