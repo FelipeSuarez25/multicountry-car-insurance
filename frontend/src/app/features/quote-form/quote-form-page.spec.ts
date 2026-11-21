@@ -6,23 +6,31 @@ import { QuoteStore } from '../../core/quote-store';
 import type { FieldConfig } from '../../shared/field-config.model';
 import { configureAppTest, createAppTest, type AppTest } from '../../../testing/app-harness';
 import {
+  PROMPT,
   allControls,
   allLabels,
   alertTexts,
   button,
+  choose,
   control,
   describedText,
+  expectPrompt,
   fillForm,
   invalidControls,
   isExposedAsRequired,
   labelsWithErrors,
   leave,
+  listboxOf,
   maybeButton,
   maybeControl,
   normalise,
+  openCombobox,
+  optionTexts,
+  settleUi,
   shownValue,
   typeInto,
 } from '../../../testing/dom';
+import { maybeButtonNamed, selectedOptionTexts } from '../../../testing/custom-controls';
 import {
   CL_VALID_INPUT,
   CL_VALID_RAW,
@@ -45,7 +53,6 @@ import {
 const HEADING = 'Tus datos y los de tu vehículo';
 const LOAD_ERROR = 'No pudimos cargar el formulario. Intenta de nuevo.';
 const COUNTRIES_ERROR = 'No pudimos cargar la lista de países. Intenta de nuevo.';
-const PROMPT = 'Selecciona una opción';
 
 describe('US-01 step 1 page (component tests through the real routes)', () => {
   let app: AppTest;
@@ -63,11 +70,11 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
     await app.settle();
   };
   const fillCo = async (overrides: Record<string, string | boolean | null> = {}): Promise<void> => {
-    fillForm(app.root, { ...CO_VALID_INPUT, ...overrides });
+    await fillForm(app.root, { ...CO_VALID_INPUT, ...overrides });
     await app.settle();
   };
   const fillCl = async (overrides: Record<string, string | boolean | null> = {}): Promise<void> => {
-    fillForm(app.root, { ...CL_VALID_INPUT, ...overrides });
+    await fillForm(app.root, { ...CL_VALID_INPUT, ...overrides });
     await app.settle();
   };
   const heading = (): HTMLElement => app.root.querySelector('h1') as HTMLElement;
@@ -109,14 +116,32 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       expect(app.server.requestsOf('countries')).toHaveLength(1);
     });
 
-    it('US-01-AC-01 every field type renders its native control: text, number, date, select and checkbox', async () => {
+    // US-04 spec 11.1: renamed from "renders its native control"; the select and the date are now custom controls.
+    it('US-01-AC-01 every field type renders its control: text (textbox), number (spinbutton), date (textbox plus "Elegir fecha"), select (combobox) and checkbox', async () => {
       await start();
       await app.open('/co/datos');
       expect(control(app.root, 'Número de documento')).toMatchObject({ tagName: 'INPUT', type: 'text' });
       expect(control(app.root, 'Modelo (año)')).toMatchObject({ tagName: 'INPUT', type: 'number' });
-      expect(control(app.root, 'Fecha de nacimiento')).toMatchObject({ tagName: 'INPUT', type: 'date' });
-      expect(control(app.root, 'Ciudad').tagName).toBe('SELECT');
       expect(control(app.root, CONSENT_LABEL_CO)).toMatchObject({ tagName: 'INPUT', type: 'checkbox' });
+
+      // date: a text box (not a native date input, not a combobox) and a button that opens the calendar
+      const date = control(app.root, 'Fecha de nacimiento');
+      expect(date).toMatchObject({ tagName: 'INPUT', type: 'text' });
+      expect(date.getAttribute('role')).not.toBe('combobox');
+      expect(maybeButtonNamed(app.root, 'Elegir fecha: Fecha de nacimiento')).not.toBeNull();
+
+      // select: a combobox, collapsed; once opened, aria-expanded is true and aria-controls refers to the rendered listbox
+      for (const label of ['Tipo de documento', 'Ciudad', 'Marca']) {
+        const combo = control(app.root, label);
+        expect(combo.tagName, label).not.toBe('SELECT');
+        expect(combo.getAttribute('role'), label).toBe('combobox');
+        expect(combo.getAttribute('aria-expanded'), label).toBe('false');
+        const listbox = await openCombobox(combo);
+        expect(combo.getAttribute('aria-expanded'), label).toBe('true');
+        expect(listbox.getAttribute('role')).toBe('listbox');
+        expect(listboxOf(combo), `${label}: aria-controls refers to the rendered listbox`).toBe(listbox);
+        await settleUi();
+      }
     });
 
     it('US-01-AC-01 shows the step heading, the required note, the help texts and "Continuar" (Ready state)', async () => {
@@ -165,31 +190,46 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
   });
 
   describe('US-01-AC-07 select options come from Strapi (US-01-BR-02)', () => {
-    const optionTexts = (select: HTMLSelectElement): string[] => Array.from(select.options).map((o) => normalise(o.textContent));
+    // US-04 spec 11.1: "Ciudad" has 4 options, so it is a searchable select; its prompt is the placeholder and the
+    // prompt is not an option (US-04-BR-05). The list is read while it is open; nothing is selected; stored values are checked.
+    async function openCity(address: string): Promise<{ city: ReturnType<typeof control>; listbox: HTMLElement }> {
+      await start();
+      await app.open(address);
+      const city = control(app.root, 'Ciudad');
+      expectPrompt(city);
+      const listbox = await openCombobox(city);
+      return { city, listbox };
+    }
 
     it('US-01-AC-07 Colombia "Ciudad" shows the prompt and then exactly the 4 cities, in this order, and none is selected', async () => {
-      await start();
-      await app.open('/co/datos');
-      const city = control(app.root, 'Ciudad') as HTMLSelectElement;
-      expect(optionTexts(city)).toEqual([PROMPT, 'Bogotá', 'Medellín', 'Cali', 'Barranquilla']);
-      expect(city.value).toBe('');
-      expect(normalise(city.selectedOptions[0].textContent)).toBe(PROMPT);
+      const { city, listbox } = await openCity('/co/datos');
+      expect(optionTexts(listbox)).toEqual(['Bogotá', 'Medellín', 'Cali', 'Barranquilla']);
+      expect(selectedOptionTexts(listbox)).toEqual([]);
+      expect(store().values()['city'] ?? '').toBe('');
+      expect(city.getAttribute('aria-expanded')).toBe('true');
     });
 
     it('US-01-AC-07 Chile "Ciudad" shows the prompt and then exactly the 4 cities, in this order, and none is selected', async () => {
-      await start();
-      await app.open('/cl/datos');
-      const city = control(app.root, 'Ciudad') as HTMLSelectElement;
-      expect(optionTexts(city)).toEqual([PROMPT, 'Santiago', 'Valparaíso', 'Concepción', 'Antofagasta']);
-      expect(city.value).toBe('');
+      const { listbox } = await openCity('/cl/datos');
+      expect(optionTexts(listbox)).toEqual(['Santiago', 'Valparaíso', 'Concepción', 'Antofagasta']);
+      expect(selectedOptionTexts(listbox)).toEqual([]);
     });
 
-    it('US-01-BR-02 the first entry is a prompt that cannot be selected, and the option values are the stored values, not the labels', async () => {
-      await start();
-      await app.open('/co/datos');
-      const city = control(app.root, 'Ciudad') as HTMLSelectElement;
-      expect(city.options[0].disabled).toBe(true);
-      expect(Array.from(city.options).map((o) => o.value)).toEqual(['', 'BOG', 'MDE', 'CLO', 'BAQ']);
+    it('US-01-BR-02 the prompt is not an option, and choosing each option stores its value (BOG, MDE, CLO, BAQ), not its label', async () => {
+      const { city, listbox } = await openCity('/co/datos');
+      expect(optionTexts(listbox)).not.toContain(PROMPT);
+      expect(listbox.querySelectorAll('[role="option"]')).toHaveLength(4);
+      await settleUi();
+      for (const [label, value] of [
+        ['Bogotá', 'BOG'],
+        ['Medellín', 'MDE'],
+        ['Cali', 'CLO'],
+        ['Barranquilla', 'BAQ'],
+      ]) {
+        await choose(city, label);
+        expect(shownValue(city), label).toBe(label);
+        expect(store().values()['city'], label).toBe(value);
+      }
     });
 
     it('US-01-BR-02 the options follow their sortOrder, not the order Strapi sent them', async () => {
@@ -208,7 +248,8 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
           : i,
       );
       await app.open('/co/datos');
-      expect(optionTexts(control(app.root, 'Ciudad') as HTMLSelectElement)).toEqual([PROMPT, 'Bogotá', 'Medellín', 'Cali', 'Barranquilla']);
+      const listbox = await openCombobox(control(app.root, 'Ciudad'));
+      expect(optionTexts(listbox)).toEqual(['Bogotá', 'Medellín', 'Cali', 'Barranquilla']);
     });
   });
 
@@ -216,7 +257,7 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
     const rows: [string, string | boolean | null, string][] = [
       ['Placa', 'AB12', 'Ingresa una placa válida: 3 letras y 3 números (por ejemplo, ABC123).'],
       ['Ciudad', null, 'Selecciona tu ciudad.'],
-      ['Fecha de nacimiento', '2010-03-01', 'Debes ser mayor de edad (18 años o más) para cotizar.'],
+      ['Fecha de nacimiento', '01/03/2010', 'Debes ser mayor de edad (18 años o más) para cotizar.'],
       ['Modelo (año)', '2005', 'El modelo debe estar entre los últimos 20 años y el próximo año.'],
       [CONSENT_LABEL_CO, false, 'Debes autorizar el tratamiento de tus datos para continuar.'],
       ['Nombre completo', 'Al', 'Ingresa tu nombre completo (entre 3 y 80 caracteres).'],
@@ -537,14 +578,22 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       expect(app.server.requestsOf('form-fields')).toHaveLength(1);
     });
 
-    it('US-01-AC-04 shows what each control type holds after hydration: text, number, date, select and checkbox', async () => {
+    it('US-01-AC-04 shows what each control type holds after hydration: text, number, date, select (both kinds) and checkbox, and the store still holds the stored values', async () => {
       await start(wizardEntry('CO', CO_VALID_RAW));
       await app.open('/co/datos');
       expect((control(app.root, 'Número de documento') as HTMLInputElement).value).toBe('1012345678');
       expect((control(app.root, 'Modelo (año)') as HTMLInputElement).value).toBe('2022');
-      expect((control(app.root, 'Fecha de nacimiento') as HTMLInputElement).value).toBe('1990-05-15');
-      expect((control(app.root, 'Ciudad') as HTMLSelectElement).value).toBe('MDE');
+      // US-04: the date is shown as dd/mm/aaaa, stored as ISO
+      expect((control(app.root, 'Fecha de nacimiento') as HTMLInputElement).value).toBe('15/05/1990');
+      expect(store().values()['birthDate']).toBe('1990-05-15');
+      // searchable select: its input shows the option label
+      expect(shownValue(control(app.root, 'Ciudad'))).toBe('Medellín');
+      expect(store().values()['city']).toBe('MDE');
+      // select-only select: its button shows the option label
+      expect(shownValue(control(app.root, 'Tipo de documento'))).toBe('Cédula de ciudadanía');
+      expect(store().values()['documentType']).toBe('CC');
       expect((control(app.root, CONSENT_LABEL_CO) as HTMLInputElement).checked).toBe(true);
+      expect(invalidControls(app.root)).toEqual([]);
     });
   });
 
@@ -714,11 +763,12 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       expect(storedValues()['mileage']).toBe('');
     });
 
+    // US-04 spec 11.1: the stubbed `validity.badInput` is replaced by typing unreadable text ("10/13/2026").
     for (const [name, errorMessage, expected] of [
       ['its errorMessage', 'Ingresa una fecha de revisión válida.', 'Ingresa una fecha de revisión válida.'],
       ['"Revisa este campo." when errorMessage is empty', '', 'Revisa este campo.'],
     ] as const) {
-      it(`US-01-AC-09 / US-01-AC-10 an optional date the browser cannot read (badInput) is an error showing ${name}: "Continuar" blocked, store holds ""`, async () => {
+      it(`US-01-AC-09 / US-01-AC-10 an optional date the person typed unreadably (10/13/2026) is an error showing ${name}: "Continuar" blocked, focus on the date, store holds "" and the text stays`, async () => {
         await start();
         app.server.fields['CO'] = withOptional('CO', {
           key: 'inspectionDate',
@@ -732,33 +782,28 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
         await app.open('/co/datos');
         await fillCo();
         const date = control(app.root, 'Fecha de revisión') as HTMLInputElement;
-        typeInto(date, '2026-01-10');
+        typeInto(date, '10/01/2026');
         await app.settle();
         expect(store().values()['inspectionDate']).toBe('2026-01-10');
-        Object.defineProperty(date, 'validity', { configurable: true, get: () => ({ badInput: true, valid: false }) });
-        date.value = '';
-        date.dispatchEvent(new Event('input', { bubbles: true }));
+        typeInto(date, '10/13/2026');
         leave(date);
         await app.settle();
         expect(store().values()['inspectionDate']).toBe('');
+        expect(date.value).toBe('10/13/2026');
         await continuar();
         expect(describedText(date)).toContain(expected);
         expect(date.getAttribute('aria-invalid')).toBe('true');
+        expect(document.activeElement).toBe(date);
         expect(app.path()).toBe('/co/datos');
         expect(store().step1Output()).toBeNull();
         expect(storedValues()['inspectionDate']).toBe('');
+        expect(date.value).toBe('10/13/2026');
       });
     }
   });
 
   describe('US-01-AC-02 / US-01-AC-10 / US-01-AC-18 a required date emptied after it was valid (US-01-R3-F01)', () => {
     const MESSAGE = 'Ingresa tu fecha de nacimiento.';
-    /** An emptied or unreadable date: the control reports `badInput` and reads back '', then the input event. */
-    function emptyDate(el: HTMLInputElement, badInput: boolean): void {
-      Object.defineProperty(el, 'validity', { configurable: true, get: () => ({ badInput, valid: !badInput }) });
-      el.value = '';
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-    }
     const submitWithEnter = async (): Promise<void> => {
       // Enter in a text field submits the form through the default button.
       const form = app.root.querySelector('form') as HTMLFormElement;
@@ -766,8 +811,13 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       await app.settle();
     };
 
-    for (const badInput of [true, false]) {
-      const how = badInput ? 'an unreadable (partly cleared) date' : 'a cleared date';
+    // US-04 spec 11.1: the stubbed badInput becomes real typing. "Partly cleared" is "15/05/199" (unreadable text that stays
+    // on screen); "cleared" is an empty text box. Same assertions as before, plus the typed text stays visible.
+    for (const [how, text] of [
+      ['an unreadable (partly cleared) date', '15/05/199'],
+      ['a cleared date', ''],
+    ] as const) {
+      const emptyDate = (el: HTMLInputElement): void => typeInto(el, text);
 
       it(`US-01-AC-02 ${how}: shows the required message with aria-invalid after leaving the field`, async () => {
         await start();
@@ -775,11 +825,12 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
         await fillCo();
         const date = control(app.root, 'Fecha de nacimiento') as HTMLInputElement;
         expect(store().values()['birthDate']).toBe('1990-05-15');
-        emptyDate(date, badInput);
+        emptyDate(date);
         leave(date);
         await app.settle();
         expect(describedText(date)).toContain(MESSAGE);
         expect(date.getAttribute('aria-invalid')).toBe('true');
+        expect(date.value).toBe(text);
       });
 
       it(`US-01-AC-02 / US-01-AC-10 / US-01-AC-18 ${how}: "Continuar" by click stays on /co/datos, focuses the date, and no step 1 output carries the stale date`, async () => {
@@ -787,7 +838,7 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
         await app.open('/co/datos');
         await fillCo();
         const date = control(app.root, 'Fecha de nacimiento') as HTMLInputElement;
-        emptyDate(date, badInput);
+        emptyDate(date);
         leave(date);
         await app.settle();
         await continuar();
@@ -797,6 +848,7 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
         expect(store().step1Output()).toBeNull();
         expect(JSON.stringify(store().step1Output())).not.toContain('1990-05-15');
         expect(store().values()['birthDate']).toBe('');
+        expect(date.value).toBe(text);
       });
 
       it(`US-01-AC-02 / US-01-AC-10 / US-01-AC-18 ${how}: submitting with Enter stays on /co/datos, focuses the date, and no step 1 output carries the stale date`, async () => {
@@ -804,7 +856,7 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
         await app.open('/co/datos');
         await fillCo();
         const date = control(app.root, 'Fecha de nacimiento') as HTMLInputElement;
-        emptyDate(date, badInput);
+        emptyDate(date);
         leave(date);
         await app.settle();
         await submitWithEnter();
@@ -827,9 +879,9 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
 
       expect(maybeControl(app.root, 'Línea')).toBeNull();
       expect(store().values()).not.toHaveProperty('model');
-      const city = control(app.root, 'Ciudad') as HTMLSelectElement;
-      expect(city.value).toBe('');
-      expect(normalise(city.selectedOptions[0].textContent)).toBe(PROMPT);
+      const city = control(app.root, 'Ciudad');
+      expectPrompt(city);
+      expect(store().values()['city']).toBe('');
       expect(alertTexts(app.root)).toEqual([]);
       // the rest of the stored data is kept
       expect((control(app.root, 'Nombre completo') as HTMLInputElement).value).toBe('Ana Prueba Ficticia');
@@ -994,6 +1046,127 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       expect(regions()).toHaveLength(1);
       expect(regions()[0]).toBe(first);
       expect(normalise(first.textContent)).toBe(message);
+    });
+  });
+
+  // ---------------------------------------------------------------------------------------------
+  // US-04: icons, skeleton, heading outline of step 1
+  // ---------------------------------------------------------------------------------------------
+
+  describe('US-04-AC-04 field icons: hidden from assistive technology, by key, with a default (the table itself is in field-icons.spec.ts)', () => {
+    /** The smallest element that holds both the label and its control: the field. */
+    const fieldOf = (label: string): HTMLElement => {
+      const el = control(app.root, label);
+      const lab = Array.from(app.root.querySelectorAll('label')).find((l) => l.control === el) as HTMLLabelElement;
+      let node: HTMLElement | null = el.parentElement;
+      while (node && !node.contains(lab)) node = node.parentElement;
+      return node as HTMLElement;
+    };
+    const firstIcon = (label: string): string => fieldOf(label).querySelector('svg')?.outerHTML ?? '';
+
+    it('US-04-AC-04 every text, number, select and date field of Colombia shows an icon, and the consent checkbox shows none', async () => {
+      await start();
+      await app.open('/co/datos');
+      for (const label of seedLabels('CO').filter((l) => l !== CONSENT_LABEL_CO)) {
+        expect(fieldOf(label).querySelectorAll('svg').length, label).toBeGreaterThan(0);
+      }
+      expect(fieldOf(CONSENT_LABEL_CO).querySelectorAll('svg')).toHaveLength(0);
+    });
+
+    it('US-04-AC-04 every icon of the page is hidden from assistive technology (aria-hidden="true", not focusable, no title, no text)', async () => {
+      await start();
+      await app.open('/co/datos');
+      const icons = Array.from(app.root.querySelectorAll('svg'));
+      expect(icons.length).toBeGreaterThan(9);
+      for (const icon of icons) {
+        expect(icon.getAttribute('aria-hidden'), icon.outerHTML.slice(0, 80)).toBe('true');
+        expect(icon.getAttribute('tabindex')).toBeNull();
+        expect(icon.querySelector('title')).toBeNull();
+        expect(normalise(icon.textContent)).toBe('');
+      }
+    });
+
+    it('US-04-AC-04 each field is still named exactly by its label, and "Continuar" is still named "Continuar"', async () => {
+      await start();
+      await app.open('/co/datos');
+      for (const cfg of seedFieldConfigs('CO')) expect(normalise(control(app.root, cfg.label).labels?.[0]?.textContent), cfg.label).toBe(cfg.label);
+      expect(normalise(button(app.root, 'Continuar').textContent)).toBe('Continuar');
+    });
+
+    it('US-04-AC-04 a field added in Strapi with an unmapped key ("mobilePhone", and a number "mileage") shows the same default icon, different from every mapped one', async () => {
+      await start();
+      app.server.fields['CO'] = [
+        ...seedStrapiItems('CO'),
+        toStrapiFieldItem({ key: 'mobilePhone', type: 'text', label: 'Teléfono celular', isRequired: false, sortOrder: 35, errorMessage: 'Ingresa un número de celular válido.', rules: [] }, 90),
+        toStrapiFieldItem({ key: 'mileage', type: 'number', label: 'Kilometraje', isRequired: false, sortOrder: 95, errorMessage: '', rules: [] }, 91),
+      ];
+      await app.open('/co/datos');
+      const dflt = firstIcon('Teléfono celular');
+      expect(dflt).not.toBe('');
+      expect(firstIcon('Kilometraje')).toBe(dflt);
+      for (const mapped of ['Número de documento', 'Nombre completo', 'Placa', 'Línea']) expect(firstIcon(mapped), mapped).not.toBe(dflt);
+    });
+
+    it('US-04-AC-04 the icon follows the key: "Número de documento" (Colombia) and "RUT" (Chile), both key documentNumber, show the same icon', async () => {
+      await start();
+      await app.open('/co/datos');
+      const co = firstIcon('Número de documento');
+      // Chile is another page load (a country is never switched inside the wizard, US-01-Q-02)
+      TestBed.resetTestingModule();
+      configureAppTest();
+      await start();
+      await app.open('/cl/datos');
+      expect(firstIcon('RUT')).toBe(co);
+    });
+  });
+
+  describe('US-04-AC-15 skeletons while the form loads (the live text stays)', () => {
+    const shapes = (): number =>
+      Array.from(app.root.querySelectorAll('[aria-hidden="true"]')).filter((e) => e.tagName.toLowerCase() !== 'svg' && normalise(e.textContent) === '').length;
+    const liveTexts = (): string[] =>
+      Array.from(app.root.querySelectorAll('[role="status"], [aria-live="polite"]')).map((e) => normalise(e.textContent));
+
+    it('US-04-AC-15 while the form fields load there are skeleton shapes hidden from assistive technology, "Cargando formulario…" is still in the polite live region, and the container is busy; when the content arrives the shapes are gone', async () => {
+      vi.useFakeTimers();
+      await start();
+      app.server.fields['CO'] = 'hang';
+      const navigation = app.begin('/co/datos');
+      await app.settle();
+      const loading = shapes();
+      expect(loading, 'skeleton shapes while loading').toBeGreaterThan(0);
+      expect(liveTexts()).toContain('Cargando formulario…');
+      expect(app.root.querySelector('[aria-busy="true"]')).not.toBeNull();
+      // the live text is not inside a hidden subtree
+      const status = Array.from(app.root.querySelectorAll('[role="status"], [aria-live="polite"]')).find((e) => normalise(e.textContent) === 'Cargando formulario…');
+      expect(status?.closest('[aria-hidden="true"]')).toBeNull();
+
+      await vi.advanceTimersByTimeAsync(10_000);
+      await vi.advanceTimersByTimeAsync(50);
+      TestBed.tick();
+      await navigation;
+      app.server.fields['CO'] = seedStrapiItems('CO');
+      button(app.root, 'Reintentar').click();
+      await app.settle();
+      expect(allLabels(app.root)).toEqual(seedLabels('CO'));
+      expect(shapes(), 'the skeleton is replaced by the content').toBeLessThan(loading);
+      expect(liveTexts()).not.toContain('Cargando formulario…');
+    });
+  });
+
+  describe('US-04-AC-20 heading outline of step 1 (header, indicator, panels and calendar add no heading)', () => {
+    it('US-04-AC-20 step 1 in Chile has exactly one heading: h1 "Tus datos y los de tu vehículo"', async () => {
+      await start();
+      await app.open('/cl/datos');
+      const outline = Array.from(app.root.querySelectorAll('h1, h2, h3, h4, h5, h6')).map((h) => [h.tagName.toLowerCase(), normalise(h.textContent)]);
+      expect(outline).toEqual([['h1', HEADING]]);
+      expect(app.root.querySelectorAll('main')).toHaveLength(1);
+    });
+
+    it('US-04-AC-20 with a select panel open there is still no other heading in the document', async () => {
+      await start();
+      await app.open('/cl/datos');
+      await openCombobox(control(app.root, 'Ciudad'));
+      expect(Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6')).map((h) => h.tagName.toLowerCase())).toEqual(['h1']);
     });
   });
 });

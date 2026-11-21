@@ -343,12 +343,15 @@ export function seedCountryItems(): StrapiItem[] {
 // Values a person types (labels and visible option texts, as a user sees them)
 // ---------------------------------------------------------------------------------------------
 
-/** AC-04 / AC-18 values for Colombia, keyed by the visible label. Selects use the option text. */
+/**
+ * AC-04 / AC-18 values for Colombia, keyed by the visible label. Selects use the option text; the
+ * date is what a person types and sees, dd/mm/aaaa (US-04-Q-05), and is stored as 1990-05-15.
+ */
 export const CO_VALID_INPUT: Record<string, string | boolean> = {
   'Tipo de documento': 'Cédula de ciudadanía',
   'Número de documento': '1012345678',
   'Nombre completo': 'Ana Prueba Ficticia',
-  'Fecha de nacimiento': '1990-05-15',
+  'Fecha de nacimiento': '15/05/1990',
   Ciudad: 'Medellín',
   Placa: 'ABC123',
   Marca: 'Mazda',
@@ -391,7 +394,7 @@ export const CO_EXPECTED_OUTPUT = {
 export const CL_VALID_INPUT: Record<string, string | boolean> = {
   RUT: '12.345.678-5',
   'Nombre completo': 'Pedro Prueba Ficticio',
-  'Fecha de nacimiento': '1985-03-20',
+  'Fecha de nacimiento': '20/03/1985',
   Ciudad: 'Santiago',
   Patente: 'BCDF12',
   Marca: 'Suzuki',

@@ -1,5 +1,5 @@
 import { expect, type APIRequestContext, type Locator, type Page } from '@playwright/test';
-import { continuar, field, fillColombia, fillField } from './form';
+import { continuar, expectShown, field, fillColombia, fillField, isCombobox, isoOf, storedValue, STORED_KEY, STORED_OPTION } from './form';
 import type { AdminSession, ScopedToken } from './strapi-admin';
 
 /**
@@ -25,11 +25,11 @@ export const CL_HIDDEN_NAMES = ['Plan Flex', 'Plan Premium Plus'];
 
 export const CL_CONSENT = 'Acepto el tratamiento de mis datos personales.';
 
-/** "I completed step 1 in Chile" of US-02 spec section 5. */
+/** "I completed step 1 in Chile" of US-02 spec section 5 (the date as typed, dd/mm/aaaa, stored 1990-05-15). */
 export const CL_VALID: Record<string, string | boolean> = {
   RUT: '12.345.678-5',
   'Nombre completo': 'Ana Prueba Ficticia',
-  'Fecha de nacimiento': '1990-05-15',
+  'Fecha de nacimiento': '15/05/1990',
   Ciudad: 'Santiago',
   Patente: 'BCDF12',
   Marca: 'Kia',
@@ -79,18 +79,26 @@ export async function expectPrices(page: Page, names: string[], prices: string[]
   }
 }
 
-/** Every control of step 1 shows the value that was entered (US-01-AC-04, AC-20, AC-21); no error is shown. */
+/**
+ * Every control of step 1 shows the value that was entered (US-01-AC-04, AC-20, AC-21); no error is shown.
+ * US-04 spec 11.1: a combobox shows the option label AND the wizard state holds the option value; the date
+ * box shows dd/mm/aaaa AND the state holds the ISO date.
+ */
 export async function expectEntered(page: Page, values: Record<string, string | boolean>): Promise<void> {
   for (const [label, value] of Object.entries(values)) {
     const control = field(page, label);
-    const tag = await control.evaluate((el) => el.tagName.toLowerCase());
     const type = await control.evaluate((el) => (el as HTMLInputElement).type);
-    if (tag === 'select') {
-      await expect.poll(() => control.evaluate((el) => (el as HTMLSelectElement).selectedOptions[0]?.textContent?.trim()), { message: label }).toBe(value);
+    if (await isCombobox(control)) {
+      await expectShown(control, value as string);
+      const key = STORED_KEY[label];
+      await expect.poll(() => storedValue(page, key), { message: `${label} is stored as its option value` }).toBe(STORED_OPTION[label][value as string]);
     } else if (type === 'checkbox') {
       await (value ? expect(control).toBeChecked() : expect(control).not.toBeChecked());
     } else {
       await expect(control, label).toHaveValue(value as string);
+      if (label === 'Fecha de nacimiento') {
+        await expect.poll(() => storedValue(page, STORED_KEY[label]), { message: 'the date is stored as ISO' }).toBe(isoOf(value as string));
+      }
     }
     await expect(control).not.toHaveAttribute('aria-invalid', 'true');
   }
