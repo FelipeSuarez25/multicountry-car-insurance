@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Current step | 2 ADR (HC1 passed: spec v0.1 Approved) |
+| Current step | 3 Tests (HC2 passed: ADR-0008 and ADR-0009 Accepted) |
 | Branch | feat/us-03-summary-payment |
 | PR | — |
-| Blockers | HC1: six blocking gaps in spec §6 (US-03-Q-01..Q-06); Q-03 also needs a human edit of CLAUDE.md §6 if its default is accepted |
-| **Next action** | architect writes the simulated-payment ADR (Q-01) and the terms rich-text ADR (Q-02) and the ADR-0002 implementation note for the `term` type (Q-03); then HC2. |
+| Blockers | none |
+| **Next action** | test-engineer writes the US-03 tests first from spec v0.1 §11, ADR-0008 and ADR-0009. |
 | Last updated | 2026-11-21 by orchestrator (Claude Opus 5.5) |
 
 ## Tasks
@@ -23,9 +23,9 @@ T-12 and T-15 on the terms-format ADR (US-03-Q-02); T-10..T-13 on the content-ty
 
 | ID | Task | ACs | Owner (agent) | Status | Commit(s) |
 |---|---|---|---|---|---|
-| US-03-T-01 | ADR: simulated payment design (outcome source, processing time and its injection, service boundary, no request, no card data). Proposed default in spec US-03-Q-01 | US-03-AC-03, US-03-AC-04, US-03-AC-09, US-03-AC-15 | architect | todo | |
-| US-03-T-02 | ADR: terms rich-text format and safe rendering (`blocks` + whitelist renderer vs Markdown + sanitised `[innerHTML]` vs plain text; dependency impact; degradation of unsupported nodes). Proposed default in spec US-03-Q-02 | US-03-AC-13 | architect | todo | |
-| US-03-T-03 | Implementation note on ADR-0002 for the terms permission name (US-03-Q-03); and, only if US-03-Q-06 takes the alternative, a confirmation-route note on ADR-0001 | US-03-AC-19, US-03-AC-11 | architect | todo | |
+| US-03-T-01 | ADR: simulated payment design (outcome source, processing time and its injection, service boundary, no request, no card data). Proposed default in spec US-03-Q-01 | US-03-AC-03, US-03-AC-04, US-03-AC-09, US-03-AC-15 | architect | done (ADR-0008 Proposed: visible outcome choice, `PaymentGateway` boundary; HC2 pending) | |
+| US-03-T-02 | ADR: terms rich-text format and safe rendering (`blocks` + whitelist renderer vs Markdown + sanitised `[innerHTML]` vs plain text; dependency impact; degradation of unsupported nodes). Proposed default in spec US-03-Q-02 | US-03-AC-13 | architect | done (ADR-0009 Proposed: `blocks` + whitelist renderer, no `[innerHTML]`; HC2 pending) | |
+| US-03-T-03 | Implementation note on ADR-0002 for the terms permission name (US-03-Q-03); and, only if US-03-Q-06 takes the alternative, a confirmation-route note on ADR-0001 | US-03-AC-19, US-03-AC-11 | architect | done (ADR-0002 implementation note in `adr/README.md`: `api::term.term`, `api::term.term.find`, `publishedOnlyConfig()`, `/api/terms` on the nginx allow-list; no ADR-0001 note, US-03-Q-06 kept the default) | |
 | US-03-T-04 | Unit tests: `document-mask.spec.ts` (every AC-05 row, accessible tail), `summary-rows.spec.ts` (every AC-06 row: groups, option labels, long date per `locale`, plain year, empty optional and checkbox omitted, editor-added field), `quote-number.spec.ts` (every AC-10 row, pinned clock, injected random source) | US-03-AC-05, US-03-AC-06, US-03-AC-10 | test-engineer | todo | |
 | US-03-T-05 | Unit and component tests: `terms.spec.ts` (parser, whitelist, malformed entries skipped, `publishedAt` ordering, warning without text), `terms-api.spec.ts` (§7.2 request, relative `/api`, 10 s timeout), `rich-text.spec.ts` (formatting kept; AC-13 XSS rows rendered literally; fallbacks per the ADR) | US-03-AC-13, US-03-AC-14, US-03-AC-12 | test-engineer | todo | |
 | US-03-T-06 | Unit tests: simulated payment service (outcome per the ADR, fixed delay with fake timers, single in-flight attempt, no HTTP call) and `quote-store-clear.spec.ts` (entry and in-memory state deleted on success only; nothing cleared on rejection) | US-03-AC-03, US-03-AC-04, US-03-AC-09, US-03-AC-11 | test-engineer | todo | |
@@ -49,6 +49,8 @@ T-12 and T-15 on the terms-format ADR (US-03-Q-02); T-10..T-13 on the content-ty
 |---|---|---|---|---|
 | 2026-11-21 | 1 Spec | Draft v0.1 written: 8 BR, 19 AC (4 original, 15 derived), 17 Q (6 block HC1), 2 ADRs needed, seed annex `seed-terms.md` | spec-writer (Claude Opus 5.5) | [spec.md §13](spec.md#13-review-log) |
 | 2026-11-21 | HC1 (round 1) | **Approved**: spec v0.1; Q-01..Q-06 as proposed, CLAUDE.md §6 corrected, other defaults accepted | Felipe Sabogal (human) | [spec.md §13](spec.md#13-review-log) |
+| 2026-11-21 | 2 ADR | ADR-0008 (simulated payment: visible outcome choice, option A of A–E; backend mock endpoint excluded by ADR-0002) and ADR-0009 (terms rich text: `blocks` + whitelist renderer, option D of A–D) written as Proposed, each with *Strongest argument against* and *Spec impact* (no AC change). US-03-Q-03 recorded as an ADR-0002 implementation note. Ready for HC2 | architect (Claude Opus 5.5) | [ADR-0008](../../adr/0008-simulated-payment.md), [ADR-0009](../../adr/0009-terms-rich-text-rendering.md), [adr/README.md](../../adr/README.md) |
+| 2026-11-21 | HC2 | **Accepted**: ADR-0008 (simulated payment, option A) and ADR-0009 (terms as Strapi blocks with a whitelist renderer, option D); ADR-0002 implementation note for the `term` type | Felipe Sabogal (human) | adr/0008, adr/0009 |
 
 ## Session log
 
