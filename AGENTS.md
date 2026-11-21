@@ -43,5 +43,6 @@ checks their diffs, and talks to the human. It does not do the agents' work on s
 |---|---|
 | `scripts/trace.sh US-NN` | Traceability matrix; fails on untested ACs or open blocker/major findings |
 | `scripts/scan-secrets.sh [files]` | Minimal secret scan (prints the rule and location, never the value) |
+| `scripts/check-story-fidelity.py <pdf> <story.md>…` | Verifies that `story.md` files are verbatim transcriptions of the assessment PDF (needs `pdftotext`) |
 | `.claude/hooks/enforce-write-scope.mjs` | Per-agent write scope (fails closed) |
 | `.claude/hooks/guard-bash.mjs` | Blocks `.env` access, environment dumps, pushes to `main`, force pushes, merges, `--no-verify`, unpinned Angular CLI |

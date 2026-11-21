@@ -14,6 +14,10 @@ Templates: `.claude/skills/sdd-spec/templates/`.
 
 | Story | Title | Status |
 |---|---|---|
-| US-01 | Policyholder and vehicle data form | Not started |
-| US-02 | Plan list | Not started |
-| US-03 | Summary and payment | Not started |
+| US-01 | Policyholder and vehicle data form | H0 done (story.md) — next: 1 Spec |
+| US-02 | Plan list | H0 done (story.md) |
+| US-03 | Summary and payment | H0 done (story.md) |
+
+Stories US-01..03 were transcribed from the assessment PDF by the orchestrator, at the human's
+request, and verified word by word against the source (see the provenance header in each
+`story.md` and FLOW.md §3, H0).
