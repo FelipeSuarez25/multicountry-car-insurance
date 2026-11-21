@@ -73,8 +73,15 @@ for f in "${files[@]}"; do
   done
 done
 
-if [ "$found" = 1 ]; then
-  echo "Potential secrets found. Do not commit; report to the human." >&2
+# Personal data (separate policy from secrets: secrets are rotated, personal data is redacted).
+# Compared by hash, so the value is never written here; no allow marker applies. See
+# scripts/check-personal-data.py and logs/sessions/README.md ("Personal data").
+personal=0
+python3 -I scripts/check-personal-data.py "${files[@]}" || personal=1
+
+if [ "$found" = 1 ] || [ "$personal" = 1 ]; then
+  [ "$found" = 1 ] && echo "Potential secrets found. Do not commit; report to the human." >&2
+  [ "$personal" = 1 ] && echo "Personal data found. Do not commit; redact with scripts/redact-logs.sh." >&2
   exit 1
 fi
-echo "scan-secrets: no findings in ${#files[@]} file(s); explicit exceptions: ${allowed}."
+echo "scan-secrets: no findings in ${#files[@]} file(s); explicit exceptions: ${allowed}; personal data: none."

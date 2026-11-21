@@ -1,43 +1,36 @@
 #!/usr/bin/env python3
-"""Redact exact strings (real personal data) from exported session logs, reproducibly.
+"""Redact real personal data from exported session logs, reproducibly. Called by scripts/redact-logs.sh.
 
-Usage (run with `python3 -I`):
-    REDACT_STRINGS='first,second' python3 -I scripts/redact-logs.py logs/sessions/<dir>
-    REDACT_STRINGS='first,second' python3 -I scripts/redact-logs.py logs/sessions/<file>.txt
+Usage (run with `python3 -I`; normally through scripts/redact-logs.sh):
+    REDACT_FILE=/path/outside/the/repo/personal.txt python3 -I scripts/redact-logs.py logs/sessions/<dir-or-file>
 
-    REDACT_FILE=/path/outside/the/repo/strings.txt python3 -I scripts/redact-logs.py logs/sessions/<dir>
+Policy (human decision, Felipe Sabogal, 2026-11-21; logs/sessions/README.md, "Personal data"):
+- The values come from REDACT_FILE, one per line, kept OUTSIDE the repository. They are never passed on a
+  command line: the transcript records every command and would capture them again, in new escaped forms.
+- List every form a value takes in a transcript: the plain string and any escaped form a command used
+  (a regex `a\\.b` is stored in JSON as `a\\\\.b`). Longer strings are replaced first, and each
+  occurrence is counted once.
+- Each occurrence is replaced by `[REDACTED-PERSONAL]`. Nothing else in the file changes.
+- Processes *.jsonl transcripts and *.txt readable exports (/export), in a directory or one file. Every
+  JSONL line must still parse as JSON afterwards, or the file is left untouched.
+- Prints per-file counts so they can be recorded in logs/sessions/README.md, never the values.
 
-- Prefer REDACT_FILE (one string per line, kept outside the repository): a value typed into a command
-  is recorded by the transcript and reappears, in new escaped forms, in the next export.
-- It processes *.jsonl transcripts and *.txt readable exports (/export), in a directory or one file.
-- Pass every form a value can take in a transcript: the plain string, and any escaped form a command
-  used (for example a regex `a\\.b` is stored in JSON as `a\\\\.b`). Verify afterwards with a broad,
-  case-insensitive grep that prints counts only.
-
-- The strings to redact come from the REDACT_STRINGS environment variable (comma-separated), so the
-  real values are never written into the repository. Longer strings are replaced first.
-- Each occurrence is replaced by `[redacted]`. Nothing else in the file changes.
-- Every JSONL line must still parse as JSON afterwards, or the file is left untouched.
-- Prints per-file counts so the change can be recorded in logs/sessions/README.md.
-
-This is the only edit ever applied to exported logs (human decision, 2026-11-21): the assessment asks
-for unedited logs and also forbids real personal data in the repository.
+This is the only edit ever applied to exported logs: the assessment asks for unedited logs and also
+forbids real personal data in the repository.
 """
 import json
 import os
 import pathlib
 import sys
 
-REPLACEMENT = b"[redacted]"
+REPLACEMENT = b"[REDACTED-PERSONAL]"
 
 
 def main() -> int:
-    raw = [s for s in os.environ.get("REDACT_STRINGS", "").split(",")]
-    # REDACT_FILE: a file OUTSIDE the repository with one string per line. Preferred, because the
-    # strings then never appear in a command, so the transcript of the redaction run itself does not
-    # record them again (each command that names a value is captured by the next export).
-    if os.environ.get("REDACT_FILE"):
-        raw += pathlib.Path(os.environ["REDACT_FILE"]).read_text(encoding="utf-8").splitlines()
+    if not os.environ.get("REDACT_FILE"):
+        print(__doc__, file=sys.stderr)
+        return 2
+    raw = pathlib.Path(os.environ["REDACT_FILE"]).read_text(encoding="utf-8").splitlines()
     targets = sorted({s.strip().encode() for s in raw if s.strip()}, key=len, reverse=True)
     if not targets or len(sys.argv) != 2:
         print(__doc__, file=sys.stderr)

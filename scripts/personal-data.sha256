@@ -1,0 +1,4 @@
+# SHA-256 of lowercase words that must never be committed (real personal data).
+# The values are not written in the repository on purpose; see scripts/check-personal-data.py and
+# logs/sessions/README.md ("Personal data"). One hash per line; text after the hash is a comment.
+d170808649c4332adb81c9d30a8acddd54e3759c2f1ab14e7ea6ff43ae36629e  domain label of the human's account e-mail (human decision, 2026-11-21)
