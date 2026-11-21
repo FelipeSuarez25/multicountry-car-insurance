@@ -22,17 +22,20 @@ const isStr = (v: unknown): v is string => typeof v === 'string';
 const isFieldType = (v: unknown): v is FieldType => TYPES.some((t) => t === v);
 const isNonEmpty = (v: unknown): v is string => isStr(v) && v.trim() !== '';
 
-/** A finite number, also accepted when Strapi sends it as numeric text. */
+/** Numeric sortOrder tolerated as text for fields and options (not used for rule parameters). */
 function num(v: unknown): number | null {
   if (typeof v === 'number') return Number.isFinite(v) ? v : null;
   if (isStr(v) && /^-?\d+(\.\d+)?$/.test(v.trim())) return Number(v);
   return null;
 }
+/** A rule parameter must be a JSON number (spec 7.5.1): numeric text such as "3" is a wrong type. */
+const jsonNum = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 const nonNegativeInt = (v: unknown): number | null => {
-  const n = num(v);
+  const n = jsonNum(v);
   return n !== null && Number.isInteger(n) && n >= 0 ? n : null;
 };
 
+/** Maps one wire rule (spec 7.5.1) to the logical rule; attributes its kind does not use are ignored. */
 function parseRule(raw: unknown, type: FieldType): ValidationRule | null {
   if (!isRec(raw) || !isStr(raw['kind']) || APPLIES_TO[raw['kind']] !== type) return null;
   const message = isNonEmpty(raw['message']) ? raw['message'] : undefined;
@@ -44,17 +47,18 @@ function parseRule(raw: unknown, type: FieldType): ValidationRule | null {
     }
     case 'min':
     case 'max': {
-      const value = num(raw['value']);
+      const value = jsonNum(raw['value']);
       return value === null ? null : { kind: raw['kind'], value, message };
     }
     case 'pattern': {
-      if (!isNonEmpty(raw['value'])) return null;
+      const source = raw['pattern'];
+      if (!isNonEmpty(source)) return null;
       try {
-        new RegExp(`^(?:${raw['value']})$`);
+        new RegExp(`^(?:${source})$`);
       } catch {
         return null;
       }
-      return { kind: 'pattern', value: raw['value'], message };
+      return { kind: 'pattern', value: source, message };
     }
     case 'minAge': {
       const years = nonNegativeInt(raw['years']);
