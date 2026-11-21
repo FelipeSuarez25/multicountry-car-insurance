@@ -897,7 +897,8 @@ describe('US-03 step 3 page: the summary and the payment (component tests throug
       for (const label of ['Número de documento', 'Nombre completo', 'Fecha de nacimiento', 'Placa', 'Línea', 'Modelo (año)']) {
         expect(shownValue(control(app.root, label)), label).toBe('');
       }
-      expect(sessionStorage.getItem(WIZARD_STORAGE_KEY)).not.toContain('1012345678');
+      // Stricter form: an empty state writes nothing (e2e requires null after the confirmation).
+      expect(sessionStorage.getItem(WIZARD_STORAGE_KEY)).toBeNull();
     });
 
     it('US-03-AC-11 a reload after the confirmation leads to "/co/datos" with every field empty and no plan chosen', async () => {

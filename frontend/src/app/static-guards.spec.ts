@@ -70,9 +70,10 @@ describe('US-03-AC-15 / ADR-0008 no card data, no payment SDK, no request from t
   });
 
   it('US-03-AC-15 the payment gateway boundary has no card-shaped field (number, expiry, cvv, holder)', () => {
-    const files = production.filter((p) => p.endsWith('payment-gateway.ts'));
-    expect(files).toHaveLength(1);
-    expect(read(files[0])).not.toMatch(/cardNumber|expiry|expiration|securityCode|holder/i);
+    // Both the boundary and its simulated implementation, matched by exact basename.
+    const files = production.filter((p) => ['payment-gateway.ts', 'simulated-payment-gateway.ts'].includes(p.split(/[\\/]/).pop() ?? ''));
+    expect(files.map((p) => p.split(/[\\/]/).pop()).sort()).toEqual(['payment-gateway.ts', 'simulated-payment-gateway.ts']);
+    for (const file of files) expect(read(file), file).not.toMatch(/cardNumber|expiry|expiration|securityCode|holder/i);
   });
 
   it('US-03-AC-11 sessionStorage is referenced only by QuoteStore (ADR-0003)', () => {
