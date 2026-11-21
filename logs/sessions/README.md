@@ -22,7 +22,7 @@ assessment. Procedure: the `session-handoff` skill.
 
 | Date | Session | Stories / steps covered | Notes |
 |---|---|---|---|
-| 2026-11-20 → 2026-11-21 | `2026-11-21-067ab97b/` (session `067ab97b…`): `main-session.jsonl` (orchestrator, one session resumed once after a Claude Code restart) and `subagents/` (47 subagent transcripts) | Flow setup; third-party skill evaluation; H0 intake US-01..03; **US-01 end to end** (spec v0.1→v0.5, ADR-0001..0006, SPIKE-01, tests first, implementation, 3 gate attempts, review rounds R1–R4, HC3 merge of PR #3); US-02 spec v0.1 | Snapshot taken after the US-01 merge; the session continues, so a later export will supersede `main-session.jsonl`. One redaction applied (below). |
+| 2026-11-20 → 2026-11-21 | `2026-11-21-067ab97b/` (session `067ab97b…`): `main-session.jsonl` (orchestrator, one session resumed after a Claude Code restart and after context compactions) and `subagents/` (70 subagent transcripts) | Flow setup; third-party skill evaluation; H0 intake US-01..03; **US-01, US-02 and US-03 end to end** (specs, ADR-0001..0009, SPIKE-01, tests first, implementation, gates, review rounds, HC3 merges of PRs #3, #5 and #7); the human's request for US-04 (design system and visual redesign) | Exported at the US-03 closure. It **supersedes** the snapshot taken after the US-01 merge. The session continues with US-04, so a final export at the end of US-04 will supersede this one and add the readable `/export` text (human decision, 2026-11-21). Redactions below. |
 
 ## Redactions
 
@@ -33,12 +33,15 @@ the orchestrator's own search commands. The address is not written anywhere in t
 
 | File | What | Occurrences | How |
 |---|---|---|---|
-| `2026-11-21-067ab97b/main-session.jsonl` | the full address | 3 → `[redacted-email]` | exact byte replacement; every line re-validated as JSON |
-| same | its local part followed by `@` (in the orchestrator's grep commands) | 4 → `[redacted-email-local-part]` | same |
-| same | re-run with `scripts/redact-logs.py` (full address, local part, domain) | 0 (verified idempotent) | `REDACT_STRINGS=… python3 -I scripts/redact-logs.py logs/sessions/<dir>` |
+| first export (US-01 snapshot, now superseded) | the full address and its local part | 3 + 4 | exact byte replacement (`[redacted-email]`, `[redacted-email-local-part]`) |
+| `2026-11-21-067ab97b/main-session.jsonl` (US-03 closure export) | every literal form of the address and its parts: the address, the local part, the surname and the domain, including the regex and JSON-escaped forms that appeared in the orchestrator's own search and redaction commands | 141 → `[redacted]` | `scripts/redact-logs.py` with `REDACT_FILE` (strings collected from the source into a file **outside** the repository, so no value is typed into a command); every JSONL line re-validated |
+| `2026-11-21-067ab97b/subagents/agent-a6dbd418bd7886c8d.jsonl` | the domain, as the name of a plugin listed in the subagent's tool list | 3 → `[redacted]` | same |
 
-No subagent transcript contained the address. Later exports use `scripts/redact-logs.py` (replacement
-`[redacted]`) and add a row here with the counts.
+Verification: a case-insensitive search for the surname and for the domain over every exported transcript returns 0, and every JSONL line still parses. The counts are exact: the script now counts each occurrence once (it used to count a part again inside the full address), and the US-03 closure export was redone from the source to get them.
+
+**Lesson (2026-11-21).** The first redaction pass of this export missed two forms: a regex-escaped form in an old search command, and the domain inside a plugin name. Each new command that named the value to check or redact was itself recorded by the transcript in yet another escaped form. Hence `REDACT_FILE`: values never appear in commands, and verification prints counts only.
+
+Later exports use `scripts/redact-logs.py` with `REDACT_FILE` and add a row here with the counts.
 
 ## Scan exceptions
 
@@ -53,7 +56,7 @@ No subagent transcript contained the address. Later exports use `scripts/redact-
 |---|---|---|---|---|
 | 2026-11-21 | 7 subagent transcripts (`a075d5c9…`, `a2ffb675…`, `a3deae29…`, `a6282abb…`, `a650a409…`, `a83f4bb7…`, `adcd7645…`) and `main-session.jsonl` | `strapi-or-generic-secret-assignment`, `bearer-header` | Fictitious only: `.env.example` placeholders (`toBeModified…`), the e2e helper's `test…` secrets, the negative-test bearer value, `docker-compose.yml` `${VAR:-}` lines, and agents quoting files that carry the `scan-secrets: allow (…)` markers | Accepted (Felipe Sabogal, 2026-11-21) |
 | 2026-11-21 | `main-session.jsonl` (2 matches) | `strapi-or-generic-secret-assignment` | `realLookingValue1234567890`: a fictitious value the orchestrator wrote to test the scanner (exact match verified) | Accepted (Felipe Sabogal, 2026-11-21) |
-| 2026-11-21 | `main-session.jsonl:519` (2 matches) | `private-key` | The scanner's own rule text (`-----BEGIN [A-Z ]*PRIVATE KEY-----`) as written into `scripts/scan-secrets.sh`; no key material follows | Accepted (Felipe Sabogal, 2026-11-21) |
+| 2026-11-21 | `main-session.jsonl` (the line where the scanner's rules were written; 2 matches) | `private-key` | The scanner's own rule text (`-----BEGIN [A-Z ]*PRIVATE KEY-----`) as written into `scripts/scan-secrets.sh`; no key material follows | Accepted (Felipe Sabogal, 2026-11-21) |
 | 2026-11-21 | `subagents/agent-a69213286f947f6bb.jsonl:54` (one token, 2 matches) | `jwt` | **Real token**: a Strapi admin *refresh* token for the fictitious dev admin (`userId 1`) of the throwaway stack `mci-db` (R2-F04 persistence check). It **expired at 2026-11-21T16:16:25Z**, and it was signed with an `ADMIN_JWT_SECRET` generated inside that stack's volume, **which was deleted** (`down -v`), so it cannot be validated anywhere. | Accepted as an exception; the log stays unedited (Felipe Sabogal, 2026-11-21) |
 | 2026-11-21 | several subagent transcripts | `bearer-header` / `strapi-or-generic-secret-assignment` reported as `ALLOWED` | Lines that carry the repo's explicit `scan-secrets: allow (…)` markers | Already justified by the markers |
 
