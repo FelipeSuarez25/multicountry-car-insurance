@@ -3,6 +3,7 @@ import { By } from '@angular/platform-browser';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QuoteFormPage } from './quote-form-page';
 import { QuoteStore } from '../../core/quote-store';
+import type { FieldConfig } from '../../shared/field-config.model';
 import { configureAppTest, createAppTest, type AppTest } from '../../../testing/app-harness';
 import {
   allControls,
@@ -598,8 +599,6 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       el.dispatchEvent(new Event('input', { bubbles: true }));
     }
     const storedValues = (): Record<string, unknown> => JSON.parse(sessionStorage.getItem(WIZARD_STORAGE_KEY) ?? '{}').step1.values;
-    const makeYearOptional = (items: StrapiItem[]): StrapiItem[] =>
-      items.map((i) => (i['key'] === 'vehicleYear' ? { ...i, isRequired: false } : i));
 
     it('US-01-AC-09 after "2015" and then unparseable text, the store holds "" (not the last parseable "2015")', async () => {
       await start();
@@ -656,43 +655,98 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       expect(app.path()).toBe('/cl/datos');
     });
 
-    it('US-01-AC-09 an optional number with unparseable text is an error (US-01-R3-F01 decision, supersedes R2-F01): errorMessage shown, "Continuar" blocked, store holds ""', async () => {
-      await start();
-      app.server.fields['CL'] = makeYearOptional(seedStrapiItems('CL'));
-      await app.open('/cl/datos');
-      await fillCl({ Año: null });
-      const year = control(app.root, 'Año') as HTMLInputElement;
-      typeInto(year, '2015');
-      await app.settle();
-      typeUnparseable(year);
-      leave(year);
-      await app.settle();
-      expect(store().values()['vehicleYear']).toBe('');
-      expect(describedText(year)).toContain('El año debe estar entre los últimos 20 años y el próximo año.');
-      expect(year.getAttribute('aria-invalid')).toBe('true');
+    /** Spec v0.5 AC-09 fixture: an optional CO number "Kilometraje" (not seed content), added to this test's content-server response only. */
+    const MILEAGE_MESSAGE = 'Ingresa un kilometraje válido (solo números enteros).';
+    const withOptional = (country: 'CO', config: FieldConfig): StrapiItem[] => [
+      ...seedStrapiItems(country),
+      toStrapiFieldItem(config, 90),
+    ];
+    const mileageField = (errorMessage: string): FieldConfig => ({
+      key: 'mileage',
+      type: 'number',
+      label: 'Kilometraje',
+      isRequired: false,
+      sortOrder: 95,
+      errorMessage,
+      rules: [],
+    });
 
+    for (const text of ['1e', '2015e']) {
+      it(`US-01-AC-09 an optional number with unparseable text "${text}" (Kilometraje, CO) is an error: errorMessage shown, "Continuar" blocked, store holds ""`, async () => {
+        await start();
+        app.server.fields['CO'] = withOptional('CO', mileageField(MILEAGE_MESSAGE));
+        await app.open('/co/datos');
+        await fillCo();
+        const mileage = control(app.root, 'Kilometraje') as HTMLInputElement;
+        typeInto(mileage, '2015');
+        await app.settle();
+        typeUnparseable(mileage);
+        leave(mileage);
+        await app.settle();
+        expect(store().values()['mileage']).toBe('');
+        await continuar();
+        expect(describedText(mileage)).toContain(MILEAGE_MESSAGE);
+        expect(mileage.getAttribute('aria-invalid')).toBe('true');
+        expect(app.path()).toBe('/co/datos');
+        expect(store().step1Output()).toBeNull();
+        expect(store().values()['mileage']).toBe('');
+        expect(storedValues()['mileage']).toBe('');
+      });
+    }
+
+    it('US-01-AC-09 an optional number with unparseable text and no errorMessage (Kilometraje, CO) shows "Revisa este campo." and blocks "Continuar"', async () => {
+      await start();
+      app.server.fields['CO'] = withOptional('CO', mileageField(''));
+      await app.open('/co/datos');
+      await fillCo();
+      const mileage = control(app.root, 'Kilometraje') as HTMLInputElement;
+      typeUnparseable(mileage);
+      leave(mileage);
+      await app.settle();
       await continuar();
-      expect(app.path()).toBe('/cl/datos');
+      expect(describedText(mileage)).toContain('Revisa este campo.');
+      expect(mileage.getAttribute('aria-invalid')).toBe('true');
+      expect(app.path()).toBe('/co/datos');
       expect(store().step1Output()).toBeNull();
-      expect(storedValues()['vehicleYear']).toBe('');
+      expect(store().values()['mileage']).toBe('');
+      expect(storedValues()['mileage']).toBe('');
     });
 
-    it('US-01-AC-09 an optional number with unparseable text and no errorMessage shows "Revisa este campo." and blocks "Continuar"', async () => {
-      await start();
-      app.server.fields['CL'] = seedStrapiItems('CL').map((i) =>
-        i['key'] === 'vehicleYear' ? { ...i, isRequired: false, errorMessage: '', requiredMessage: undefined } : i,
-      );
-      await app.open('/cl/datos');
-      await fillCl({ Año: null });
-      const year = control(app.root, 'Año') as HTMLInputElement;
-      typeUnparseable(year);
-      leave(year);
-      await app.settle();
-      await continuar();
-      expect(describedText(year)).toContain('Revisa este campo.');
-      expect(year.getAttribute('aria-invalid')).toBe('true');
-      expect(app.path()).toBe('/cl/datos');
-    });
+    for (const [name, errorMessage, expected] of [
+      ['its errorMessage', 'Ingresa una fecha de revisión válida.', 'Ingresa una fecha de revisión válida.'],
+      ['"Revisa este campo." when errorMessage is empty', '', 'Revisa este campo.'],
+    ] as const) {
+      it(`US-01-AC-09 / US-01-AC-10 an optional date the browser cannot read (badInput) is an error showing ${name}: "Continuar" blocked, store holds ""`, async () => {
+        await start();
+        app.server.fields['CO'] = withOptional('CO', {
+          key: 'inspectionDate',
+          type: 'date',
+          label: 'Fecha de revisión',
+          isRequired: false,
+          sortOrder: 95,
+          errorMessage,
+          rules: [],
+        });
+        await app.open('/co/datos');
+        await fillCo();
+        const date = control(app.root, 'Fecha de revisión') as HTMLInputElement;
+        typeInto(date, '2026-01-10');
+        await app.settle();
+        expect(store().values()['inspectionDate']).toBe('2026-01-10');
+        Object.defineProperty(date, 'validity', { configurable: true, get: () => ({ badInput: true, valid: false }) });
+        date.value = '';
+        date.dispatchEvent(new Event('input', { bubbles: true }));
+        leave(date);
+        await app.settle();
+        expect(store().values()['inspectionDate']).toBe('');
+        await continuar();
+        expect(describedText(date)).toContain(expected);
+        expect(date.getAttribute('aria-invalid')).toBe('true');
+        expect(app.path()).toBe('/co/datos');
+        expect(store().step1Output()).toBeNull();
+        expect(storedValues()['inspectionDate']).toBe('');
+      });
+    }
   });
 
   describe('US-01-AC-02 / US-01-AC-10 / US-01-AC-18 a required date emptied after it was valid (US-01-R3-F01)', () => {
