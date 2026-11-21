@@ -46,6 +46,9 @@ h1:focus:not(:focus-visible) {
   width: 1.5rem;
   height: 1.5rem;
   margin: 0;
+  /* Above the stretched label, so a pointer click on the radio itself reaches it. */
+  position: relative;
+  z-index: 1;
 }
 .plan__name {
   flex: 1 1 auto;
