@@ -164,6 +164,9 @@ export class QuoteStore {
     const country = this.countrySignal();
     if (country === null) return;
     const plan = this.planSignal();
+    // An empty state writes no entry: after a closed quote the first step 1 is empty and leaves
+    // nothing behind until the person types (US-03-AC-11).
+    if (plan === null && Object.keys(this.valuesSignal()).length === 0) return;
     try {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ version: VERSION, country, step1: { values: this.valuesSignal() }, ...(plan ? { plan } : {}) }));
     } catch {
