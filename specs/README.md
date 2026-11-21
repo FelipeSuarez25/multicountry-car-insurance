@@ -15,7 +15,7 @@ Templates: `.claude/skills/sdd-spec/templates/`.
 | Story | Title | Status |
 |---|---|---|
 | US-01 | Policyholder and vehicle data form | **Ready for QA** (merged in PR #3, 2026-11-21) |
-| US-02 | Plan list | Spec v0.1 Approved, ADR-0007 Accepted; implemented; review R1 APPROVED, fixing minors — next: HC3 |
+| US-02 | Plan list | **Ready for QA** (merged in PR #5, 2026-11-21) |
 | US-03 | Summary and payment | H0 done (story.md) |
 
 Stories US-01..03 were transcribed from the assessment PDF by the orchestrator, at the human's
