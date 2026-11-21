@@ -848,10 +848,20 @@ describe('US-03 step 3 page: the summary and the payment (component tests throug
       await clickPay();
       gateway.settle({ status: 'approved' });
       await flush();
-      for (const gone of ['Ana Prueba Ficticia', 'ABC123', 'Plan Total', 'Tus datos', 'Tu vehículo', 'Plan elegido', CO_TERMS_TITLE, 'Editar mis datos', 'Cambiar plan', '5678']) {
+      // Personal values, plan names and prices are forbidden anywhere in the app root, the step indicator included.
+      for (const gone of ['Ana Prueba Ficticia', 'ABC123', 'Plan Total', CO_TERMS_TITLE, '5678']) {
         expect(text(), gone).not.toContain(gone);
       }
       expect(compact(text())).not.toContain('$2.310.000');
+      // The section names and the summary buttons are gone from the page content; "Tus datos" survives only as a step name in the indicator (US-04-AC-13).
+      const page = app.root.querySelector('main') as HTMLElement;
+      for (const gone of ['Tus datos', 'Tu vehículo', 'Plan elegido', 'Editar mis datos', 'Cambiar plan']) {
+        expect(normalise(page.textContent), gone).not.toContain(gone);
+      }
+      expect(h2s(app.root)).toHaveLength(0);
+      const indicator = stepIndicator(app.root) as HTMLElement;
+      expect(indicator).not.toBeNull();
+      expect(normalise(indicator.textContent).replace(/Tus datos|Plan|Resumen y pago|Paso \d de 3|completado/g, '').trim()).toBe('');
       expect(maybeButton(app.root, 'Pagar')).toBeNull();
       expect(app.root.querySelectorAll('input, select, textarea')).toHaveLength(0);
     });

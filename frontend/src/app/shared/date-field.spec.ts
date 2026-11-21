@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QuoteStore } from '../core/quote-store';
 import { configureAppTest, createAppTest, type AppTest } from '../../testing/app-harness';
 import { day } from '../../testing/clock';
-import { control, describedText, leave, normalise, press, settleUi, shownValue, typeInto } from '../../testing/dom';
+import { control, describedText, fillForm, leave, normalise, press, settleUi, shownValue, typeInto } from '../../testing/dom';
 import {
   buttonNamed,
   calendarDialog,
@@ -17,7 +17,7 @@ import {
   topLevelOf,
   yearTexts,
 } from '../../testing/custom-controls';
-import { CO_VALID_RAW, WIZARD_STORAGE_KEY, seedStrapiItems, toStrapiFieldItem, wizardEntry } from '../../testing/seed-fixtures';
+import { CO_VALID_INPUT, CO_VALID_RAW, WIZARD_STORAGE_KEY, seedStrapiItems, toStrapiFieldItem, wizardEntry } from '../../testing/seed-fixtures';
 
 /**
  * US-04-AC-08, AC-09, AC-10 (and BR-06): the date field and its calendar, tested through the real step 1
@@ -118,6 +118,8 @@ describe('US-04 date field and calendar (component tests through the real routes
 
     it('US-04-AC-08 unreadable text is the former badInput: stored "" while the text stays visible, also after leaving and after a failed "Continuar", and "Continuar" does not move on', async () => {
       await start('/co/datos');
+      // every other required field is valid, so the unreadable date is the only invalid field (ADR-0004: focus on the first invalid one)
+      await fillForm(app.root, { ...CO_VALID_INPUT, [LABEL]: null });
       await typeDate('15/05/199');
       await leaveDate();
       expect(stored('birthDate')).toBe('');
