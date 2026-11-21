@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Current step | 6 Review round 2 (all R1 findings addressed; gate passed after the fixes) |
+| Current step | 6 Review R2: APPROVED with 4 minor + 2 nit; all to be fixed before HC3 (human decision) |
 | Branch | feat/us-01-data-form |
 | PR | — |
 | Blockers | none known; R2 verifies F01-F11 against their fix commits |
-| **Next action** | code-reviewer writes reviews/US-01-review-R2.md; if APPROVED, the orchestrator opens the PR for HC3 (human QA incl. AC-26 screenshots, merge). |
+| **Next action** | Tests first (R2-F01 behaviour, R2-F02, R2-F03), R2-F04 DB volume, R2-F06 stale text, README run instructions (R2-F05); then R2-F01 frontend fix; then gate, short review round 3, PR for HC3. |
 | Last updated | 2026-11-21 by orchestrator (Claude Opus 5.5) |
 
 ## Tasks
@@ -56,7 +56,7 @@ T-09, T-11..T-26 (text and references); T-32..T-38 added.
 | US-01-T-30 | Create `specs/US-01/seed-fields.md` from spec *Annex A (staging)*, verbatim, and delete Annex A and the staging note in §7.2 (the spec-writer's write scope did not allow it in v0.2) | US-01-AC-01, US-01-AC-11, US-01-AC-13 | orchestrator | done | c3ee6f4 |
 | US-01-T-31 | HC3 manual check of AC-26: screenshots of step 1 of Colombia at 360 × 740 and 1280 × 800, attached to the HC3 record | US-01-AC-26 | human (HC3) | todo | |
 | US-01-T-32 | Strapi bootstrap: create a development super admin from `STRAPI_ADMIN_EMAIL` / `STRAPI_ADMIN_PASSWORD` when no admin user exists; delete the default "Full Access" API token; no token is ever copied into any `.env` (ADR-0002). New in v0.3 | US-01-AC-03, US-01-AC-27 | strapi-developer | done | 1be0b26, 99585d3 |
-| US-01-T-33 | Strapi middlewares: global published-only middleware that removes `status`, `publicationFilter` and `hasPublishedVersion` from content API requests not authenticated by an API token; `strapi::cors` restricted to an env-driven allow-list, empty by default (ADR-0002). New in v0.3 | US-01-AC-13, US-01-AC-28 | strapi-developer | done | dbb33ce |
+| US-01-T-33 | Strapi middlewares: global published-only middleware that removes `status`, `publicationFilter` and `hasPublishedVersion` from content API requests not authenticated by an API token; `strapi::cors` restricted to an env-driven allow-list, empty by default (ADR-0002). New in v0.3 (since c3bdb56/345a016 a **route** middleware on find/findOne via `publishedOnlyConfig()`, not global; R2-F06) | US-01-AC-13, US-01-AC-28 | strapi-developer | done | dbb33ce |
 | US-01-T-34 | Strapi: `config/api.ts` `documents.strictRelations: true`; Document Service middleware enforcing `form-field` `key` uniqueness per country on create, update and publish (ADR-0001). New in v0.3 | US-01-AC-01, US-01-AC-14 | strapi-developer | done | f9c0f75 |
 | US-01-T-35 | nginx same-origin proxy (template in the `frontend` image): only `GET`/`HEAD` on the allow-list `/api/countries`, `/api/form-fields`; other methods `405`, other `/api/` paths `404`, without reaching Strapi; requests with an `Authorization` header `400`; `Cache-Control: no-store` on `/api/`, no `proxy_cache`; `index.html` `no-cache`, hashed assets long-term (ADR-0002). New in v0.3 | US-01-AC-03, US-01-AC-27, US-01-AC-28 | frontend-developer | done | 2882341 (checked with curl against a stub upstream; e2e at step 5) |
 | US-01-T-36 | `CountryStore`: load the published countries once per full page load (`GET /api/countries?sort=sortOrder:asc`, narrow `fields[]`), boundary validation (drop + `console.warn`); loading and load-error states with "Reintentar" on the chooser and the unknown-country page, copy per US-01-Q-28, never "Este país no está disponible." on a load failure (ADR-0001). New in v0.3 | US-01-AC-17 | frontend-developer | done | e780ce3, d7b12ba |
@@ -91,6 +91,7 @@ page (US-01-Q-19).
 | 2026-11-21 | 6 Review (round 1) | **CHANGES REQUESTED**: F01 blocker (anonymous draft reads on :1337 via non-Bearer Authorization or upper-case /API/, reproduced independently by the orchestrator), F02 major (AC-28 tests miss those variants), F03-F09 minor, F10-F11 nit. Human decisions: F04 structured rule attributes; F05 expose `localeTag` without mapping (F04+F05 recorded in ADR-0006); F06 copy approved ("Elige tu país", title "Cotizador de seguro de auto"); fix F03, F07, F08, F10, F11 in this round; F09 fixed by the orchestrator (this table) | code-reviewer (Opus 5.5) + Felipe Sabogal (human) | [reviews/US-01-review-R1.md](../../reviews/US-01-review-R1.md) |
 | 2026-11-21 | HC1 (round 4) + HC2 (ADR-0006) | **Approved** spec v0.4 (F04 wire shapes §7.5, F05 `localeTag`, F06 copy §8.1, AC-28 widened to 19 variants); **Accepted** ADR-0006 (typed rule attributes; `localeTag` exposed, no renaming controller) | Felipe Sabogal (human) | spec.md §13, adr/0006 |
 | 2026-11-21 | 5 Gate (after R1 fixes) | **PASSED**. Fix commits: F01 c3bdb56+345a016, F02 8d0a658, F03 a76ea4c, F04 f39ff8d+dd364a6, F05 d84cf82+6ccd4aa, F07 9f4f08d+4a82769, F08 7476019+f33d527, F09 e6a1611, F10 dce1165, F11 1d65723+595e11c; F06 recorded in spec v0.4 §8.1. Clean volumes: builds, lint both sides, 304/304 unit, 9/9 backend, e2e 38/38 twice, wire shapes per spec §7.5 confirmed with curl, scan clean (6 explicit exceptions). trace.sh still counts F01/F02 open until R2 verifies them | orchestrator (scripts, no AI) | Playwright output |
+| 2026-11-21 | 6 Review (round 2) | **APPROVED** (0 blocker/major); R1 F01-F11 verified fixed. Human decisions: **R2-F01 follow the spec** (unparseable number = empty in model/store, optional stays valid, typed text stays visible); **R2-F04 fix before HC3** (SQLite file inside the volume); fix R2-F02, R2-F03, R2-F05, R2-F06 before HC3 | code-reviewer (Opus 5.5) + Felipe Sabogal (human) | [reviews/US-01-review-R2.md](../../reviews/US-01-review-R2.md) |
 
 ## Session log
 
