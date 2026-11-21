@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Current step | HC3 (review R2 APPROVED) |
+| Current step | **Ready for QA** (PR #7 merged by the human after HC3, 2026-11-21) |
 | Branch | feat/us-03-summary-payment |
 | PR | — |
 | Blockers | none |
-| **Next action** | human: HC3 (PR, manual QA per T-19, merge). |
+| **Next action** | none for US-03. Next: US-04 (design system and visual redesign), requested by the human. |
 | Last updated | 2026-11-21 by orchestrator (Claude Opus 5.5) |
 
 ## Tasks
@@ -41,7 +41,7 @@ T-12 and T-15 on the terms-format ADR (US-03-Q-02); T-10..T-13 on the content-ty
 | US-03-T-16 | Simulated payment service per the ADR (no request, no card data, fixed injectable delay, single in-flight attempt) and the `QuoteStore` clear on success (entry and in-memory state) | US-03-AC-03, US-03-AC-04, US-03-AC-09, US-03-AC-11, US-03-AC-15 | frontend-developer | done | f11e522, a3f186c |
 | US-03-T-17 | `SummaryPage` attached to `/:country/resumen` (address and `summaryStepGuard` unchanged): rows, plan and price via `calculateFinalPrice` and the US-02 formatter, edit actions, terms section and states, checkbox, simulation group, pay button rules, processing lock, rejection, confirmation (US-03-Q-06), focus and document titles, copy of spec §8.1 | US-03-AC-01, US-03-AC-02, US-03-AC-03, US-03-AC-04, US-03-AC-07, US-03-AC-08, US-03-AC-09, US-03-AC-11, US-03-AC-12, US-03-AC-15, US-03-AC-16, US-03-AC-17 | frontend-developer | done | 55e94d6 |
 | US-03-T-18 | Responsive layout of the summary and confirmation (one column at narrow widths, terms region height, 320–1440 px, target sizes) | US-03-AC-18 | frontend-developer | done | 55e94d6, 8daae83 |
-| US-03-T-19 | HC3 manual checks: AC-18 screenshots of the CO summary and confirmation at 360 × 740 and 1280 × 800; screen reader pass (masked number, terms region, alerts); AC-14 terms change in the Strapi admin | US-03-AC-14, US-03-AC-17, US-03-AC-18 | human (HC3) | partly done: AC-18 screenshots captured by the orchestrator on a clean stack (fictitious step 1 and plan seeded in sessionStorage; Playwright, headless Chromium): `docs/qa/US-03/ac-18-co-{summary,confirmation}-{360x740,1280x800}.png` and `ac-18-cl-summary-{360x740,1280x800}.png`, no horizontal scroll, no stored entry after the confirmation; remaining human checks at HC3: screen reader, AC-14 terms change in the admin, AC-16 real scroll | (this commit) |
+| US-03-T-19 | HC3 manual checks: AC-18 screenshots of the CO summary and confirmation at 360 × 740 and 1280 × 800; screen reader pass (masked number, terms region, alerts); AC-14 terms change in the Strapi admin | US-03-AC-14, US-03-AC-17, US-03-AC-18 | human (HC3) | done: AC-18 screenshots in `docs/qa/US-03/` (orchestrator, accepted by the human); manual checks (CO end to end, CL rejection and retry, keyboard and AC-16 real scroll, screen reader, AC-14 terms change in the admin) done by the human at HC3 | dafc0f6 |
 
 ## Gate history
 
@@ -57,6 +57,7 @@ T-12 and T-15 on the terms-format ADR (US-03-Q-02); T-10..T-13 on the content-ty
 | 2026-11-21 | Review R1 decisions | **Decided**: F01 (major) the terms seed creates a country's terms only when that country has no terms document at all (draft or published); spec §7.3 note and a backend test. F02..F05 and F06 fixed now | Felipe Sabogal (human) | [R1](../../reviews/US-03-review-R1.md) |
 | 2026-11-21 | Gate (attempt 2, after R1 fixes) | **PASSED** (orchestrator, clean stack): frontend lint 0, build 0, unit 956/956; backend lint 0, build 0, 86/86; e2e 124/124 twice; `trace.sh` US-01/02 exit 0; US-03 exit 1 **only** because review R1 still lists F01 (major) as open, which the reviewer closes in R2 (ACs without test: 0); code scan exit 0 (6 known exceptions); log scan 23 = 23. R1 fixes: F01 6d4b236, F02 b3fdd45, F03 test-only (height kept on design grounds), F04 461500b, F05 16b77a3, F06 6341a57; R1 tests 092edd3, 398fbd3 | orchestrator | 54963e8 |
 | 2026-11-21 | Review R2 | **APPROVED**: all R1 findings fixed (F01 re-reproduced live: rename, replace and draft-only cases; F03 mutation-checked); 1 new nit R2-F01 (README said "Terms"; the admin shows "Términos y condiciones"), fixed by the orchestrator in this commit. `trace.sh US-03` exit 0 | code-reviewer | [R2](../../reviews/US-03-review-R2.md) |
+| 2026-11-21 | HC3 | **PASSED**: human QA on a clean local stack (CO end to end, CL rejected payment and retry, keyboard only, screen reader, AC-14 terms change without deploy); no findings reported; PR #7 merged by Felipe Sabogal (f5ee222). Session log exported with this closure (see logs/sessions/README.md) | Felipe Sabogal (human) | PR #7 |
 
 ## Session log
 

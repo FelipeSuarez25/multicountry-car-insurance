@@ -20,8 +20,15 @@ files=()
 while IFS= read -r f; do files+=("$f"); done < <(find logs/sessions -name '*.jsonl' -type f | sort)
 [ ${#files[@]} -gt 0 ] || { echo "scan-logs: no transcripts found"; exit 0; }
 
-found=$(bash scripts/scan-secrets.sh "${files[@]}" 2>/dev/null | grep -c '^SECRET?' || true)
-echo "scan-logs: ${#files[@]} transcript(s); unmarked findings: $found; recorded in $readme: $recorded"
+out=$(bash scripts/scan-secrets.sh "${files[@]}" 2>/dev/null || true)
+found=$(printf '%s\n' "$out" | grep -c '^SECRET?' || true)
+personal=$(printf '%s\n' "$out" | grep -c '^PERSONAL?' || true)
+echo "scan-logs: ${#files[@]} transcript(s); unmarked findings: $found; recorded in $readme: $recorded; files with personal data: $personal"
+if [ "$personal" != 0 ]; then
+  printf '%s\n' "$out" | grep '^PERSONAL?' >&2
+  echo "scan-logs: personal data found. Redact with scripts/redact-logs.sh (no exception applies)." >&2
+  exit 1
+fi
 if [ "$found" != "$recorded" ]; then
   echo "scan-logs: MISMATCH. Classify every finding (values never printed), record it in $readme and update the count." >&2
   exit 1
