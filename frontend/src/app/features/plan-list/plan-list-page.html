@@ -1,0 +1,78 @@
+<main class="page" [attr.aria-busy]="status() === 'loading' ? 'true' : null">
+  <h1 id="plans-heading" #heading tabindex="-1">Elige tu plan</h1>
+  @switch (status()) {
+    @case ('loading') {
+      <p role="status">Cargando planes…</p>
+    }
+    @case ('error') {
+      <app-load-error message="No pudimos cargar los planes. Intenta de nuevo." (retry)="load()" />
+    }
+    @case ('empty') {
+      <p role="status">No hay planes disponibles para tu país en este momento.</p>
+    }
+    @case ('ready') {
+      <div
+        class="plans"
+        role="radiogroup"
+        aria-labelledby="plans-heading"
+        aria-required="true"
+        [attr.aria-describedby]="showChoosePlan() ? 'choose-plan-message' : null"
+      >
+        @for (item of items(); track item.plan.key) {
+          <div class="plan" [class.plan--chosen]="chosenKey() === item.plan.key" [class.plan--recommended]="item.plan.key === recommendedKey()">
+            <div class="plan__header">
+              <input
+                #option
+                type="radio"
+                name="plan"
+                class="plan__radio"
+                [id]="'plan-' + item.plan.key"
+                [value]="item.plan.key"
+                [checked]="chosenKey() === item.plan.key"
+                [attr.aria-describedby]="describedBy(item.plan.key)"
+                (change)="choose(item.plan.key)"
+              />
+              <h2 class="plan__name">
+                <label [for]="'plan-' + item.plan.key">{{ item.plan.name }}</label>
+              </h2>
+              @if (item.plan.key === recommendedKey()) {
+                <span class="plan__badge" [id]="'plan-recommended-' + item.plan.key">Recomendado</span>
+              }
+              @if (chosenKey() === item.plan.key) {
+                <span class="plan__badge plan__badge--chosen">Seleccionado</span>
+              }
+            </div>
+            <p class="plan__description" [id]="'plan-description-' + item.plan.key">{{ item.plan.shortDescription }}</p>
+            <p class="plan__price" [id]="'plan-price-' + item.plan.key">
+              <span class="plan__amount">{{ item.price }}</span>
+              <span class="plan__caption">Precio anual</span>
+            </p>
+            <h3 class="plan__list-heading">Coberturas</h3>
+            <ul class="plan__list">
+              @for (coverage of item.plan.coverages; track $index) {
+                <li>{{ coverage }}</li>
+              }
+            </ul>
+            @if (item.plan.benefits.length > 0) {
+              <h3 class="plan__list-heading">Beneficios</h3>
+              <ul class="plan__list">
+                @for (benefit of item.plan.benefits; track $index) {
+                  <li>{{ benefit }}</li>
+                }
+              </ul>
+            }
+          </div>
+        }
+      </div>
+      @if (showChoosePlan()) {
+        <p role="alert" id="choose-plan-message" class="choose-message">Elige un plan para continuar.</p>
+      }
+    }
+  }
+  <div class="actions">
+    <button type="button" class="secondary" (click)="back()">Atrás</button>
+    @if (status() === 'ready') {
+      <button type="button" (click)="next()">Continuar</button>
+    }
+  </div>
+</main>

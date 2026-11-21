@@ -1,0 +1,115 @@
+.page {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+h1 {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+  line-height: 1.3;
+}
+h1:focus:not(:focus-visible) {
+  outline: none;
+}
+.plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: 1rem;
+}
+.plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  border: 2px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+}
+.plan:hover {
+  background: var(--color-surface-hover);
+}
+.plan--recommended {
+  border-color: var(--color-border-strong);
+}
+.plan--chosen {
+  border-color: var(--color-link);
+  box-shadow: 0 0 0 2px var(--color-link);
+}
+.plan__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.plan__radio {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0;
+}
+.plan__name {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 1.125rem;
+}
+/* The label stretches over the whole card so a click anywhere chooses the plan. */
+.plan__name label::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 0.75rem;
+  cursor: pointer;
+}
+.plan__badge {
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.plan__badge--chosen {
+  border-color: var(--color-link);
+  background: var(--color-link);
+  color: var(--color-button-text);
+}
+.plan__description {
+  margin: 0.75rem 0 0;
+  color: var(--color-muted);
+}
+.plan__price {
+  margin: 0.75rem 0 0;
+}
+.plan__amount {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.plan__caption {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+.plan__list-heading {
+  margin: 1rem 0 0.25rem;
+  font-size: 1rem;
+}
+.plan__list {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+.choose-message {
+  margin: 1rem 0 0;
+  color: var(--color-error);
+  font-weight: 600;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+.secondary {
+  border: 2px solid var(--color-button);
+  background: var(--color-surface);
+  color: var(--color-button);
+}
