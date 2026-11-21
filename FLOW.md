@@ -179,6 +179,8 @@ and the end procedure includes exporting the unedited session logs to `logs/sess
 
 | The Bash guard blocked its own author | While committing this flow, the guard blocked a heredoc that wrote a commit message, because the message *text* mentioned the skip-hooks flag. The guard matches command text, not intent. | Accepted as a known limit (false positives are safer than false negatives). Commit messages and PR bodies are written to files with the file tools and passed via `git commit -F` / `gh pr create --body-file`. |
 
+| A widened write scope did not take effect | At HC1 the human asked for a spec annex (`seed-fields.md`). We widened the spec-writer's hook on disk and tested it (9/9 cases), but the running subagent was still blocked. Most likely Claude Code loads agent definitions, and their hooks, when the session starts. | The spec-writer staged the annex inside the spec and raised task T-30, so no silent workaround. The human chose to have the orchestrator move it mechanically, verified by diff. Rule adopted: **changes to `.claude/agents/` take effect in the next session**, so plan agent-config changes before a session, or restart after the session-handoff. |
+
 *(This table is extended as the stories are implemented.)*
 
 ### Where we decided not to use AI, and why
