@@ -8,9 +8,10 @@ Accepted ADRs are binding (`CLAUDE.md` §1, level 2) and are never rewritten; th
 | ADR | Title | Status | Date | Stories |
 |---|---|---|---|---|
 | [0001](0001-multi-country-content-strategy.md) | Multi-country content strategy and country context (includes wizard routes and step guards) | Accepted | 2026-11-20 | US-01, US-02, US-03 |
-| [0002](0002-strapi-access-and-security.md) | Strapi access and security model | Accepted | 2026-11-20 | US-01, US-02, US-03 |
+| [0002](0002-strapi-access-and-security.md) | Strapi access and security model | Accepted (amended by ADR-0005) | 2026-11-20 | US-01, US-02, US-03 |
 | [0003](0003-wizard-state-persistence.md) | Front-end persistence of the wizard state | Accepted | 2026-11-20 | US-01, US-02, US-03 |
 | [0004](0004-forms-library.md) | Forms library for the Strapi-driven step 1 form (Signal Forms over a shared validation core) | Accepted | 2026-11-20 | US-01 |
+| [0005](0005-e2e-token-scope-for-relations.md) | Scope of the temporary e2e API token when the created content has relations (amends ADR-0002) | Accepted | 2026-11-21 | US-01 |
 
 ## Backlog (decisions known to be needed)
 
