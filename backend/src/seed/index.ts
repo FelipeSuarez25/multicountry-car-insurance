@@ -6,6 +6,8 @@ const COUNTRY = 'api::country.country';
 const FORM_FIELD = 'api::form-field.form-field';
 
 function fieldData(field: FieldSeed, countryDocumentId: string): Record<string, unknown> {
+  // `draftOnly` is seed metadata (read by the caller), not a content attribute: drop it here.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { draftOnly: _draftOnly, options, rules, ...attributes } = field;
   return {
     ...attributes,

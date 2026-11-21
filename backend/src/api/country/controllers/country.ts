@@ -23,7 +23,7 @@ function toApiShape(item: CountryItem): CountryItem {
   return { ...rest, [API_NAME]: tag };
 }
 
-export default factories.createCoreController('api::country.country', ({ strapi }) => ({
+export default factories.createCoreController('api::country.country', () => ({
   async find(ctx) {
     const query = ctx.query as Record<string, unknown>;
     if ('fields' in query) ctx.query = { ...query, fields: renameInFields(query['fields']) } as typeof ctx.query;

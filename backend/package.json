@@ -13,6 +13,7 @@
     "strapi": "strapi",
     "upgrade": "npx @strapi/upgrade latest",
     "upgrade:dry": "npx @strapi/upgrade latest --dry",
+    "lint": "eslint .",
     "test": "vitest run"
   },
   "dependencies": {
@@ -28,10 +29,13 @@
     "styled-components": "6.6.0"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
     "@types/node": "22.20.5",
     "@types/react": "18.3.31",
     "@types/react-dom": "18.3.7",
+    "eslint": "10.15.0",
     "typescript": "5.9.3",
+    "typescript-eslint": "8.73.0",
     "vitest": "5.1.1"
   },
   "engines": {
