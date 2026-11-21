@@ -37,13 +37,57 @@ async function expectOk(response: { ok(): boolean; status(): number; url(): stri
   }
 }
 
+/**
+ * Strapi 5.63 rate-limits the admin login and registration routes (the `admin::rateLimit`
+ * middleware, koa2-ratelimit): 5 requests per 5 minutes, keyed on `email:path:ip`. This is a
+ * security control and stays on. The window is documented in
+ * `@strapi/admin/dist/server/server/src/middlewares/rateLimit.js`. Its handler throws a
+ * RateLimitError (HTTP 429) and sets no Retry-After header, so the wait below honours a
+ * Retry-After if one is ever sent and otherwise the documented window.
+ */
+export const LOGIN_RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
+const MAX_LOGIN_WAIT_MS = LOGIN_RATE_LIMIT_WINDOW_MS + 15_000;
+
+/** Env var that carries the session JWT from the Playwright runner (globalSetup) to the workers. */
+const SESSION_ENV = 'E2E_ADMIN_SESSION_JWT';
+
+function retryAfterMs(headers: Record<string, string>): number {
+  const seconds = Number(headers['retry-after']);
+  return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : LOGIN_RATE_LIMIT_WINDOW_MS;
+}
+
+/** Logs in once. On HTTP 429 it waits once, for a bounded time, then fails with a clear message. */
 export async function loginAdmin(api: APIRequestContext, email: string, password: string): Promise<AdminSession> {
-  const response = await api.post('/admin/login', { data: { email, password } });
+  let response = await api.post('/admin/login', { data: { email, password } });
+  if (response.status() === 429) {
+    const wait = retryAfterMs(response.headers());
+    if (wait > MAX_LOGIN_WAIT_MS) {
+      throw new Error(`Strapi admin login is rate limited (HTTP 429) for ${Math.round(wait / 1000)} s, more than the ${MAX_LOGIN_WAIT_MS / 1000} s this suite will wait`);
+    }
+    console.warn(`Strapi admin login rate limited (HTTP 429): waiting ${Math.round(wait / 1000)} s for the window to pass, once.`);
+    // Reason for the sleep: the rate limit window is time based and there is nothing to poll.
+    await new Promise((resolve) => setTimeout(resolve, wait));
+    response = await api.post('/admin/login', { data: { email, password } });
+    if (response.status() === 429) {
+      throw new Error('Strapi admin login still rate limited (HTTP 429) after waiting one full window; stop other clients that log in to this Strapi, or reset the stack');
+    }
+  }
   await expectOk(response, 'Strapi admin login');
   const body = (await response.json()) as { data?: { token?: string } };
   const jwt = body.data?.token;
   if (!jwt) throw new Error('Strapi admin login returned no token');
   return { jwt };
+}
+
+/** Called once per run by the Playwright globalSetup: the JWT is shared with the tests through the Node environment only. */
+export async function openSharedAdminSession(api: APIRequestContext, email: string, password: string): Promise<void> {
+  process.env[SESSION_ENV] = (await loginAdmin(api, email, password)).jwt;
+}
+
+/** The session of this run (one admin login per run). Falls back to a login only if globalSetup did not run. */
+export async function getAdminSession(api: APIRequestContext, email: string, password: string): Promise<AdminSession> {
+  const jwt = process.env[SESSION_ENV];
+  return jwt ? { jwt } : loginAdmin(api, email, password);
 }
 
 export async function createScopedToken(api: APIRequestContext, session: AdminSession, name: string): Promise<ScopedToken> {

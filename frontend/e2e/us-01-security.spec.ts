@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Request } from '@playwright/test';
 import { BASE_URL, STRAPI_URL, adminCredentials } from './support/env';
-import { createScopedToken, deleteStaleTokens, deleteToken, loginAdmin } from './support/strapi-admin';
+import { createScopedToken, deleteStaleTokens, deleteToken, getAdminSession } from './support/strapi-admin';
 import { continuar, field, fillColombia } from './support/form';
 
 /**
@@ -259,7 +259,7 @@ test.describe('US-01-AC-28 anonymous callers cannot read drafts or write content
     const strapi = await playwright.request.newContext({ baseURL: STRAPI_URL });
     const { email, password } = adminCredentials();
     const tokenName = 'US-01-AC-28 e2e token';
-    const session = await loginAdmin(strapi, email, password);
+    const session = await getAdminSession(strapi, email, password);
     await deleteStaleTokens(strapi, session, tokenName);
     const token = await createScopedToken(strapi, session, tokenName);
     try {

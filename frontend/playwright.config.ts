@@ -15,6 +15,8 @@ import { BASE_URL } from './e2e/support/env';
 export default defineConfig({
   testDir: './e2e',
   testMatch: '**/*.spec.ts',
+  // One admin login per run (Strapi rate-limits it); see e2e/global-setup.ts.
+  globalSetup: './e2e/global-setup.ts',
   // One worker, in file order: us-01-config-change adds and removes a published field, which the
   // other files must never see (they assert the exact field list).
   workers: 1,

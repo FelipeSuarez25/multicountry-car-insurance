@@ -9,7 +9,7 @@ import {
   deleteStaleTokens,
   deleteToken,
   findCountryDocumentId,
-  loginAdmin,
+  getAdminSession,
   type AdminSession,
   type ScopedToken,
 } from './support/strapi-admin';
@@ -62,7 +62,7 @@ test.describe('US-01-AC-03 configuration change without deployment', () => {
 
     // Pre-test cleanup of leftovers of a crashed run, then the scoped token for this run.
     const { email, password } = adminCredentials();
-    session = await loginAdmin(api, email, password);
+    session = await getAdminSession(api, email, password);
     await deleteStaleTokens(api, session, TOKEN_NAME);
     token = await createScopedToken(api, session, TOKEN_NAME);
     await deleteStaleFields(api, token, FIELD_KEY);
