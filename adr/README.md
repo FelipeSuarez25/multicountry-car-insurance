@@ -14,6 +14,15 @@ Accepted ADRs are binding (`CLAUDE.md` §1, level 2) and are never rewritten; th
 | [0005](0005-e2e-token-scope-for-relations.md) | Scope of the temporary e2e API token when the created content has relations (amends ADR-0002) | Accepted | 2026-11-21 | US-01 |
 | [0006](0006-strapi-physical-model-adjustments.md) | Strapi physical model adjustments: typed validation-rule parameters and the country `localeTag` attribute (amends ADR-0001) | Accepted | 2026-11-21 | US-01, US-02 |
 
+### Implementation notes on accepted ADRs (no decision change)
+
+Accepted ADRs are not rewritten. When the implementation of an accepted decision changes in a way
+that leaves the decision intact, the note goes here.
+
+| ADR | Note | Since |
+|---|---|---|
+| 0002 | The published-only rule (ADR-0002 calls it a "global middleware") is a **route middleware** on `find`/`findOne`, attached per router through `publishedOnlyConfig()`, so that it runs after Strapi authentication. The decision (no drafts for any unauthenticated read) is unchanged. A backend test guards that every content router uses it. | c3bdb56, 345a016 (US-01-R1-F01); US-01-R2-F06 |
+
 ## Backlog (decisions known to be needed)
 
 Numbers are assigned when an ADR is written; this order is only provisional.

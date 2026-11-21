@@ -7,7 +7,7 @@
 | Version | 0.4 |
 | Author | spec-writer subagent (Claude Opus 5.5) |
 | Approved by | v0.2: Felipe Sabogal, 2026-11-20 (HC1 round 2). v0.3: Felipe Sabogal, 2026-11-20 (HC1 round 3). v0.4: Felipe Sabogal, 2026-11-21 (HC1 round 4). |
-| Related ADRs | [ADR-0001](../../adr/0001-multi-country-content-strategy.md) (multi-country content and routes), [ADR-0002](../../adr/0002-strapi-access-and-security.md) (Strapi access and security), [ADR-0003](../../adr/0003-wizard-state-persistence.md) (wizard state persistence), [ADR-0004](../../adr/0004-forms-library.md) (forms library). All Accepted at HC2, 2026-11-20 (see §10). ADR-0006 (amends ADR-0001's physical model: structured rule attributes and the country `localeTag` attribute), being written after code review round 1 (see §10). |
+| Related ADRs | [ADR-0001](../../adr/0001-multi-country-content-strategy.md) (multi-country content and routes), [ADR-0002](../../adr/0002-strapi-access-and-security.md) (Strapi access and security), [ADR-0003](../../adr/0003-wizard-state-persistence.md) (wizard state persistence), [ADR-0004](../../adr/0004-forms-library.md) (forms library). All Accepted at HC2, 2026-11-20 (see §10). [ADR-0006](../../adr/0006-strapi-physical-model-adjustments.md) (amends ADR-0001's physical model: structured rule attributes and the country `localeTag` attribute), Accepted 2026-11-21 at HC1 round 4 (see §10). |
 
 Sources cited in this spec:
 
@@ -1073,13 +1073,18 @@ The country names shown in links ("Colombia", "Chile") are content (`country.nam
   4. [ADR-0004](../../adr/0004-forms-library.md) — Forms library: Signal Forms over a shared,
      library-agnostic validation core; string editing model; unparseable numbers reach the model
      as empty. Covers v0.2 need 2 (SPIKE-01). Used by: §7.3, AC-09, AC-10.
-- **In progress (v0.4, not yet accepted):** ADR-0006 (amends ADR-0001's physical model), being
-  written in parallel after code review round 1: structured rule attributes, one typed attribute
-  per parameter type (US-01-R1-F04), and the country attribute `localeTag`, exposed by the API
-  under that name with no backend renaming (US-01-R1-F05). Used by: §7, §7.1, §7.4, §7.5, AC-14.
-  Until it is accepted, ADR-0001 still names the attribute `locale`; this spec follows the human
-  decisions of 2026-11-21 that ADR-0006 records.
-- **Needed:** none beyond ADR-0006 above.
+- **Referenced (accepted 2026-11-21, together with spec v0.4 at HC1 round 4; binding,
+  precedence level 2):**
+  5. [ADR-0006](../../adr/0006-strapi-physical-model-adjustments.md) — Amends ADR-0001's
+     physical model, written after code review round 1: structured rule attributes, one typed
+     attribute per parameter type (US-01-R1-F04), and the country attribute `localeTag`, exposed
+     by the API under that name with no backend renaming (US-01-R1-F05). Where ADR-0001 names
+     the country attribute `locale`, ADR-0006 prevails. Used by: §7, §7.1, §7.4, §7.5, AC-14.
+- **Implementation note (no behaviour change):** ADR-0002's published-only rule is implemented,
+  since commits c3bdb56 and 345a016 (US-01-R1-F01), as a **route middleware** on `find` and
+  `findOne`, applied through `publishedOnlyConfig()`, not as a global middleware. The outcome
+  required by BR-06 and AC-28 is unchanged.
+- **Needed:** none.
 
 ## 11. Test mapping
 
@@ -1157,3 +1162,4 @@ Generated with `scripts/trace.sh US-01` and pasted here.
 | 2026-11-20 | Felipe Sabogal (human) | HC1 round 3 | **Approved** (v0.3) | Spec v0.3 approved as is; US-01-Q-28 default accepted. Next: step 3, tests first. |
 | 2026-11-21 | spec-writer (Claude Opus 5.5) | 1 Spec | Draft v0.4 | Revision after code review round 1 ([reviews/US-01-review-R1.md](../../reviews/US-01-review-R1.md)), applying the human decisions of Felipe Sabogal, 2026-11-21, recorded in `tasks.md`, *Gate history*, row "6 Review (round 1)". Status "Draft — awaiting HC1 (round 4)". **(1) US-01-R1-F04, structured rule attributes (human decision: typed component attributes per parameter):** new §7.5 (§7.5.1) fixes the wire shape of a rule in the Strapi 5 REST response: `kind`, `value` (number: minLength, maxLength, min, max), `pattern` (text: pattern), `years` (minAge), `maxYearsOld`/`maxYearsAhead` (yearRange), `message`; unused attributes `null`; no free JSON. Explicit wire → logical mapping; the logical `ValidationRule` of §7.1 is unchanged (a logical `pattern` rule keeps its regex in `value`). A missing, `null`, wrong-type (numeric text included) or out-of-range parameter makes the rule and its field malformed, dropped with a warning (AC-14). §7 intro and the §7.1 rule-kinds preamble point to §7.5; §7.4 item 6 added; AC-14 gets two Examples rows (`pattern` null with the regex in `value`; `minLength` `value` as text "3") and a note; §11 AC-14 row notes the wire fixtures. **(2) US-01-R1-F05, `localeTag` (human decision: the API exposes `localeTag`, no backend renaming):** §7 intro names the country attribute `localeTag` (Strapi reserves `locale`); §7.5.2 gives the country wire shape and the mapping `localeTag` → logical `locale` in the front-end boundary parser; requests select `localeTag`; §11 AC-17 row adds the parser unit test. No AC, BR or glossary entry named the country `locale` attribute, so none changed for this item. **(3) US-01-R1-F06, copy (human decision: both strings approved):** new §8.1 lists all code-owned chrome copy (US-01-Q-14 and Q-28 strings, unchanged) plus "Elige tu país" (country chooser heading) and "Cotizador de seguro de auto" (page `<title>`), marked "Approved at review round 1 (F06)"; new §8 row *Country chooser*; BR-07 points to §8.1. Q-14 and Q-28 cells untouched. **(4) US-01-R1-F02 (context of F01), AC-28 widened, ID kept:** glossary entry *Anonymous request* (any request Strapi does not authenticate: no header, non-Bearer scheme, empty or invalid `Bearer`, any letter case of `/api`, Strapi's port or the proxy); BR-06 references it; AC-28's draft outline now has 14 rows (7 variants × 2 entry points) and a `publishedAt` check, a new outline for draft countries (5 rows), and a note that error responses satisfy the `Then` and that the other publication parameters are covered by the same rows; write scenario unchanged; §11 e2e table and AC-28 row updated (still 4 e2e files). **(5) ADRs:** ADR-0006 (amends ADR-0001's physical model) referenced in the metadata and in §7 and §10 as in progress. Also: new glossary entry *Wire shape / logical shape*; sources list adds Review R1. No ID renumbered or retired; no ID added. Unchanged: §1, §2, BR-01..BR-05, BR-08, AC-01..AC-13, AC-15..AC-27, §6 (all rows and *Human answer* cells), §7.2, §7.3, §9, §12. Counts: 8 BR, 28 AC (4 original, 24 derived), 28 Q (none blocks HC1). |
 | 2026-11-21 | Felipe Sabogal (human) | HC1 round 4 | **Approved** (v0.4) | Spec v0.4 approved as is, together with the acceptance of ADR-0006. Next: tests for the new wire shapes (AC-14 rows, country parser), then the backend and frontend fixes. |
+| 2026-11-21 | spec-writer | editorial | v0.4 text aligned with accepted ADR-0006 and the route middleware (US-01-R2-F06); no behaviour change | Metadata *Related ADRs*: ADR-0006 linked and stated as Accepted 2026-11-21 (was "being written"). §10: the "In progress (not yet accepted)" entry replaced by a "Referenced (accepted 2026-11-21)" entry for ADR-0006, which amends ADR-0001's physical model; "Needed" now "none"; implementation note that ADR-0002's published-only rule is a route middleware on `find`/`findOne` via `publishedOnlyConfig()` (c3bdb56, 345a016). No other section, and no BR, AC or Q, changed; version and status unchanged. |
