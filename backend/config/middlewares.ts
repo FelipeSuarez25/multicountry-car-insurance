@@ -14,8 +14,6 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
   },
   'strapi::poweredBy',
   'strapi::query',
-  // After the query parser, before the routers: removes draft-reading parameters from anonymous requests.
-  'global::published-only',
   'strapi::body',
   'strapi::session',
   'strapi::favicon',
