@@ -32,9 +32,9 @@ Numbers are assigned when an ADR is written; this order is only provisional.
 
 | Topic | Why it needs an ADR | Input |
 |---|---|---|
-| — | No pending ADR for US-01 or US-02 (ADR-0007: option A chosen at HC2; the orchestrator records acceptance) | — |
+| — | No pending ADR for US-01 or US-02 | — |
 
-Covered since 2026-11-21: the simulated price rule of US-02 (ADR-0007, Proposed; US-02-Q-01) and
+Covered since 2026-11-21: the simulated price rule of US-02 (ADR-0007, Accepted: option A; US-02-Q-01) and
 the summary route registered by US-02 (implementation note on ADR-0001 above; US-02-Q-03).
 
 Covered since 2026-11-20: the multi-country content strategy (ADR-0001, which also folds in the
