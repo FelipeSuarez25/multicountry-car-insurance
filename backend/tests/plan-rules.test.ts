@@ -247,10 +247,11 @@ describe('US-02-BR-01 ADR-0001 plan rules (key per country, required country, at
       expect(await plans.findOne({ documentId: draft, status: 'published' })).toBeNull();
     }, 60_000);
 
-    it('US-02-AC-09 refuses to publish an existing draft whose coverages were never set', async () => {
-      const draft = await createPlan('probe-draft-unset-publish', colombia, 'draft', { coverages: undefined });
-      await expect(plans.publish({ documentId: draft })).rejects.toThrow();
-      expect(await plans.findOne({ documentId: draft, status: 'published' })).toBeNull();
+    // Strapi semantics (required + min 1 on a repeatable component): an unset list is refused even on a draft,
+    // while a draft may hold [] (the admin panel and REST send [] for an empty repeatable) and then cannot be published.
+    it('US-02-AC-09 refuses to create a draft with coverages unset (no draft without a list); the draft with [] is covered above', async () => {
+      await expect(createPlan('probe-draft-unset', colombia, 'draft', { coverages: undefined })).rejects.toThrow();
+      expect(await plans.findMany({ status: 'draft', filters: { key: 'probe-draft-unset' } })).toEqual([]);
     }, 60_000);
 
     it('US-02-AC-09 refuses to publish a draft whose coverages an editor emptied after saving it valid', async () => {
