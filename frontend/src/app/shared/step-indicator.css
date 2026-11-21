@@ -1,0 +1,100 @@
+:host {
+  display: block;
+}
+.progress {
+  position: relative;
+  max-width: var(--size-form-max);
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-4) 0;
+}
+/* The track runs between the centres of the first and the last marker. */
+.track {
+  position: absolute;
+  top: calc(var(--space-4) + var(--size-progress-dot) / 2 - var(--size-progress-height) / 2);
+  inset-inline: calc(var(--space-4) + (100% - 2 * var(--space-4)) / 6);
+  height: var(--size-progress-height);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-raised);
+  overflow: hidden;
+}
+.fill {
+  width: 100%;
+  height: 100%;
+  background: var(--color-country-accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+[data-progress='1'] .fill {
+  transform: scaleX(0.5);
+}
+[data-progress='2'] .fill {
+  transform: scaleX(1);
+}
+.steps {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding-inline: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+  line-height: var(--leading-small);
+  text-align: center;
+}
+.marker {
+  display: grid;
+  place-items: center;
+  width: var(--size-progress-dot);
+  height: var(--size-progress-dot);
+  border: var(--border-width-hairline) solid var(--color-border-control);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted);
+}
+.marker .lucide {
+  width: var(--size-icon-small);
+  height: var(--size-icon-small);
+}
+.step--done .marker {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+.step--current {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+.step--current .marker {
+  border-color: var(--color-brand);
+  background: var(--color-brand);
+  color: var(--color-text-on-brand);
+}
+@media (forced-colors: active) {
+  .marker {
+    border-color: CanvasText;
+  }
+  .step--current .marker {
+    background: Highlight;
+    color: HighlightText;
+  }
+  .fill {
+    background: Highlight;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fill {
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+  .marker {
+    transition:
+      background-color var(--duration-base) var(--ease-standard),
+      border-color var(--duration-base) var(--ease-standard);
+  }
+}

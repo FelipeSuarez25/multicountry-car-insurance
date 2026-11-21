@@ -1,0 +1,31 @@
+<div class="progress" [attr.data-progress]="progress()">
+  <div class="track" aria-hidden="true"><div class="fill"></div></div>
+  <ol class="steps" aria-label="Progreso de la cotización">
+    @for (step of steps(); track step.n) {
+      <li class="step" [class.step--done]="step.done" [class.step--current]="step.isCurrent" [attr.aria-current]="step.isCurrent ? 'step' : null">
+        <span class="marker" aria-hidden="true">
+          @if (step.done) {
+            <svg lucideCheck></svg>
+          } @else {
+            @switch (step.n) {
+              @case (1) {
+                <svg lucideUserRound></svg>
+              }
+              @case (2) {
+                <svg lucideShieldCheck></svg>
+              }
+              @default {
+                <svg lucideReceipt></svg>
+              }
+            }
+          }
+        </span>
+        <span class="label">{{ step.label }}</span>
+        <span class="visually-hidden">Paso {{ step.n }} de 3</span>
+        @if (step.done) {
+          <span class="visually-hidden">completado</span>
+        }
+      </li>
+    }
+  </ol>
+</div>
