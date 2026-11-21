@@ -60,6 +60,54 @@ test.describe('US-01-AC-02 field validation (today pinned to 2026-11-20)', () =>
   }
 });
 
+test.describe('US-01-AC-02 / US-01-AC-10 / US-01-AC-18 a required date partly cleared after it was valid (US-01-R3-F01)', () => {
+  // The date control reads typed digits in the browser locale; the first segment is the month in en-US.
+  test.use({ locale: 'en-US' });
+  test.beforeEach(async ({ page }) => {
+    await page.clock.setFixedTime(TODAY);
+  });
+
+  const MESSAGE = 'Ingresa tu fecha de nacimiento.';
+
+  /** Fill everything, then clear the first segment of the date with the keyboard and Tab away. */
+  async function clearDateSegment(page: Page): Promise<Locator> {
+    await page.goto('/co/datos');
+    await fillColombia(page);
+    const date = field(page, 'Fecha de nacimiento');
+    await expect(date).toHaveValue('1990-05-15');
+    await date.focus();
+    await page.keyboard.press('Backspace');
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab'); // out of the three segments, to the next control
+    await expectDescribedBy(page, 'Fecha de nacimiento', MESSAGE);
+    await expect(date).toHaveAttribute('aria-invalid', 'true');
+    return date;
+  }
+
+  test('US-01-AC-02 / US-01-AC-10 / US-01-AC-18 "Continuar" by click stays on step 1 with the focus on the date, and the stale date is not stored', async ({ page }) => {
+    const date = await clearDateSegment(page);
+    await continuar(page).click();
+
+    await expect(page).toHaveURL(/\/co\/datos$/);
+    await expect(date).toBeFocused();
+    await expectDescribedBy(page, 'Fecha de nacimiento', MESSAGE);
+    await expect(date).toHaveAttribute('aria-invalid', 'true');
+    const stored = await page.evaluate(() => sessionStorage.getItem('quote-wizard') ?? '');
+    expect(stored).not.toContain('1990-05-15');
+  });
+
+  test('US-01-AC-02 / US-01-AC-10 / US-01-AC-18 Enter in another field stays on step 1 with the focus on the date', async ({ page }) => {
+    const date = await clearDateSegment(page);
+    await field(page, 'Nombre completo').focus();
+    await page.keyboard.press('Enter');
+
+    await expect(page).toHaveURL(/\/co\/datos$/);
+    await expect(date).toBeFocused();
+    await expect(date).toHaveAttribute('aria-invalid', 'true');
+  });
+});
+
 test.describe('US-01-AC-09 a number the browser cannot parse counts as empty', () => {
   test.beforeEach(async ({ page }) => {
     await page.clock.setFixedTime(TODAY);

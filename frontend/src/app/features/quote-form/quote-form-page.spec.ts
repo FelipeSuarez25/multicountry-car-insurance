@@ -656,7 +656,7 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       expect(app.path()).toBe('/cl/datos');
     });
 
-    it('US-01-AC-09 an optional number with unparseable text counts as empty: no error, "Continuar" is not blocked, output is null', async () => {
+    it('US-01-AC-09 an optional number with unparseable text is an error (US-01-R3-F01 decision, supersedes R2-F01): errorMessage shown, "Continuar" blocked, store holds ""', async () => {
       await start();
       app.server.fields['CL'] = makeYearOptional(seedStrapiItems('CL'));
       await app.open('/cl/datos');
@@ -668,13 +668,96 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       leave(year);
       await app.settle();
       expect(store().values()['vehicleYear']).toBe('');
-      expect(describedText(year)).not.toContain('El año debe estar entre');
-      expect(year.getAttribute('aria-invalid')).not.toBe('true');
+      expect(describedText(year)).toContain('El año debe estar entre los últimos 20 años y el próximo año.');
+      expect(year.getAttribute('aria-invalid')).toBe('true');
 
       await continuar();
-      expect(app.path()).toBe('/cl/planes');
-      expect(store().step1Output()?.values['vehicleYear']).toBeNull();
+      expect(app.path()).toBe('/cl/datos');
+      expect(store().step1Output()).toBeNull();
+      expect(storedValues()['vehicleYear']).toBe('');
     });
+
+    it('US-01-AC-09 an optional number with unparseable text and no errorMessage shows "Revisa este campo." and blocks "Continuar"', async () => {
+      await start();
+      app.server.fields['CL'] = seedStrapiItems('CL').map((i) =>
+        i['key'] === 'vehicleYear' ? { ...i, isRequired: false, errorMessage: '', requiredMessage: undefined } : i,
+      );
+      await app.open('/cl/datos');
+      await fillCl({ Año: null });
+      const year = control(app.root, 'Año') as HTMLInputElement;
+      typeUnparseable(year);
+      leave(year);
+      await app.settle();
+      await continuar();
+      expect(describedText(year)).toContain('Revisa este campo.');
+      expect(year.getAttribute('aria-invalid')).toBe('true');
+      expect(app.path()).toBe('/cl/datos');
+    });
+  });
+
+  describe('US-01-AC-02 / US-01-AC-10 / US-01-AC-18 a required date emptied after it was valid (US-01-R3-F01)', () => {
+    const MESSAGE = 'Ingresa tu fecha de nacimiento.';
+    /** An emptied or unreadable date: the control reports `badInput` and reads back '', then the input event. */
+    function emptyDate(el: HTMLInputElement, badInput: boolean): void {
+      Object.defineProperty(el, 'validity', { configurable: true, get: () => ({ badInput, valid: !badInput }) });
+      el.value = '';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    const submitWithEnter = async (): Promise<void> => {
+      // Enter in a text field submits the form through the default button.
+      const form = app.root.querySelector('form') as HTMLFormElement;
+      form.requestSubmit();
+      await app.settle();
+    };
+
+    for (const badInput of [true, false]) {
+      const how = badInput ? 'an unreadable (partly cleared) date' : 'a cleared date';
+
+      it(`US-01-AC-02 ${how}: shows the required message with aria-invalid after leaving the field`, async () => {
+        await start();
+        await app.open('/co/datos');
+        await fillCo();
+        const date = control(app.root, 'Fecha de nacimiento') as HTMLInputElement;
+        expect(store().values()['birthDate']).toBe('1990-05-15');
+        emptyDate(date, badInput);
+        leave(date);
+        await app.settle();
+        expect(describedText(date)).toContain(MESSAGE);
+        expect(date.getAttribute('aria-invalid')).toBe('true');
+      });
+
+      it(`US-01-AC-02 / US-01-AC-10 / US-01-AC-18 ${how}: "Continuar" by click stays on /co/datos, focuses the date, and no step 1 output carries the stale date`, async () => {
+        await start();
+        await app.open('/co/datos');
+        await fillCo();
+        const date = control(app.root, 'Fecha de nacimiento') as HTMLInputElement;
+        emptyDate(date, badInput);
+        leave(date);
+        await app.settle();
+        await continuar();
+        expect(app.path()).toBe('/co/datos');
+        expect(document.activeElement).toBe(date);
+        expect(describedText(date)).toContain(MESSAGE);
+        expect(store().step1Output()).toBeNull();
+        expect(JSON.stringify(store().step1Output())).not.toContain('1990-05-15');
+        expect(store().values()['birthDate']).toBe('');
+      });
+
+      it(`US-01-AC-02 / US-01-AC-10 / US-01-AC-18 ${how}: submitting with Enter stays on /co/datos, focuses the date, and no step 1 output carries the stale date`, async () => {
+        await start();
+        await app.open('/co/datos');
+        await fillCo();
+        const date = control(app.root, 'Fecha de nacimiento') as HTMLInputElement;
+        emptyDate(date, badInput);
+        leave(date);
+        await app.settle();
+        await submitWithEnter();
+        expect(app.path()).toBe('/co/datos');
+        expect(document.activeElement).toBe(date);
+        expect(describedText(date)).toContain(MESSAGE);
+        expect(store().step1Output()).toBeNull();
+      });
+    }
   });
 
   describe('US-01-AC-23 configuration changed while data is stored', () => {
