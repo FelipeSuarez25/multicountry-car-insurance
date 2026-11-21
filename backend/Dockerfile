@@ -1,4 +1,4 @@
-FROM node:24-bookworm-slim
+FROM node:24.22.3-bookworm-slim
 
 ENV NODE_ENV=production \
     DATA_DIR=/data \
