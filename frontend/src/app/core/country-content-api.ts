@@ -16,7 +16,7 @@ export class CountryContentApi {
       'fields[0]': 'code',
       'fields[1]': 'name',
       'fields[2]': 'currencyCode',
-      'fields[3]': 'locale',
+      'fields[3]': 'localeTag',
       'fields[4]': 'sortOrder',
       'pagination[pageSize]': '100',
     }).pipe(map(parseCountries));
