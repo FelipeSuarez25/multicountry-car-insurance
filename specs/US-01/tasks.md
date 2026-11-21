@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Current step | HC3: PR open for human QA and merge (review round 4 APPROVED) |
+| Current step | **Ready for QA** (PR #3 merged by the human after HC3, 2026-11-21) |
 | Branch | feat/us-01-data-form |
 | PR | — |
-| Blockers | none (R4-F01 justified and deferred; R4-F02 being fixed) |
-| **Next action** | Human: QA pass (CO, CL, keyboard only, 360 px + desktop, AC-26 screenshots = T-31), decide R4-F01/R4-F02, merge the PR. Then Ready for QA + session-handoff. |
+| Blockers | none |
+| **Next action** | none for US-01. Known limitation US-01-R4-F01 is documented in README. Next story: US-02. |
 | Last updated | 2026-11-21 by orchestrator (Claude Opus 5.5) |
 
 ## Tasks
@@ -54,7 +54,7 @@ T-09, T-11..T-26 (text and references); T-32..T-38 added.
 | US-01-T-28 | Responsive layout (one column, 320–1440 px, target sizes) | US-01-AC-26 | frontend-developer | done | d8d5d44 (HC3 manual check T-31 pending) |
 | US-01-T-29 | Update the `dynamic-form-fields` skill contract to match spec §7.4, in the same PR (repository plumbing, needs human request) | US-01-AC-09, US-01-AC-12 | orchestrator | done | 69b18b3 |
 | US-01-T-30 | Create `specs/US-01/seed-fields.md` from spec *Annex A (staging)*, verbatim, and delete Annex A and the staging note in §7.2 (the spec-writer's write scope did not allow it in v0.2) | US-01-AC-01, US-01-AC-11, US-01-AC-13 | orchestrator | done | c3ee6f4 |
-| US-01-T-31 | HC3 manual check of AC-26: screenshots of step 1 of Colombia at 360 × 740 and 1280 × 800, attached to the HC3 record | US-01-AC-26 | human (HC3) | todo | |
+| US-01-T-31 | HC3 manual check of AC-26: screenshots of step 1 of Colombia at 360 × 740 and 1280 × 800, attached to the HC3 record | US-01-AC-26 | human (HC3) | done: screenshots captured by the orchestrator on a clean stack (Playwright, headless Chromium, en-US date format) and accepted by the human at HC3: `docs/qa/US-01/ac-26-{co,cl}-step1-{360x740,1280x800}.png` | 31b3c79 (closure PR) |
 | US-01-T-32 | Strapi bootstrap: create a development super admin from `STRAPI_ADMIN_EMAIL` / `STRAPI_ADMIN_PASSWORD` when no admin user exists; delete the default "Full Access" API token; no token is ever copied into any `.env` (ADR-0002). New in v0.3 | US-01-AC-03, US-01-AC-27 | strapi-developer | done | 1be0b26, 99585d3 |
 | US-01-T-33 | Strapi middlewares: global published-only middleware that removes `status`, `publicationFilter` and `hasPublishedVersion` from content API requests not authenticated by an API token; `strapi::cors` restricted to an env-driven allow-list, empty by default (ADR-0002). New in v0.3 (since c3bdb56/345a016 a **route** middleware on find/findOne via `publishedOnlyConfig()`, not global; R2-F06) | US-01-AC-13, US-01-AC-28 | strapi-developer | done | dbb33ce |
 | US-01-T-34 | Strapi: `config/api.ts` `documents.strictRelations: true`; Document Service middleware enforcing `form-field` `key` uniqueness per country on create, update and publish (ADR-0001). New in v0.3 | US-01-AC-01, US-01-AC-14 | strapi-developer | done | f9c0f75 |
@@ -99,8 +99,10 @@ page (US-01-Q-19).
 | 2026-11-21 | 5 Gate (after R3 fixes) | **PASSED** on a clean stack with Strapi on 127.0.0.1 only (confirms the [::1] binding was unneeded): fe build 0 errors, 319/319 unit, tsc, lint both, be 12/12; Reactive Forms 0, `ignoreValidators` 0, casts 2; data-form-co ×15 = 225/225; full e2e 40/40 ×2; scan clean (6 exceptions). trace.sh counts R3-F01 open until review round 4 | orchestrator (scripts, no AI) | scripts/e2e.sh output |
 | 2026-11-21 | 6 Review (round 4) | **APPROVED**: R3-F01..F05 verified fixed (CO and CL, click and Enter); open: R4-F01 minor (date edited unreadable < ~25 ms after completion: screen and store diverge; not reachable at human speed), R4-F02 nit (stale wording in two test titles). Checks re-run by the reviewer: 319/319, 12/12, e2e 40/40 ×2, CO ×15 225/225 | code-reviewer (Opus 5.5) | [reviews/US-01-review-R4.md](../../reviews/US-01-review-R4.md) |
 | 2026-11-21 | HC3 decisions on R4 | **R4-F01 justified and deferred** (sub-25 ms date edit; not reachable at human speed; a fix would add more custom sync around Signal Forms' deferred DOM writes, the pattern behind two US-01 regressions). Recorded as a known limitation in README. **R4-F02 fixed** (test-engineer) | Felipe Sabogal (human) | README "Known limitations" |
+| 2026-11-21 | HC3 | **PASSED**: human QA done (CO, CL, keyboard, widths), PR #3 merged by Felipe Sabogal (merge a974b16). AC-26 evidence in docs/qa/US-01/. R4-F01 justified and deferred (README Known limitations). Session logs exported to logs/sessions/2026-11-21-067ab97b/ with the documented e-mail redaction and one recorded scan exception | Felipe Sabogal (human) | PR #3 |
 
 ## Session log
 
 | Date | Session export | Summary |
 |---|---|---|
+| 2026-11-20 → 2026-11-21 | `logs/sessions/2026-11-21-067ab97b/` | US-01 from intake to merge; see logs/sessions/README.md |
