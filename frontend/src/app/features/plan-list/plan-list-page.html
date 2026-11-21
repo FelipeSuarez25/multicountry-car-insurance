@@ -1,14 +1,19 @@
-<main class="page" [attr.aria-busy]="status() === 'loading' ? 'true' : null">
+<main class="page page--plans" animate.enter="page-enter" [attr.aria-busy]="status() === 'loading' ? 'true' : null">
   <h1 id="plans-heading" #heading tabindex="-1">Elige tu plan</h1>
   @switch (status()) {
     @case ('loading') {
-      <p role="status">Cargando planes…</p>
+      <p role="status" class="visually-hidden">Cargando planes…</p>
+      <div class="plans" aria-hidden="true">
+        <span class="skeleton skeleton--plan"></span>
+        <span class="skeleton skeleton--plan"></span>
+        <span class="skeleton skeleton--plan"></span>
+      </div>
     }
     @case ('error') {
       <app-load-error message="No pudimos cargar los planes. Intenta de nuevo." (retry)="load()" />
     }
     @case ('empty') {
-      <p role="status">No hay planes disponibles para tu país en este momento.</p>
+      <p role="status" class="message message--help">No hay planes disponibles para tu país en este momento.</p>
     }
     @case ('ready') {
       <div
@@ -19,7 +24,14 @@
         [attr.aria-describedby]="showChoosePlan() ? 'choose-plan-message' : null"
       >
         @for (item of items(); track item.plan.key) {
-          <div class="plan" [class.plan--chosen]="chosenKey() === item.plan.key" [class.plan--recommended]="item.plan.key === recommendedKey()">
+          <!-- A click anywhere on the plan chooses it (US-04-AC-16). The native radio inside stays the keyboard and assistive-technology control, so this handler needs no key event or tabindex of its own. -->
+          <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+          <div
+            class="plan"
+            [class.plan--chosen]="chosenKey() === item.plan.key"
+            [class.plan--recommended]="item.plan.key === recommendedKey()"
+            (click)="choose(item.plan.key)"
+          >
             <div class="plan__header">
               <input
                 #option
@@ -33,7 +45,7 @@
                 (change)="choose(item.plan.key)"
               />
               <h2 class="plan__name">
-                <label [for]="'plan-' + item.plan.key">{{ item.plan.name }}</label>
+                <label class="plan__label" [for]="'plan-' + item.plan.key">{{ item.plan.name }}</label>
               </h2>
               @if (item.plan.key === recommendedKey()) {
                 <span class="plan__badge" [id]="'plan-recommended-' + item.plan.key">Recomendado</span>
@@ -44,20 +56,26 @@
             </div>
             <p class="plan__description" [id]="'plan-description-' + item.plan.key">{{ item.plan.shortDescription }}</p>
             <p class="plan__price" [id]="'plan-price-' + item.plan.key">
-              <span class="plan__amount">{{ item.price }}</span>
-              <span class="plan__caption">Precio anual</span>
+              <span class="amount">{{ item.price }}</span>
+              <span class="caption">Precio anual</span>
             </p>
             <h3 class="plan__list-heading">Coberturas</h3>
             <ul class="plan__list">
               @for (coverage of item.plan.coverages; track $index) {
-                <li>{{ coverage }}</li>
+                <li>
+                  <svg lucideCircleCheck></svg>
+                  {{ coverage }}
+                </li>
               }
             </ul>
             @if (item.plan.benefits.length > 0) {
               <h3 class="plan__list-heading">Beneficios</h3>
               <ul class="plan__list">
                 @for (benefit of item.plan.benefits; track $index) {
-                  <li>{{ benefit }}</li>
+                  <li>
+                    <svg lucideCircleCheck></svg>
+                    {{ benefit }}
+                  </li>
                 }
               </ul>
             }
@@ -65,7 +83,7 @@
         }
       </div>
       @if (showChoosePlan()) {
-        <p role="alert" id="choose-plan-message" class="choose-message">Elige un plan para continuar.</p>
+        <p role="alert" id="choose-plan-message" class="message message--error choose-message" animate.enter="message-enter">Elige un plan para continuar.</p>
       }
     }
   }

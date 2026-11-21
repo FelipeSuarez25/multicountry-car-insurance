@@ -6,6 +6,7 @@ import { FormFieldStore } from '../../core/form-field-store';
 import { PlanStore } from '../../core/plan-store';
 import { QuoteStore } from '../../core/quote-store';
 import type { Country } from '../../shared/country.model';
+import { LucideCircleCheck } from '@lucide/angular';
 import { LoadError } from '../../shared/load-error';
 import { formatMoney } from '../../shared/money-format';
 import { recommendedPlanKey } from '../../shared/plan';
@@ -27,7 +28,7 @@ interface PlanItem {
  */
 @Component({
   selector: 'app-plan-list-page',
-  imports: [LoadError],
+  imports: [LoadError, LucideCircleCheck],
   templateUrl: './plan-list-page.html',
   styleUrl: './plan-list-page.css',
 })
