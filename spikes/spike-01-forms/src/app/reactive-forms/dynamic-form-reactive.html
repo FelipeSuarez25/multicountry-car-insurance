@@ -1,0 +1,40 @@
+@let st = state();
+<form [formGroup]="st.record" (ngSubmit)="onSubmit()" novalidate aria-label="Datos del vehículo">
+  @for (cfg of st.configs; track cfg.key) {
+    <div class="field">
+      @if (cfg.type === 'checkbox') {
+        <label><input type="checkbox" [id]="cfg.key" [formControl]="ctl(cfg.key)" /> {{ cfg.label }}</label>
+      } @else {
+        <label [for]="cfg.key">{{ cfg.label }}</label>
+        @switch (cfg.type) {
+          @case ('select') {
+            <select [id]="cfg.key" [formControl]="ctl(cfg.key)"
+              [attr.aria-required]="cfg.isRequired" [attr.aria-invalid]="showError(cfg.key)"
+              [attr.aria-describedby]="describedBy(cfg)">
+              <option value="">{{ cfg.placeholder }}</option>
+              @for (o of cfg.options; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          }
+          @case ('number') {
+            <input type="number" [id]="cfg.key" [formControl]="ctl(cfg.key)"
+              [attr.aria-required]="cfg.isRequired" [attr.aria-invalid]="showError(cfg.key)"
+              [attr.aria-describedby]="describedBy(cfg)" />
+          }
+          @case ('date') {
+            <input type="date" [id]="cfg.key" [formControl]="ctl(cfg.key)"
+              [attr.aria-required]="cfg.isRequired" [attr.aria-invalid]="showError(cfg.key)"
+              [attr.aria-describedby]="describedBy(cfg)" />
+          }
+          @default {
+            <input type="text" [id]="cfg.key" [formControl]="ctl(cfg.key)"
+              [attr.aria-required]="cfg.isRequired" [attr.aria-invalid]="showError(cfg.key)"
+              [attr.aria-describedby]="describedBy(cfg)" />
+          }
+        }
+      }
+      @if (cfg.helpText) { <p [id]="cfg.key + '-help'">{{ cfg.helpText }}</p> }
+      @if (showError(cfg.key)) { <p [id]="cfg.key + '-error'" role="alert">{{ message(cfg.key) }}</p> }
+    </div>
+  }
+  <button type="submit">Continuar</button>
+</form>

@@ -1,0 +1,42 @@
+@let st = state();
+<form [formRoot]="st.f" aria-label="Datos del vehículo">
+  @for (cfg of st.configs; track cfg.key) {
+    @let fs = st.f[cfg.key]();
+    @let showError = fs.touched() && fs.invalid();
+    <div class="field">
+      @if (cfg.type === 'checkbox') {
+        <label><input type="checkbox" [id]="cfg.key" [formField]="bool(cfg.key)" /> {{ cfg.label }}</label>
+      } @else {
+        <label [for]="cfg.key">{{ cfg.label }}</label>
+        @switch (cfg.type) {
+          @case ('select') {
+            <select [id]="cfg.key" [formField]="str(cfg.key)"
+              [attr.aria-required]="cfg.isRequired" [attr.aria-invalid]="showError"
+              [attr.aria-describedby]="describedBy(cfg, showError)">
+              <option value="">{{ cfg.placeholder }}</option>
+              @for (o of cfg.options; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          }
+          @case ('number') {
+            <input type="number" [id]="cfg.key" [formField]="str(cfg.key)"
+              [attr.aria-required]="cfg.isRequired" [attr.aria-invalid]="showError"
+              [attr.aria-describedby]="describedBy(cfg, showError)" />
+          }
+          @case ('date') {
+            <input type="date" [id]="cfg.key" [formField]="str(cfg.key)"
+              [attr.aria-required]="cfg.isRequired" [attr.aria-invalid]="showError"
+              [attr.aria-describedby]="describedBy(cfg, showError)" />
+          }
+          @default {
+            <input type="text" [id]="cfg.key" [formField]="str(cfg.key)"
+              [attr.aria-required]="cfg.isRequired" [attr.aria-invalid]="showError"
+              [attr.aria-describedby]="describedBy(cfg, showError)" />
+          }
+        }
+      }
+      @if (cfg.helpText) { <p [id]="cfg.key + '-help'">{{ cfg.helpText }}</p> }
+      @if (showError) { <p [id]="cfg.key + '-error'" role="alert">{{ fs.errors()[0].message }}</p> }
+    </div>
+  }
+  <button type="submit">Continuar</button>
+</form>
