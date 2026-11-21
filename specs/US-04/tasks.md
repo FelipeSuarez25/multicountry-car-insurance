@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Current step | 3 Tests written and red (spec v0.2 Approved; ADR-0010..0013 Accepted); next: 4 Implementation |
+| Current step | 4 Implementation (tests first done, 4d75937) |
 | Branch | feat/us-04-design-system |
 | PR | — |
 | Blockers | none |
-| **Next action** | Orchestrator reads the test-engineer report (public API and DOM contract, ambiguities) and starts step 4: the frontend-developer implements T-16..T-23 until the tests pass. The tests are red on purpose; the packages `@angular/aria`, `@angular/cdk`, `@lucide/angular` and the two font packages are not installed yet. |
+| **Next action** | frontend-developer implements US-04 to make the tests pass; then the gate (step 5). |
 | Last updated | 2026-11-21 by test-engineer (Claude Sonnet 5.5) |
 
 ## Tasks
@@ -56,6 +56,7 @@ T-16..T-23 depend on the ADRs (T-02..T-05); T-12 and T-13 depend on US-04-Q-04 a
 | 2026-11-21 | 2 ADRs (in parallel with HC1, at the human's request) | Four ADRs written, status Proposed: ADR-0010 (tokens, static guard, dark theme, palette with computed contrast, Archivo + Atkinson Hyperlegible Next, `@lucide/angular` 1.77.0, own flags), ADR-0011 (country-visuals map; amends ADR-0001), ADR-0012 (`@angular/aria` + `@angular/cdk` 22.3.0, `FormValueControl`, `transformedValue`, lazy step 1; amends ADR-0004), ADR-0013 (native `animate.enter` + CSS, enter-only step transition, reduced motion by construction). Spec changes reported in each ADR's *Spec impact* | architect (Claude Opus 5.5) | [adr/README.md](../../adr/README.md) |
 | 2026-11-21 | HC1 + HC2 | **Approved / Accepted**: spec v0.1 approved (six blocking gaps as proposed, other defaults accepted, story translation confirmed, the 14 ADR-driven adjustments approved for v0.2, calendar week start per country locale); ADR-0010, 0011 (amends ADR-0001), 0012 (amends ADR-0004) and 0013 accepted. Skills: EVAL-003/004 rejected, EVAL-005 `frontend-design` adopted with adjustments (27e40b0) | Felipe Sabogal (human) | spec §13, adr/0010..0013 |
 | 2026-11-21 | 3 Tests (red) | US-04 tests written from spec v0.2 and ADR-0010..0013: new and extended unit and component specs, one new e2e file, existing helpers and specs rewritten per spec 11.1 without weakening them. `tsc -p tsconfig.spec.json` fails only with 5 x TS2307 for the planned pure modules; the rest of the unit suite runs 1178 tests, 981 pass (every unchanged pre-US-04 test) and 197 fail because the custom controls, tokens, icons, flags, header, indicator and skeletons do not exist yet | test-engineer (Claude Sonnet 5.5) | this file; `scripts/trace.sh US-04 --no-fail` |
+| 2026-11-21 | Step 3 (tests first) | **Done** (4d75937): 30 test files; red for the right reason (5 TS2307 for planned modules; rewritten US-01..03 tests fail only because the custom controls do not exist yet; 168 e2e tests listed). The test-engineer's contract conventions (signatures in calendar-dates/date-text/field-icons, `parseDateText` returns `null` for unreadable text per ADR-0012, the `contrast-pairs.json` shape, header/indicator/skeleton DOM conventions) accepted by the orchestrator as technical choices within the spec | orchestrator | 4d75937 |
 
 ## Session log
 
