@@ -7,12 +7,12 @@
 
 | Field | Value |
 |---|---|
-| Current step | 3 Tests written (red) |
+| Current step | 5 Gate PASSED (attempt 3/3) → 6 Code review |
 | Branch | feat/us-01-data-form |
 | PR | — |
 | Blockers | none. Plumbing needed before step 4: `frontend/tsconfig.app.json` must exclude `src/testing/**` (see Gate history, step 3 row) |
-| **Next action** | Step 4: the developers implement against the red tests (frontend-developer: T-20..T-28, T-35, T-36; strapi-developer: T-15..T-19, T-32..T-34), using the module paths and exported names the tests import. The orchestrator commits the step 3 tests first. |
-| Last updated | 2026-11-20 by test-engineer (Claude Sonnet 5.5) |
+| **Next action** | Step 6: code-reviewer reviews the branch against spec v0.3, ADR-0001..0005 and the review-checklist; writes reviews/US-01-review-R1.md. |
+| Last updated | 2026-11-21 by orchestrator (Claude Opus 5.5) |
 
 ## Tasks
 
@@ -85,6 +85,10 @@ page (US-01-Q-19).
 
 | 2026-11-20 | 3 Tests (red) | Tests written from spec v0.3 §11: 7 frontend spec files + shared helpers in `frontend/src/testing/`, 4 e2e files + `frontend/playwright.config.ts` + `frontend/e2e/support/`, 1 backend test + helper. `tsc --noEmit -p tsconfig.spec.json`: 17 errors, all TS2307 for planned production modules, 0 other. `playwright test --list`: 4 files, 32 tests. Backend: suite fails on the missing `api::country.country` and `api::form-field.form-field` content types. The 263 unit and component tests also pass against a throwaway reference implementation kept outside the repository (so the tests agree with each other and the helpers work). Open for the orchestrator: add `src/testing/**` to the `exclude` of `frontend/tsconfig.app.json` (the app build compiles it today); decide the questions in the step 3 report | test-engineer (Claude Sonnet 5.5) | `scripts/trace.sh US-01 --no-fail`: 27 of 28 ACs have a test, AC-26 manual |
 | 2026-11-20 | Step 3 decisions | (1) Secret-scan false positive in `us-01-security.spec.ts` (fictitious bearer literal): resolved with an explicit, justified `scan-secrets: allow (<reason>)` marker; the scanner lists and counts exceptions. (2) Required-field marker: trailing visual `*` (aria-hidden) in the label + `required`/`aria-required` on the control. (3) The test-engineer's 7 working assumptions accepted: rule component flattened to the §7.1 logical shape; select prompt `disabled` with value ''; lowercase-country redirect via `RedirectCommand` in `canMatch`; heading focus asserted after browser back; whitespace-only optional = empty; keyboard e2e with locale en-US tolerating the date-picker tab stop; frontend served on port 8080 (T-19/T-35 publish it). Step 4 plumbing: exclude `src/testing/**` in `frontend/tsconfig.app.json`; add `@types/node` (exact) to frontend devDependencies | Felipe Sabogal (human) | this file |
+| 2026-11-21 | 5 Gate (attempt 1/3) | **FAILED**. Green: frontend build, 263/263 unit+component, tsc clean, backend build, 9/9 backend, ADR-0004 grep (no Reactive Forms, 2 casts), all deps pinned, scan clean (5 explicit exceptions), trace 0 ACs without test, clean stack `mci-gate` healthy. E2E 28 passed, 3 failed, 1 did not run: AC-03 (creating the field returns HTTP 400), AC-09 (`1e` shows only the help text, no error), AC-24 (keyboard helper fails when focus stays inside the date field). Routed: AC-03 strapi-developer, AC-09 frontend-developer, AC-24 test-engineer | orchestrator (scripts, no AI) | Playwright output |
+| 2026-11-21 | 5 Gate (attempt 2/3) | **FAILED** (flaky). Fixes since attempt 1: 7584186 (AC-24 helper), 108ac16 (AC-09 parse error message), e5ba5ff (AC-03 create controller). Clean volumes. Green: builds, 263/263 unit, 9/9 backend, trace, scan; stray `dbgfield` gone (10 CO fields after the run). E2E 31 passed, 1 failed: AC-09 `1e`: expected the input value '' (HTML sanitisation), received '1' (the stale model value). The same test passes 6/6 in isolation (`--repeat-each=3`), so it is a timing/race issue, not deterministic. Routed to frontend-developer | orchestrator (scripts, no AI) | Playwright output |
+| 2026-11-21 | HC2 (ADR-0005) | **Accepted**: ADR-0005 (e2e token = form-field create/delete + country find; custom create controller from e5ba5ff reverted). Attempt-2 fix f01aab4 (AC-09 race) verified by the frontend-developer with 3 consecutive full e2e runs, 32/32 | Felipe Sabogal (human) | adr/0005 |
+| 2026-11-21 | 5 Gate (attempt 3/3) | **PASSED**. Fixes since attempt 2: f01aab4 (AC-09 race: late Signal Forms DOM write), 645bd25 (custom controller reverted, ADR-0005), f1fc135 (e2e token + country.find, pre-test cleanup). Clean volumes. Frontend build 0 errors, 263/263 unit, tsc 0; backend build OK, 9/9; Reactive Forms 0, casts 2; **e2e 32/32 twice in a row**; 10 CO fields after the runs (no leftovers); trace.sh exit 0 (0 ACs without test, 0 open blocker/major); scan clean, 5 explicit exceptions | orchestrator (scripts, no AI) | Playwright output |
 
 ## Session log
 
