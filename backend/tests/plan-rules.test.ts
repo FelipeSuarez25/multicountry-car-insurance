@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { bootStrapi, type DocumentService, type TestStrapi } from './helpers/strapi';
 
 /**
@@ -94,10 +94,19 @@ describe('US-02-BR-01 ADR-0001 plan rules (key per country, required country, at
     chile = await ensureCountry('CL', 'Chile', 'CLP', 'es-CL', 20);
   }, 240_000);
 
+  /**
+   * Each test removes the probe plans it created, so no probe stays published and active for the
+   * seed checks to see: those assertions then prove the seed is exactly the annex's plans.
+   */
+  async function removeProbes(): Promise<void> {
+    if (!plans) return;
+    for (const documentId of created.splice(0)) await plans.delete({ documentId }).catch(() => undefined);
+  }
+
+  afterEach(removeProbes, 60_000);
+
   afterAll(async () => {
-    if (plans) {
-      for (const documentId of created) await plans.delete({ documentId }).catch(() => undefined);
-    }
+    await removeProbes();
     if (dispose) await dispose();
   }, 60_000);
 
