@@ -7,7 +7,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test --watch=false",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "lint": "eslint ."
   },
   "private": true,
   "packageManager": "npm@11.19.1",
@@ -25,11 +26,15 @@
     "@angular/build": "22.3.0",
     "@angular/cli": "22.3.0",
     "@angular/compiler-cli": "22.3.0",
+    "@eslint/js": "10.0.1",
     "@playwright/test": "1.65.1",
     "@types/node": "24.19.2",
+    "angular-eslint": "22.3.0",
+    "eslint": "10.15.0",
     "jsdom": "31.0.1",
     "prettier": "3.10.1",
     "typescript": "6.0.3",
+    "typescript-eslint": "8.73.0",
     "vitest": "5.1.1"
   }
 }
