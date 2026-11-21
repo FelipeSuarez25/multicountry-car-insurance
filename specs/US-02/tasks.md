@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Current step | 2 ADR (HC1 passed: spec v0.1 Approved) |
-| Branch | feat/us-02-plan-list (to be created by the orchestrator; the spec files are uncommitted on `feat/us-01-data-form` until then) |
+| Current step | 3 Tests (HC2 passed: ADR-0007 Accepted, option A) |
+| Branch | feat/us-02-plan-list |
 | PR | — |
-| Blockers | HC1 needs answers to US-02-Q-01 (price rule, ADR), Q-02 (plan currency), Q-03 (summary route), Q-04 (e2e files) |
-| **Next action** | architect writes ADR-0007 (simulated price rule, US-02-Q-01) and records the summary route/guard change (US-02-Q-03); then HC2. |
+| Blockers | — (the orchestrator sets ADR-0007 to Accepted per the human's HC2 decision) |
+| **Next action** | test-engineer writes the US-02 tests first from spec v0.1 §11 and ADR-0007. |
 | Last updated | 2026-11-21 by orchestrator (Claude Opus 5.5) |
 
 ## Tasks
@@ -22,8 +22,8 @@ ADR (US-02-Q-01).
 
 | ID | Task | ACs | Owner (agent) | Status | Commit(s) |
 |---|---|---|---|---|---|
-| US-02-T-01 | ADR: simulated price rule (options: rule in code, factors per country in Strapi, factor per plan; formula, integer arithmetic and rounding, missing-input fallback, clock, reuse by US-03). Proposed default in spec §7.6 | US-02-AC-07, US-02-AC-13 | architect | todo | |
-| US-02-T-02 | ADR-0001 amendment or implementation note: summary route `/:country/resumen` and step 3 guard registered by US-02 (only if US-02-Q-03 is accepted) | US-02-AC-15 | architect | todo | |
+| US-02-T-01 | ADR: simulated price rule (options: rule in code, factors per country in Strapi, factor per plan; formula, integer arithmetic and rounding, missing-input fallback, clock, reuse by US-03). Proposed default in spec §7.6 | US-02-AC-07, US-02-AC-13 | architect | done (ADR-0007: option A chosen at HC2, revised; acceptance recorded by the orchestrator) | |
+| US-02-T-02 | ADR-0001 amendment or implementation note: summary route `/:country/resumen` and step 3 guard registered by US-02 (only if US-02-Q-03 is accepted) | US-02-AC-15 | architect | done (implementation note on ADR-0001 in `adr/README.md`; no amending ADR, the decision is unchanged) | |
 | US-02-T-03 | Unit tests `plan.spec.ts`: boundary parser (every AC-09 row, blank lines skipped, inactive dropped, duplicates, `isRecommended` normalisation), sorting with ties, recommended resolution (first flagged offered plan) | US-02-AC-01, US-02-AC-08, US-02-AC-09, US-02-AC-10 | test-engineer | todo | |
 | US-02-T-04 | Unit tests `price-rules.spec.ts` (pinned clock, every AC-07 row incl. rounding and missing inputs with a warning that carries no value) and `money-format.spec.ts` (every AC-06 row, whitespace removed) | US-02-AC-06, US-02-AC-07 | test-engineer | todo | |
 | US-02-T-05 | Unit tests `quote-store.spec.ts` (chosen plan written on choice, restored by a new instance, kept on step 1 edits, pruned when not offered and written back, entry with an invalid `plan` discarded, cleared on country switch) and `summary-step-guard.spec.ts` (AC-15 rows, `replaceUrl`) | US-02-AC-13, US-02-AC-14, US-02-AC-15 | test-engineer | todo | |
@@ -52,6 +52,9 @@ ADR (US-02-Q-01).
 | 2026-11-21 | 1 Spec | Draft v0.1 written: 7 BR, 19 AC (4 original, 15 derived), 20 Q (4 block HC1), 1 ADR needed + 1 candidate, seed annex | spec-writer (Claude Opus 5.5) | [spec.md §13](spec.md#13-review-log) |
 | 2026-11-21 | HC1 (round 1) | Answers recorded: Q-01 to an ADR with real alternatives; Q-02..Q-04 OK; other defaults accepted. Approval pending | Felipe Sabogal (human) | [spec.md §13](spec.md#13-review-log) |
 | 2026-11-21 | HC1 (round 1) | **Approved**: spec v0.1 | Felipe Sabogal (human) | [spec.md §13](spec.md#13-review-log) |
+| 2026-11-21 | 2 ADR | ADR-0007 written (Proposed): formula in code, factor tables per country as `pricing.age-band` components on `country` (option B of A–E); spec impact listed in the ADR. US-02-Q-03 recorded as an implementation note on ADR-0001. Ready for HC2 | architect (Claude Opus 5.5) | [ADR-0007](../../adr/0007-simulated-price-rule.md), [adr/README.md](../../adr/README.md) |
+| 2026-11-21 | HC2 | Human chose **option A** for ADR-0007 (rule and factors fixed in one pure front-end function shared with US-03), not the proposed B. ADR-0007 revised by the architect (outcome A, strongest argument against now argues for B, B named as the upgrade path, spec impact: none); ADR-0001 note for US-02-Q-03 kept. Acceptance to be recorded by the orchestrator | Felipe Sabogal (human); revision by architect (Claude Opus 5.5) | [ADR-0007](../../adr/0007-simulated-price-rule.md) |
+| 2026-11-21 | HC2 | **Accepted**: ADR-0007 (option A: rule and factors fixed in one pure front-end function, reused by US-03); US-02-Q-03 recorded as an ADR-0001 implementation note | Felipe Sabogal (human) | adr/0007 |
 
 ## Session log
 
