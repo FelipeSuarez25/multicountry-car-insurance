@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Current step | 1 Spec v0.2 (HC1 and HC2 passed) |
+| Current step | 3 Tests (spec v0.2 Approved; ADR-0010..0013 Accepted) |
 | Branch | feat/us-04-design-system |
 | PR | — |
-| Blockers | HC1: six gaps block approval (US-04-Q-01, Q-02, Q-04, Q-05, Q-06, Q-07); the human also confirms the story translation. HC2: ADR-0010..0013 are `Proposed`; ADR-0011 amends ADR-0001 and ADR-0012 amends ADR-0004 if accepted. The ADRs report spec changes (each ADR's *Spec impact*) that the spec-writer applies after HC1/HC2. |
-| **Next action** | spec-writer produces v0.2 with the 14 ADR-driven adjustments and the week-start decision; then the test-engineer writes the tests first (step 3). |
+| Blockers | none |
+| **Next action** | test-engineer writes the US-04 tests first (step 3). Open points: ADR-0012 note on the week start (architect); the human confirms the v0.2 alignments outside the 14 adjustments. |
 | Last updated | 2026-11-21 by orchestrator (Claude Opus 5.5) |
 
 ## Tasks
@@ -27,7 +27,7 @@ T-16..T-23 depend on the ADRs (T-02..T-05); T-12 and T-13 depend on US-04-Q-04 a
 | US-04-T-04 | ADR: accessible select and date picker primitives (CDK vs `@angular/aria` at 22.3.0) and ADR-0004 integration (labelable focus element, custom-control binding, `focusBoundControl`, overlay placement, typed-date parsing to `''`, validator reuse for disabled days, bottom sheet); amends ADR-0004 D7 and the `syncNative` note for dates | US-04-AC-05, US-04-AC-06, US-04-AC-07, US-04-AC-08, US-04-AC-09, US-04-AC-10, US-04-AC-11, US-04-AC-12 | architect | done: [ADR-0012](../../adr/0012-accessible-select-and-date-picker.md) Proposed, amends ADR-0004 (awaiting HC2) | — (uncommitted) |
 | US-04-T-05 | ADR: motion (native `animate.enter`/`animate.leave` + CSS vs `withViewTransitions()` vs a library), enter-only step transition, reduced-motion mechanism | US-04-AC-13, US-04-AC-14, US-04-AC-17 | architect | done: [ADR-0013](../../adr/0013-motion-and-reduced-motion.md) Proposed (awaiting HC2) | — (uncommitted) |
 | US-04-T-06 | Capture the missing "before" screenshots of the country chooser (`00-paises-*`, CO and CL context, three sizes) from `main` before any implementation | US-04-AC-22 | orchestrator | todo | |
-| US-04-T-07 | Unit tests: static guards (single token file, no loose values, no primitive tokens in components, documented breakpoints, ≤ 2 font families, exact versions and the accepted dependency list) | US-04-AC-01, US-04-AC-19, US-04-AC-21 | test-engineer | todo | |
+| US-04-T-07 | Unit tests: static guards (single token file, no loose values, no primitive tokens in components, documented breakpoints, ≤ 2 font families, exact versions and the accepted dependency list); also the AC-03 country-code guard (ADR-0011) and the AC-17 reduced-motion-by-construction guard (ADR-0013) | US-04-AC-01, US-04-AC-19, US-04-AC-21 | test-engineer | todo | |
 | US-04-T-08 | Unit tests: WCAG contrast function and every token pair of AC-02 (gradient stops, texture composited) | US-04-AC-02 | test-engineer | todo | |
 | US-04-T-09 | Unit tests: date text parse/format (every AC-08 row) and disabled days / year range with a pinned clock (every AC-10 row) | US-04-AC-08, US-04-AC-10 | test-engineer | todo | |
 | US-04-T-10 | Component tests: custom select (AC-05 flow, every AC-06 row on a searchable and a select-only field, AC-07 search, announcements, ARIA attributes) | US-04-AC-05, US-04-AC-06, US-04-AC-07 | test-engineer | todo | |
@@ -35,7 +35,7 @@ T-16..T-23 depend on the ADRs (T-02..T-05); T-12 and T-13 depend on US-04-Q-04 a
 | US-04-T-12 | Adapt existing component helpers and specs exactly as spec §11.1 (`testing/dom.ts`, `quote-form-page.spec.ts`), keeping strength (shown + stored) | US-04-AC-11 | test-engineer | todo | |
 | US-04-T-13 | Adapt existing e2e helpers and specs exactly as spec §11.1 (`support/form.ts`, `support/plans.ts`, `us-01-data-form-co`, `us-01-country-context`, `us-01-03-full-flow-co`) | US-04-AC-11 | test-engineer | todo | |
 | US-04-T-14 | New e2e `frontend/e2e/us-04-design-system.spec.ts`: stored object (AC-11), select and calendar with a real keyboard, typed date in two locales, panels at three viewports, step transition DOM sampling, plan card click, reduced motion, responsive matrix, request origins and fonts, focus indicators of new controls | US-04-AC-05, US-04-AC-06, US-04-AC-08, US-04-AC-09, US-04-AC-11, US-04-AC-12, US-04-AC-14, US-04-AC-16, US-04-AC-17, US-04-AC-18, US-04-AC-19, US-04-AC-20 | test-engineer | todo | |
-| US-04-T-15 | Component tests: flags and country chooser (names unchanged, fallback), wizard header, step indicator, skeletons with live text kept, plan cards, field icons and default, heading outline per page, icons hidden | US-04-AC-03, US-04-AC-04, US-04-AC-13, US-04-AC-15, US-04-AC-16, US-04-AC-20 | test-engineer | todo | |
+| US-04-T-15 | Component tests: flags and country chooser (names unchanged, fallback), wizard header, step indicator, skeletons with live text kept, plan cards, field icons and default, heading outline per page, icons hidden; also the AC-03 and AC-17 static guards where they need a component | US-04-AC-03, US-04-AC-04, US-04-AC-13, US-04-AC-15, US-04-AC-16, US-04-AC-20 | test-engineer | todo | |
 | US-04-T-16 | Token file, global styles, theme, fonts (self-hosted), focus styles, forced-colors fallbacks; restyle existing pages through tokens only | US-04-AC-01, US-04-AC-02, US-04-AC-19, US-04-AC-23 | frontend-developer | todo | |
 | US-04-T-17 | Icon setup and field-key icon map; flags and country visuals; wizard header; step indicator | US-04-AC-03, US-04-AC-04, US-04-AC-13 | frontend-developer | todo | |
 | US-04-T-18 | Custom select (select-only and searchable), panel as popover or bottom sheet | US-04-AC-05, US-04-AC-06, US-04-AC-07, US-04-AC-12 | frontend-developer | todo | |
@@ -45,8 +45,8 @@ T-16..T-23 depend on the ADRs (T-02..T-05); T-12 and T-13 depend on US-04-Q-04 a
 | US-04-T-22 | Summary, payment and confirmation redesign: segmented simulation group, micro-animations, confirmation check | US-04-AC-18, US-04-AC-23 | frontend-developer | todo | |
 | US-04-T-23 | Skeletons, step enter transition, state styles, soft error feedback, reduced motion | US-04-AC-14, US-04-AC-15, US-04-AC-17 | frontend-developer | todo | |
 | US-04-T-24 | After screenshots in `docs/qa/US-04/after/` (names of AC-22) and README table | US-04-AC-22 | orchestrator | todo | |
-| US-04-T-25 | HC3 manual checks: visual review CO/CL at three sizes, keyboard only, screen reader on select, calendar and indicator, originality | US-04-AC-20, US-04-AC-22, US-04-AC-23 | human (HC3) | todo | |
-| US-04-T-26 | After HC1 (if US-04-Q-21 default holds): one Review log row in US-01, US-02 and US-03 specs pointing to what US-04 supersedes | US-04-AC-11 | spec-writer | todo | |
+| US-04-T-25 | HC3 manual checks: visual review CO/CL at three sizes, keyboard only, screen reader on select, calendar and indicator, originality; phone check that the searchable select's bottom sheet fits above the on-screen keyboard (AC-12) | US-04-AC-20, US-04-AC-22, US-04-AC-23 | human (HC3) | todo | |
+| US-04-T-26 | After HC1 (if US-04-Q-21 default holds): one Review log row in US-01, US-02 and US-03 specs pointing to what US-04 supersedes | US-04-AC-11 | spec-writer | done (Review log rows in US-01, US-02 and US-03 specs) | (this commit) |
 
 ## Gate history
 
