@@ -1,0 +1,27 @@
+services:
+  strapi:
+    build:
+      context: ./backend
+    ports:
+      - "1337:1337"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 1337
+      # Empty values make the entrypoint generate dev-only secrets (kept in the volume).
+      APP_KEYS: ${APP_KEYS:-}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:-}
+      API_TOKEN_SALT: ${API_TOKEN_SALT:-}
+      TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT:-}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+      JWT_SECRET: ${JWT_SECRET:-}
+    volumes:
+      - strapi-data:/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:1337/_health').then(r=>process.exit(r.status===204?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+volumes:
+  strapi-data:
