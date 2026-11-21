@@ -55,8 +55,10 @@ These rules override the vendored `angular-developer` skill (see
 `docs/skills/third-party-evaluation.md`, EVAL-001):
 
 - **Forms strategy is not taken from the skill.** `references/signal-forms.md` says Signal Forms
-  are mandatory. Ignore that: Signal Forms vs Reactive Forms is decided by an ADR after
-  SPIKE-01 (see §7). Until that ADR is accepted, do not write production form code.
+  are mandatory; that is not binding. The forms strategy is **ADR-0004** (Accepted 2026-11-20,
+  after SPIKE-01): Signal Forms over a shared, library-agnostic validation core. Where ADR-0004
+  differs from the skill (for example, number fields hold strings in the model, not `0`), follow
+  ADR-0004.
 - **The Angular CLI MCP server is not used.** Do not configure it (`references/mcp.md`) and do
   not run `npx @angular/cli mcp`.
 - **The Angular CLI version is pinned** (§4). The skill's "no version / `@latest`" defaults do
@@ -115,7 +117,8 @@ Folders: `src/app/core/` (singletons, API clients, interceptors), `src/app/featu
 
 | ID | Decision | How it will be resolved | Blocks |
 |---|---|---|---|
-| SPIKE-01 | **Signal Forms vs Reactive Forms** for the Strapi-driven step 1 form | Throwaway spike on a `spike/01-forms` branch that is never merged, run by the frontend-developer. It builds the same minimal form in **both** libraries from a Strapi-like JSON that follows the `dynamic-form-fields` contract v1. Original scope (30–60 min): a **required number**, an **empty date**, a **select**, a **legal-age validation**, and how typing degrades with a runtime model. Added at HC1 (Felipe Sabogal, 2026-11-20): **hydrating** the form from stored values; **dropping** values of fields no longer configured; **when errors appear** (touched / submit attempt); **focus on the first invalid field**; **integer-only** numbers; mapping empty optional fields to **`null` in the step 1 output** while the form model stays non-null (the vendored skill forbids `null` in Signal Forms models). The time box grows to 60–90 min because of the added scope. The architect summarises the findings in `docs/spikes/SPIKE-01-forms.md` and writes the forms ADR; a human accepts it. | Production form code for US-01 |
+| ~~SPIKE-01~~ | **Resolved 2026-11-20 by ADR-0004** (Accepted). Spike findings: `docs/spikes/SPIKE-01-forms.md`, code on the `spike/01-forms` branch (never merged). | — | — |
+| SPIKE-01 (as defined) | **Signal Forms vs Reactive Forms** for the Strapi-driven step 1 form | Throwaway spike on a `spike/01-forms` branch that is never merged, run by the frontend-developer. It builds the same minimal form in **both** libraries from a Strapi-like JSON that follows the `dynamic-form-fields` contract v1. Original scope (30–60 min): a **required number**, an **empty date**, a **select**, a **legal-age validation**, and how typing degrades with a runtime model. Added at HC1 (Felipe Sabogal, 2026-11-20): **hydrating** the form from stored values; **dropping** values of fields no longer configured; **when errors appear** (touched / submit attempt); **focus on the first invalid field**; **integer-only** numbers; mapping empty optional fields to **`null` in the step 1 output** while the form model stays non-null (the vendored skill forbids `null` in Signal Forms models). The time box grows to 60–90 min because of the added scope. The architect summarises the findings in `docs/spikes/SPIKE-01-forms.md` and writes the forms ADR; a human accepts it. | Production form code for US-01 |
 
 The ADR backlog is in [adr/README.md](adr/README.md).
 
