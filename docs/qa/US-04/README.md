@@ -8,6 +8,7 @@ CO and CL at 360×740, 768×1024 and 1280×800. No capture has horizontal scroll
 
 | File prefix | What |
 |---|---|
+| `00-paises-` | Country chooser at `/` (one set, it is not country-specific; captured afterwards from the same code) |
 | `01-datos-` | Step 1, empty |
 | `01b-datos-select-focused-` | Step 1 with the native city select focused |
 | `01c-datos-date-focused-` | Step 1 with the native date input focused |
