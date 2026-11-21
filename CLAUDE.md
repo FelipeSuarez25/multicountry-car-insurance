@@ -103,7 +103,10 @@ Folders: `src/app/core/` (singletons, API clients, interceptors), `src/app/featu
 
 ### Strapi (`backend/`)
 
-- Content-type API IDs: singular `kebab-case` (`form-field`, `plan`, `country`, `terms`).
+- Content-type API IDs: singular `kebab-case` (`form-field`, `plan`, `country`, `term`). The singular
+  and plural names must differ: Strapi 5.63 refuses to start otherwise (`@strapi/core` `loaders/apis.js`).
+  The terms and conditions type is `term` (singular) / `terms` (plural), so its REST path is `/api/terms`
+  (human decision, US-03-Q-03, 2026-11-21).
 - Components: `category.kebab-name` (`form.select-option`, `plan.coverage`).
 - Attribute names: `camelCase` (`isRecommended`, `sortOrder`, `errorMessage`).
 - Custom code files: `kebab-case.ts`.
