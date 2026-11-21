@@ -24,7 +24,7 @@ function warn(what: string): void {
 }
 
 /** The spans of the inline children of a block; links keep their text only. */
-function parseInline(children: unknown[]): RichTextSpan[] {
+function parseInline(children: unknown[], insideLink = false): RichTextSpan[] {
   const spans: RichTextSpan[] = [];
   for (const child of children) {
     if (isRec(child) && child['type'] === 'text') {
@@ -40,8 +40,15 @@ function parseInline(children: unknown[]): RichTextSpan[] {
         strikethrough: child['strikethrough'] === true,
       });
     } else if (isRec(child) && child['type'] === 'link') {
+      if (insideLink) {
+        // A link inside a link is not a supported shape: dropped, so recursion stops at one level.
+        warn('link-depth');
+        continue;
+      }
       warn('link');
-      if (Array.isArray(child['children'])) spans.push(...parseInline(child['children']));
+      if (Array.isArray(child['children'])) {
+        for (const inner of parseInline(child['children'], true)) spans.push(inner);
+      }
     } else {
       warn(typeName(child));
     }
@@ -127,8 +134,9 @@ export function parseRichTextBlocks(value: unknown): RichTextBlock[] | null {
       warn(typeName(node));
     }
   }
-  const levels = pending.filter((b): b is RawHeading => 'level' in b).map((h) => h.level);
-  const smallest = levels.length > 0 ? Math.min(...levels) : 1;
+  let smallest = Infinity;
+  for (const b of pending) if ('level' in b && b.level < smallest) smallest = b.level;
+  if (smallest === Infinity) smallest = 1;
   const blocks: RichTextBlock[] = pending.map((b) => ('level' in b ? { kind: 'heading', depth: b.level - smallest, spans: b.spans } : b));
   if (blocks.length === 0) {
     warn('body');
