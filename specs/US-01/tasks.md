@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Current step | 6 Review R3: CHANGES REQUESTED (R3-F01 major) → restore the Signal Forms submit gate (human decision) |
+| Current step | 6 Review round 4 pending (R3 fixes done; spec v0.5 Approved) |
 | Branch | feat/us-01-data-form |
 | PR | — |
-| Blockers | US-01-R3-F01 (major): emptied required date submits a stale value |
-| **Next action** | spec v0.5 (optional unparseable number = error) + tests for R3-F01 and the new optional behaviour, in parallel; then frontend-developer restores the Signal Forms gate; then ADR-0004 note, gate, review round 4. |
+| Blockers | none known |
+| **Next action** | Gate on a clean stack, then code-reviewer round 4; if APPROVED, push and open the PR for HC3. |
 | Last updated | 2026-11-21 by orchestrator (Claude Opus 5.5) |
 
 ## Tasks
@@ -95,6 +95,7 @@ page (US-01-Q-19).
 | 2026-11-21 | Gate (after R2 fixes) + correction | Checks green: fe build, 309/309 unit, tsc, lint both sides, be 12/12 (incl. R2-F03 router guard), trace exit 0, scan clean. **Correction:** the earlier "F07 IPv6 regression" was an orchestrator shell bug (`env $ENV` in zsh), not a product defect; recorded in FLOW.md. With `scripts/e2e.sh`: full e2e 38/38 on runs 1-2, then **HTTP 429 on the Strapi admin login** in runs 3-5 (AC-03 and the AC-28 valid-token test): the admin login rate limit is hit when the suite is repeated against one stack. AC-24 alone 20/20. Test-isolation issue, routed to test-engineer | orchestrator (scripts, no AI) | scripts/e2e.sh output |
 | 2026-11-21 | 5 Gate (after R2 fixes, final) | **PASSED**. R2 fix commits: F01 40606e2 (+ e92e2c7, AC-24 keyboard regression it caused: store one write behind on fast Enter), F02 778f3e9, F03 6495aa9, F04 e4755af, F05 63a05b7, F06 d1e78f3; e2e admin login once per run (be39451, 429 on repeated runs). Clean volumes, via scripts/e2e.sh: data-form-co ×15 = 195/195 (was ~1/3 AC-24 failures after 40606e2), full suite 38/38 ×3; 309/309 unit, 12/12 backend, lint both, trace exit 0, scan clean | orchestrator (scripts, no AI) | scripts/e2e.sh output |
 | 2026-11-21 | 6 Review (round 3) | **CHANGES REQUESTED**: R3-F01 major (since 40606e2 submit bypasses Signal Forms validation; dates do not map badInput, so an emptied required date submits a stale value), R3-F02/F03 minor, R3-F04/F05 nit; R2-F01..F06 verified fixed. **Human decision:** restore the Signal Forms submit gate (remove `ignoreValidators: 'all'`); spec v0.5: an OPTIONAL number field with unparseable text is an error the user must fix (supersedes the optional part of the R2-F01 decision); the store still holds '' and the typed text stays visible | code-reviewer (Opus 5.5) + Felipe Sabogal (human) | [reviews/US-01-review-R3.md](../../reviews/US-01-review-R3.md) |
+| 2026-11-21 | HC1 (round 5) | **Approved** spec v0.5: an unreadable `number` or `date` (`validity.badInput`) is invalid, required or optional; the wizard state holds `''`; the typed text stays visible. R3 fixes: F01+F05 eeb23e6 (Signal Forms gate restored, single writer `syncNative`), tests 6e2077e and 33a0c11, F02 ADR-0004 implementation note, F03+F04 98f2bc4 (README e2e steps; [::1] binding removed) | Felipe Sabogal (human) | spec.md §13 |
 
 ## Session log
 

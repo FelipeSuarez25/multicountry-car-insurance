@@ -4,9 +4,9 @@
 |---|---|
 | Story | [story.md](story.md) (verbatim, not edited) |
 | Status | Approved |
-| Version | 0.4 |
+| Version | 0.5 |
 | Author | spec-writer subagent (Claude Opus 5.5) |
-| Approved by | v0.2: Felipe Sabogal, 2026-11-20 (HC1 round 2). v0.3: Felipe Sabogal, 2026-11-20 (HC1 round 3). v0.4: Felipe Sabogal, 2026-11-21 (HC1 round 4). |
+| Approved by | v0.2: Felipe Sabogal, 2026-11-20 (HC1 round 2). v0.3: Felipe Sabogal, 2026-11-20 (HC1 round 3). v0.4: Felipe Sabogal, 2026-11-21 (HC1 round 4). v0.5: Felipe Sabogal, 2026-11-21 (HC1 round 5). |
 | Related ADRs | [ADR-0001](../../adr/0001-multi-country-content-strategy.md) (multi-country content and routes), [ADR-0002](../../adr/0002-strapi-access-and-security.md) (Strapi access and security), [ADR-0003](../../adr/0003-wizard-state-persistence.md) (wizard state persistence), [ADR-0004](../../adr/0004-forms-library.md) (forms library). All Accepted at HC2, 2026-11-20 (see §10). [ADR-0006](../../adr/0006-strapi-physical-model-adjustments.md) (amends ADR-0001's physical model: structured rule attributes and the country `localeTag` attribute), Accepted 2026-11-21 at HC1 round 4 (see §10). |
 
 Sources cited in this spec:
@@ -22,6 +22,9 @@ Sources cited in this spec:
 - **Review R1**: [reviews/US-01-review-R1.md](../../reviews/US-01-review-R1.md), code review
   round 1 (2026-11-21), and the human decisions on it recorded in `tasks.md`, *Gate history*,
   row "6 Review (round 1)". Source of the v0.4 changes (findings US-01-R1-F02, F04, F05, F06).
+- **Review R3**: [reviews/US-01-review-R3.md](../../reviews/US-01-review-R3.md), code review
+  round 3 (2026-11-21), and the human decision on it recorded in `tasks.md`, *Gate history*,
+  row "6 Review (round 3)". Source of the v0.5 change (finding US-01-R3-F01).
 
 ## 1. Summary
 
@@ -103,7 +106,7 @@ countries.
 
 | ID | Original (source) | Refined (precise, testable) | Covered by |
 |---|---|---|---|
-| US-01-BR-01 | Story: "Each field is configured in Strapi with: label, type (text, number, select, date, checkbox), required flag, validations, help text, error message, order and country." | Each field configuration has: `key` (required, unique per country, see §7.1), `label` (required, non-empty), `type` (exactly one of `text`, `number`, `select`, `date`, `checkbox`), `isRequired` (boolean), `rules` (zero or more structured validation rules of the kinds in §7.1), `helpText` (optional), `errorMessage` (required, field level, used for any failure without a rule-specific message, US-01-Q-04), optional rule-specific messages, `sortOrder` (integer) and country. Only **published** configurations of the current country are rendered, sorted by `sortOrder` ascending; ties are broken by `key` ascending. A configuration that fails boundary validation is not rendered (US-01-Q-18). An empty optional field passes every rule; rules run only on non-empty values (US-01-Q-26). | US-01-AC-01, US-01-AC-02, US-01-AC-08, US-01-AC-09, US-01-AC-10, US-01-AC-14, US-01-AC-16 |
+| US-01-BR-01 | Story: "Each field is configured in Strapi with: label, type (text, number, select, date, checkbox), required flag, validations, help text, error message, order and country." | Each field configuration has: `key` (required, unique per country, see §7.1), `label` (required, non-empty), `type` (exactly one of `text`, `number`, `select`, `date`, `checkbox`), `isRequired` (boolean), `rules` (zero or more structured validation rules of the kinds in §7.1), `helpText` (optional), `errorMessage` (required, field level, used for any failure without a rule-specific message, US-01-Q-04), optional rule-specific messages, `sortOrder` (integer) and country. Only **published** configurations of the current country are rendered, sorted by `sortOrder` ascending; ties are broken by `key` ascending. A configuration that fails boundary validation is not rendered (US-01-Q-18). An empty optional field passes every rule; rules run only on non-empty values (US-01-Q-26). A `number` or `date` input whose text the browser cannot read (`validity.badInput`; for example `1e` in a number, or a partly cleared date) is not an empty optional field: it is invalid whether it is required or optional (v0.5, US-01-R3-F01; AC-09). | US-01-AC-01, US-01-AC-02, US-01-AC-08, US-01-AC-09, US-01-AC-10, US-01-AC-14, US-01-AC-16 |
 | US-01-BR-02 | Story: "Select fields (for example, make or city) get their options from Strapi." | A `select` field shows exactly the options configured for it in Strapi, each with `value` and `label`, in `sortOrder` ascending. No option is pre-selected; the first entry is a non-selectable prompt "Selecciona una opción" (code-owned copy, US-01-Q-14). A `select` with zero options is invalid configuration and is not rendered. The stored value is the option `value`, not its label. | US-01-AC-07, US-01-AC-14, US-01-AC-23 |
 | US-01-BR-03 | Story: "The vehicle year cannot be later than next year or more than 20 years old." | With `Y` = the calendar year of *today*, a vehicle year `v` is valid if and only if `v` is an integer and `Y − 20 ≤ v ≤ Y + 1` (both limits inclusive). On 2026-11-20 the valid range is 2006–2027. The limits 20 and 1 are parameters of the `yearRange` rule in the configuration (seeded as 20 and 1 for both countries), so the business can change them (US-01-Q-05). | US-01-AC-05 |
 | US-01-BR-04 | Story: "The policyholder must be of legal age." | The birth date is valid if and only if the age in completed years on *today* is ≥ the configured `minAge` (seeded as 18 for CO and for CL). A person turns N on the anniversary of their birth date; for a 29 February birth date, in non-leap years the anniversary is 1 March (US-01-Q-07). Birth dates after today are invalid. | US-01-AC-06 |
@@ -300,24 +303,52 @@ Scenario: Generic fallback when no message can be resolved
   Then the message is "Revisa este campo."
   And no rule name or English text is shown to the user
 
-Scenario: A number the browser cannot parse counts as empty
+Scenario: A required number the browser cannot parse fails the required check
   Given I am filling out the form in the context of Colombia, with today pinned to 2026-11-20
   And the required field "Modelo (año)" has no rule-specific message for "required"
   When I type "1e" key by key in "Modelo (año)" and activate "Continuar"
   Then I see the message "El modelo debe estar entre los últimos 20 años y el próximo año." next to it
+  And "Modelo (año)" still shows "1e"
   And I stay on step 1
+
+Scenario Outline: An optional number the browser cannot parse blocks "Continuar"
+  Given I am filling out the form in the context of Colombia, with today pinned to 2026-11-20
+  And every seed field holds a valid value
+  And Colombia also has the published optional field "Kilometraje" (key "mileage", type "number",
+    no rules, error message "Ingresa un kilometraje válido (solo números enteros).")
+  When I type "<text>" key by key in "Kilometraje" and activate "Continuar"
+  Then I see the message "Ingresa un kilometraje válido (solo números enteros)." next to "Kilometraje"
+  And "Kilometraje" still shows "<text>"
+  And I stay on step 1 and no typed step 1 output is produced
+  And the wizard state holds '' for "mileage"
+
+  Examples:
+    | text  |
+    | 1e    |
+    | 2015e |
 ```
 
-Note (added in v0.3, HC2 decision, ADR-0004): a `number` input whose text the browser cannot
-parse (for example `abc` or `1e`) reaches the form model as empty (`''`), because of the HTML
-value sanitisation rule for `<input type="number">`. The field is then handled as empty: a
-**required** field fails the `required` check and shows its `requiredMessage` if configured,
-otherwise its `errorMessage` (the seed's CO "Modelo (año)" has no `requiredMessage`, so the
-field-level message is shown); an **optional** field is treated as empty, so it is valid and
-its output is `null` (US-01-Q-26, §7.3). The app does not show a separate "not a number"
-message. Unit tests cover the empty-value path; the CO e2e test
-(`us-01-data-form-co.spec.ts`) confirms the sanitisation in a real browser, because jsdom does
-not reproduce it (SPIKE-01, *Not verified* item 1).
+Note (added in v0.3, HC2 decision, ADR-0004; optional case changed in v0.5, US-01-R3-F01;
+wording corrected and dates added in v0.5 at HC1 round 5): a `number` or `date` input whose text
+the browser cannot read (`validity.badInput`; for example `abc`, `1e` or `2015e` in a number, or a
+partly cleared date) has the value `''`, because of the HTML value sanitisation rules for
+`<input type="number">` and `<input type="date">`, and Signal Forms reports a **parse error** on
+the field, which makes it invalid. The **wizard state and `sessionStorage` hold `''`** for that
+key (AC-21), while the typed text stays visible in the field. The form's own editing value for the
+field is deliberately not set to `''`, because that would clear the visible text. Such a field is
+**invalid until the user fixes the text**, and "Continuar" is blocked: a **required** field shows
+its `requiredMessage` if configured, otherwise its `errorMessage`, as for an empty value (the
+seed's CO "Modelo (año)" has no `requiredMessage`, so the field-level message is shown); an
+**optional** field shows its `errorMessage`, or "Revisa este campo." when no usable message
+reaches the front end (US-01-Q-04). Unlike a really empty optional field (valid, output `null`,
+US-01-Q-26), it never produces a typed step 1 output (§7.3). The scenarios above use numbers; the
+date case is noted under AC-18. Until v0.4 an optional field in this state was valid with output `null`;
+the human decision of 2026-11-21 on US-01-R3-F01 supersedes that part of the US-01-R2-F01
+decision. The app does not show a separate "not a number" message. "Kilometraje" is a test
+fixture, not seed content (no seeded field is an optional number). Unit tests cover the message
+resolution; a component test covers both cases with a stubbed `validity.badInput`; the CO e2e
+test (`us-01-data-form-co.spec.ts`) confirms the sanitisation for the required case in a real
+browser, because jsdom does not reproduce it (SPIKE-01, *Not verified* item 1).
 
 ### US-01-AC-10 — When errors are shown, and focus on a failed attempt (derived from Q-13)
 
@@ -500,6 +531,15 @@ The wizard state keeps the raw editing values on every change (strings, booleans
 ADR-0003, HC2 decision); the typed output of §7.3 is produced from them only on a valid
 "Continuar", and that output is what US-02 and US-03 consume.
 
+Note (v0.5, HC1 round 5; US-01-R3-F01): the same holds when a date that was valid is cleared or
+partly cleared (a date the browser cannot read, AC-09 note). "Continuar" (click or Enter) keeps
+step 1, the field shows its message (CO "Fecha de nacimiento": its `requiredMessage` "Ingresa tu
+fecha de nacimiento."; AC-02) and gets the focus as the first invalid field (AC-10), the wizard
+state holds `''` for
+`birthDate`, and no typed step 1 output carries the earlier valid date. An optional date in that
+state shows its `errorMessage`, or "Revisa este campo.". Covered by component tests in
+`quote-form-page.spec.ts` (stubbed `validity.badInput`).
+
 Verification in US-01 (US-01-Q-19): a unit test of the wizard store (the typed output matches
 §7.3 and is produced only on a valid "Continuar", never on an invalid one; ADR-0003
 *Confirmation*) and a component test ("Continuar" navigates to the step 2 route of Colombia). "I
@@ -536,7 +576,10 @@ to end part is completed when US-02 exists.
 
 ADR-0003 keeps the wizard state in `sessionStorage`, so this AC applies as written (the "memory
 only" rewrite foreseen in v0.2 does not apply). The store keeps the raw editing values (HC2
-decision), so a reload restores exactly what was typed, valid or not.
+decision), so a reload restores exactly what was typed, valid or not. The one exception is a
+`number` or `date` input whose text the browser cannot read (AC-09): the store holds `''` for it, so a reload
+shows the field empty and never restores a stale valid value (US-01-R2-F01 decision, unchanged
+in v0.5).
 
 ```gherkin
 Scenario: Data survives a reload
@@ -838,10 +881,13 @@ Two shapes exist (ADR-0003, HC2 decision). Only the second one is consumed by US
 **Stored editing values** (written on every change; what a reload restores):
 
 - `country`: the country code of the context (see below).
-- `values`: a map from field `key` to the **raw editing value** of the form model, as typed:
-  a string for `text`, `number`, `select` and `date`, a boolean for `checkbox`, and `''` for an
-  empty field. In-progress invalid values (for example `'2015.5'`) are stored as typed. The model
-  never holds `null` (ADR-0004).
+- `values`: a map from field `key` to the **raw editing value**, as typed: a string for `text`,
+  `number`, `select` and `date`, a boolean for `checkbox`, and `''` for an empty field.
+  In-progress invalid values (for example `'2015.5'`) are stored as typed. A `number` or `date`
+  input whose text the browser cannot read (`validity.badInput`; for example `1e`, or a partly
+  cleared date) is stored as `''` in the wizard state and `sessionStorage` (AC-09, AC-21), while
+  the typed text stays visible and the field is invalid through the Signal Forms parse error.
+  Neither the form model nor the stored values ever hold `null` (ADR-0004).
 
 **Typed step 1 output** (produced only on a valid "Continuar"; never on an invalid one):
 
@@ -850,7 +896,9 @@ Two shapes exist (ADR-0003, HC2 decision). Only the second one is consumed by US
   values; the type is not a fixed union of them.
 - `values`: a map from field `key` to value. `text` → trimmed string; `number` → integer;
   `select` → option `value`; `date` → ISO `YYYY-MM-DD` string. An empty **optional** `text`,
-  `number`, `select` or `date` field → `null`. `checkbox` → always a boolean: checked → `true`,
+  `number`, `select` or `date` field → `null`. A `number` or `date` input, required or optional,
+  whose text the browser cannot read is invalid, so no typed output is produced while it holds
+  that text (v0.5, US-01-R3-F01, AC-09); it is never mapped to `null`. `checkbox` → always a boolean: checked → `true`,
   unchecked → `false`, also when the checkbox is optional (HC2 decision); a checkbox is never
   `null`.
 - The field configuration is **not** stored: later steps read labels and option labels from the
@@ -1071,8 +1119,9 @@ The country names shown in links ("Colombia", "Chile") are content (`country.nam
      §7.3 output only on a valid "Continuar", clearing rules. Covers v0.2 need 4. Used by: BR-08,
      §3, §7.3, AC-18, AC-21, AC-22, AC-23.
   4. [ADR-0004](../../adr/0004-forms-library.md) — Forms library: Signal Forms over a shared,
-     library-agnostic validation core; string editing model; unparseable numbers reach the model
-     as empty. Covers v0.2 need 2 (SPIKE-01). Used by: §7.3, AC-09, AC-10.
+     library-agnostic validation core; string editing model; a number input the browser cannot
+     parse has the value `''` (HTML sanitisation) and a Signal Forms parse error, and the wizard
+     state stores `''` for it (v0.5 at HC1 round 5: the same applies to an unreadable date). Covers v0.2 need 2 (SPIKE-01). Used by: §7.3, AC-09, AC-10.
 - **Referenced (accepted 2026-11-21, together with spec v0.4 at HC1 round 4; binding,
   precedence level 2):**
   5. [ADR-0006](../../adr/0006-strapi-physical-model-adjustments.md) — Amends ADR-0001's
@@ -1124,7 +1173,7 @@ Short names below: `field-config.spec.ts` = `frontend/src/app/shared/field-confi
 | US-01-AC-06 | unit (pinned clock) | `field-validators.spec.ts` |
 | US-01-AC-07 | component | `quote-form-page.spec.ts` (CO and CL options) |
 | US-01-AC-08 | unit | `field-validators.spec.ts` |
-| US-01-AC-09 | unit + e2e (unparseable number in a real browser) | `field-validators.spec.ts` (message resolution, empty-value path), `us-01-data-form-co.spec.ts` ("1e" typed key by key in "Modelo (año)") |
+| US-01-AC-09 | unit + component + e2e (unparseable number in a real browser) | `field-validators.spec.ts` (message resolution, empty-value path), `quote-form-page.spec.ts` (v0.5, stubbed `validity.badInput`: required number, `requiredMessage ?? errorMessage`; optional number "Kilometraje" (CO, key `mileage`) with `1e` and `2015e`, its `errorMessage` shown, and with an empty `errorMessage`, "Revisa este campo."; optional date (AC-09 / AC-10) with its `errorMessage` and with the "Revisa este campo." fallback; in every case "Continuar" blocked, no typed output, store `''`), `us-01-data-form-co.spec.ts` ("1e" typed key by key in "Modelo (año)") |
 | US-01-AC-10 | component | `quote-form-page.spec.ts` |
 | US-01-AC-11 | unit (seed rule values, every row) | `field-validators.spec.ts` |
 | US-01-AC-12 | unit | `field-validators.spec.ts` |
@@ -1133,7 +1182,7 @@ Short names below: `field-config.spec.ts` = `frontend/src/app/shared/field-confi
 | US-01-AC-15 | component (mocked HTTP, fake timers) | `quote-form-page.spec.ts` |
 | US-01-AC-16 | component | `quote-form-page.spec.ts` |
 | US-01-AC-17 | e2e (both scenarios; the country list failure is simulated in the browser context by aborting the `/api/countries` request) + unit (country resolution: code matching, case normalisation, unknown code, list not loaded; v0.4: the country boundary parser maps wire `localeTag` to logical `locale`, §7.5.2) | `us-01-country-context.spec.ts`, `supported-country-guard.spec.ts` (ADR-0001); the parser's unit test location is the test-engineer's choice |
-| US-01-AC-18 | unit (store: §7.3 typed output only on a valid "Continuar") + component (navigation to the step 2 route); e2e completed in US-02 | `quote-store.spec.ts`, `quote-form-page.spec.ts` |
+| US-01-AC-18 | unit (store: §7.3 typed output only on a valid "Continuar") + component (navigation to the step 2 route); e2e completed in US-02 | `quote-store.spec.ts`, `quote-form-page.spec.ts` (including the US-01-R3-F01 tests: a required CO "Fecha de nacimiento" cleared or unreadable (stubbed `validity.badInput`) after it was valid; "Continuar" by click or Enter stays on step 1, focuses the date, and no typed output carries the stale date) |
 | US-01-AC-19 | unit (guard) | `wizard-step-guard.spec.ts` |
 | US-01-AC-20 | unit (store) + component (router history back from the step 2 route); e2e completed in US-02 | `quote-store.spec.ts`, `quote-form-page.spec.ts` |
 | US-01-AC-21 | unit (raw editing values restored exactly by a new instance) + component (step 1 renders restored values); e2e completed in US-02 | `quote-store.spec.ts`, `quote-form-page.spec.ts` |
@@ -1163,3 +1212,6 @@ Generated with `scripts/trace.sh US-01` and pasted here.
 | 2026-11-21 | spec-writer (Claude Opus 5.5) | 1 Spec | Draft v0.4 | Revision after code review round 1 ([reviews/US-01-review-R1.md](../../reviews/US-01-review-R1.md)), applying the human decisions of Felipe Sabogal, 2026-11-21, recorded in `tasks.md`, *Gate history*, row "6 Review (round 1)". Status "Draft — awaiting HC1 (round 4)". **(1) US-01-R1-F04, structured rule attributes (human decision: typed component attributes per parameter):** new §7.5 (§7.5.1) fixes the wire shape of a rule in the Strapi 5 REST response: `kind`, `value` (number: minLength, maxLength, min, max), `pattern` (text: pattern), `years` (minAge), `maxYearsOld`/`maxYearsAhead` (yearRange), `message`; unused attributes `null`; no free JSON. Explicit wire → logical mapping; the logical `ValidationRule` of §7.1 is unchanged (a logical `pattern` rule keeps its regex in `value`). A missing, `null`, wrong-type (numeric text included) or out-of-range parameter makes the rule and its field malformed, dropped with a warning (AC-14). §7 intro and the §7.1 rule-kinds preamble point to §7.5; §7.4 item 6 added; AC-14 gets two Examples rows (`pattern` null with the regex in `value`; `minLength` `value` as text "3") and a note; §11 AC-14 row notes the wire fixtures. **(2) US-01-R1-F05, `localeTag` (human decision: the API exposes `localeTag`, no backend renaming):** §7 intro names the country attribute `localeTag` (Strapi reserves `locale`); §7.5.2 gives the country wire shape and the mapping `localeTag` → logical `locale` in the front-end boundary parser; requests select `localeTag`; §11 AC-17 row adds the parser unit test. No AC, BR or glossary entry named the country `locale` attribute, so none changed for this item. **(3) US-01-R1-F06, copy (human decision: both strings approved):** new §8.1 lists all code-owned chrome copy (US-01-Q-14 and Q-28 strings, unchanged) plus "Elige tu país" (country chooser heading) and "Cotizador de seguro de auto" (page `<title>`), marked "Approved at review round 1 (F06)"; new §8 row *Country chooser*; BR-07 points to §8.1. Q-14 and Q-28 cells untouched. **(4) US-01-R1-F02 (context of F01), AC-28 widened, ID kept:** glossary entry *Anonymous request* (any request Strapi does not authenticate: no header, non-Bearer scheme, empty or invalid `Bearer`, any letter case of `/api`, Strapi's port or the proxy); BR-06 references it; AC-28's draft outline now has 14 rows (7 variants × 2 entry points) and a `publishedAt` check, a new outline for draft countries (5 rows), and a note that error responses satisfy the `Then` and that the other publication parameters are covered by the same rows; write scenario unchanged; §11 e2e table and AC-28 row updated (still 4 e2e files). **(5) ADRs:** ADR-0006 (amends ADR-0001's physical model) referenced in the metadata and in §7 and §10 as in progress. Also: new glossary entry *Wire shape / logical shape*; sources list adds Review R1. No ID renumbered or retired; no ID added. Unchanged: §1, §2, BR-01..BR-05, BR-08, AC-01..AC-13, AC-15..AC-27, §6 (all rows and *Human answer* cells), §7.2, §7.3, §9, §12. Counts: 8 BR, 28 AC (4 original, 24 derived), 28 Q (none blocks HC1). |
 | 2026-11-21 | Felipe Sabogal (human) | HC1 round 4 | **Approved** (v0.4) | Spec v0.4 approved as is, together with the acceptance of ADR-0006. Next: tests for the new wire shapes (AC-14 rows, country parser), then the backend and frontend fixes. |
 | 2026-11-21 | spec-writer | editorial | v0.4 text aligned with accepted ADR-0006 and the route middleware (US-01-R2-F06); no behaviour change | Metadata *Related ADRs*: ADR-0006 linked and stated as Accepted 2026-11-21 (was "being written"). §10: the "In progress (not yet accepted)" entry replaced by a "Referenced (accepted 2026-11-21)" entry for ADR-0006, which amends ADR-0001's physical model; "Needed" now "none"; implementation note that ADR-0002's published-only rule is a route middleware on `find`/`findOne` via `publishedOnlyConfig()` (c3bdb56, 345a016). No other section, and no BR, AC or Q, changed; version and status unchanged. |
+| 2026-11-21 | spec-writer (Claude Opus 5.5) | 1 Spec | Draft v0.5 | Revision after code review round 3 ([reviews/US-01-review-R3.md](../../reviews/US-01-review-R3.md), US-01-R3-F01: with the submit gate moved off Signal Forms, an emptied required date submitted a stale value), applying the human decision of Felipe Sabogal, 2026-11-21, recorded in `tasks.md`, *Gate history*, row "6 Review (round 3)": the form goes back to letting Signal Forms decide validity on submit, and an **optional** `number` field with text the browser cannot parse (`1e`, `2015e`) is an error the user must fix. This supersedes the optional-field part of the US-01-R2-F01 human decision and the v0.4 AC-09 note. Status "Draft — awaiting HC1 (round 5)". **(1) AC-09:** the scenario "A number the browser cannot parse counts as empty" renamed "A required number the browser cannot parse fails the required check" (same steps, plus "still shows "1e""); new outline "An optional number the browser cannot parse blocks "Continuar"" (fixture field "Kilometraje", not seed; rows `1e`, `2015e`: `errorMessage` shown, text kept, step 1 kept, no typed output, store `''`); note rewritten: such a field is invalid until fixed, required → `requiredMessage ?? errorMessage`, optional → `errorMessage` or "Revisa este campo.", never `null`. **(2) BR-01:** one sentence: an unparseable number is not an empty optional field. **(3) §7.3:** stored values: an unparseable number is stored as `''`; typed output: an unparseable number (required or optional) blocks the output and is never mapped to `null`. **(4) AC-21 preamble:** one sentence making explicit the existing exception to "restores exactly what was typed": an unparseable number is stored as `''`, so a reload shows it empty (R2-F01 decision, unchanged; Gherkin unchanged). **(5) §11:** AC-09 row adds the component test (stubbed `validity.badInput`, required and optional). **(6) Sources:** Review R3 added. Unchanged as in v0.4: required unparseable number shows `requiredMessage ?? errorMessage` and blocks; typed text stays visible; store and `sessionStorage` hold `''`. No ID renumbered, retired or added. Unchanged: §1, §2, §3, BR-02..BR-08, AC-01..AC-08, AC-10..AC-20, AC-22..AC-28, §6 (all rows and *Human answer* cells), §7.1, §7.2, §7.4, §7.5, §8, §9, §10, §12. Counts: 8 BR, 28 AC (4 original, 24 derived), 28 Q (none blocks HC1). |
+| 2026-11-21 | spec-writer (Claude Opus 5.5) | 1 Spec | Draft v0.5 (corrected, version kept) | Two corrections requested by Felipe Sabogal (human) at HC1 round 5, before his decision, to match the final implementation (commit eeb23e6, `quote-form.ts`: Signal Forms decides validity on submit; a native `number` or `date` control with `validity.badInput` gets a Signal Forms parse error; its control model is deliberately not written, so the typed text stays visible; `syncNative` alone writes `''` for that key to the wizard state). **(1) "Model" wording:** the spec no longer says that unreadable text reaches the form model as `''`. AC-09 note: the input's value is `''` (HTML sanitisation), Signal Forms reports a parse error (field invalid), the wizard state and `sessionStorage` hold `''`, the text stays visible. §7.3 stored values: "raw editing value of the form model" → "raw editing value"; the unreadable-input sentence restated the same way. §10 ADR-0004 summary restated the same way. **(2) Dates too:** BR-01's v0.5 sentence, the AC-09 note, the AC-21 preamble and both §7.3 bullets now say "a `number` or `date` input the browser cannot read" (for example a partly cleared date): invalid whether required or optional; required → `requiredMessage ?? errorMessage`; optional → `errorMessage` or "Revisa este campo."; store `''`. AC-09 Gherkin unchanged (numbers, "Kilometraje" fixture kept). New note under AC-18 (no new scenario) for a cleared or partly cleared CO "Fecha de nacimiento" (US-01-R3-F01): message "Ingresa tu fecha de nacimiento.", focus, store `''`, no typed output with the old date. No ID added, renumbered or retired; no Gherkin, §6 row or *Human answer* cell changed; status unchanged. Counts: 8 BR, 28 AC (4 original, 24 derived), 28 Q (none blocks HC1). |
+| 2026-11-21 | Felipe Sabogal (human) | HC1 round 5 | **Approved** (v0.5) | Approved after the requested corrections (model wording, `date` included, AC-21 preamble) and the §11 mapping update for the AC-09/AC-18 component tests (33a0c11). |

@@ -22,6 +22,7 @@ that leaves the decision intact, the note goes here.
 | ADR | Note | Since |
 |---|---|---|
 | 0002 | The published-only rule (ADR-0002 calls it a "global middleware") is a **route middleware** on `find`/`findOne`, attached per router through `publishedOnlyConfig()`, so that it runs after Strapi authentication. The decision (no drafts for any unauthenticated read) is unchanged. A backend test guards that every content router uses it. | c3bdb56, 345a016 (US-01-R1-F01); US-01-R2-F06 |
+| 0004 | The submit gate is Signal Forms validity, as decided: `submission.action` runs only for a valid form, and `onInvalid` focuses the first invalid field in `sortOrder` with `focusBoundControl()`. A native `number`/`date` input the browser cannot read gets a Signal Forms `parse` error, and its control model is deliberately left unwritten (writing `''` would erase the visible text). The store therefore follows the control: `syncNative` is the only writer of number and date keys (`''` on `validity.badInput`), and `flushModel()` writes the other types before `completeStep1` (keyboard Enter). 40606e2 had moved the gate to the store with `ignoreValidators: 'all'`, which broke the AC-24 keyboard submit (patched in e92e2c7) and let an emptied date through (US-01-R3-F01). The human chose to restore the Signal Forms gate in eeb23e6. | e92e2c7, eeb23e6 (US-01-R3-F01, R3-F05); US-01-R3-F02 |
 
 ## Backlog (decisions known to be needed)
 
