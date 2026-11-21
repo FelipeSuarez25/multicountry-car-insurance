@@ -42,7 +42,9 @@ your output.
 
 | Tool | Version | Rule |
 |---|---|---|
-| Angular CLI / framework | **22.3.0** (latest stable, verified on npm on 2026-11-20) | Scaffold with `npx @angular/cli@22.3.0 new …`. **Never use `@latest`** or an unpinned `npx @angular/cli`. Pin exact versions in `package.json` (no `^`/`~` on `@angular/*`). |
+| Angular CLI / framework | **22.3.0** (latest stable, verified on npm on 2026-11-20) | Scaffold with `npx @angular/cli@22.3.0 new …`. **Never use `@latest`** or an unpinned `npx @angular/cli`. |
+| Strapi | **5.63.0** | Scaffolded with `npx create-strapi-app@5.63.0`. |
+| All npm dependencies | exact | **Every direct dependency and devDependency** in every `package.json` is pinned to an exact version: no `^`, `~` or ranges (human decision, 2026-11-20). Add new ones with `npm install -E`. The lockfile is committed. |
 | Unit tests | Vitest (Angular 22 CLI default) | — |
 | E2E tests | `@playwright/test` | Do not use `playwright-ng-schematics` unless a human approves it. |
 
