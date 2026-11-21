@@ -14,6 +14,12 @@ services:
       TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT:-}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
       JWT_SECRET: ${JWT_SECRET:-}
+      # Development super admin, created on first start when no admin exists (ADR-0002).
+      # Clearly fictitious, dev-only defaults so that one command works; override them in .env.
+      STRAPI_ADMIN_EMAIL: ${STRAPI_ADMIN_EMAIL:-dev.admin@example.com}
+      STRAPI_ADMIN_PASSWORD: ${STRAPI_ADMIN_PASSWORD:-DevOnly-Passw0rd}
+      # CORS allow-list (comma-separated origins). Empty: the browser uses the same-origin proxy.
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
     volumes:
       - strapi-data:/data
     healthcheck:
@@ -22,6 +28,18 @@ services:
       timeout: 5s
       retries: 12
       start_period: 30s
+
+  # nginx serving the Angular build and proxying /api to Strapi (ADR-0002). The image is built
+  # from ./frontend; the upstream address is applied at container start by the nginx template.
+  web:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    environment:
+      STRAPI_UPSTREAM: http://strapi:1337
+    depends_on:
+      strapi:
+        condition: service_healthy
 
 volumes:
   strapi-data:
