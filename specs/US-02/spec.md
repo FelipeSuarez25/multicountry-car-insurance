@@ -320,6 +320,11 @@ Scenario Outline: Malformed plan is skipped
 A blank coverage or benefit line is skipped with a warning; the plan stays if one coverage
 remains (US-02-Q-18).
 
+Note (drafts, confirmed at HC3, US-02-R2-F01): Strapi enforces "at least one coverage" only on
+published content. An editor may save a draft with an empty coverage list (`[]`), but cannot
+publish it, or update a published plan to have no coverage. A plan cannot be created, even as a
+draft, with `coverages` unset. See §7.1.
+
 ### US-02-AC-10 — Recommended edge cases (derived from US-02-BR-01 / Q-09)
 
 ```gherkin
@@ -560,7 +565,7 @@ relation, `strictRelations: true` already set), ADR-0006 (typed attributes, no f
 | `name` | string, required | Spanish, non-empty. |
 | `shortDescription` | string, required, `maxLength: 200` | Spanish, non-empty. |
 | `basePrice` | integer, required, `min: 1` | Annual, whole units of the country's currency (US-02-Q-06, Q-08). |
-| `coverages` | repeatable component `plan.coverage`, `min: 1` | Order as edited. |
+| `coverages` | repeatable component `plan.coverage`, `required`, `min: 1` | Order as edited. Draft rule (Strapi 5.63, confirmed at HC3, US-02-R2-F01): a draft may hold an empty list (`[]`, what the admin sends when an editor deletes every row); a plan cannot be created, even as a draft, with `coverages` unset; publishing, or updating a published plan, requires at least one coverage (AC-09). |
 | `benefits` | repeatable component `plan.benefit` | Zero or more. Order as edited. |
 | `sortOrder` | integer, required | Ascending; ties by `key`. |
 | `isRecommended` | boolean, default `false` | US-02-Q-09. |
@@ -803,3 +808,4 @@ Generated with `scripts/trace.sh US-02` and pasted here.
 | 2026-11-21 | spec-writer (Claude Opus 5.5) | 1 Spec | Draft v0.1 | First version from story.md, the Assessment requirements, US-01 spec v0.5 and ADR-0001..0006. 7 BR, 19 AC (4 original, 15 derived), 20 gaps (4 block HC1: Q-01 price rule [ADR], Q-02 plan currency, Q-03 summary route, Q-04 e2e files), 1 ADR needed plus 1 candidate. Seed annex [seed-plans.md](seed-plans.md). |
 | 2026-11-21 | Felipe Sabogal (human) | HC1 | Answers recorded (round 1) | Q-01: decided by an ADR with real alternatives (proposed rule as the starting point); Q-02, Q-03, Q-04 OK; all other defaults accepted. Spec approval pending the human's explicit decision. (Translated from the Spanish original in the session log.) |
 | 2026-11-21 | Felipe Sabogal (human) | HC1 | **Approved** (v0.1) | Approved as is; the answers recorded above need no text change (Q-01 goes to ADR-0007). |
+| 2026-11-21 | Felipe Sabogal (human) | HC3 | Draft rule confirmed (US-02-R2-F01) | §7.1 and AC-09 note updated by the spec-writer; no behaviour change |

@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Current step | 6 Review round 2 (verification of the R1 fixes; gate passed) |
+| Current step | **Ready for QA** (PR #5 merged by the human after HC3, 2026-11-21) |
 | Branch | feat/us-02-plan-list |
 | PR | — |
 | Blockers | none |
-| **Next action** | code-reviewer verifies R1 fixes in reviews/US-02-review-R2.md; then PR for HC3. |
+| **Next action** | none for US-02. Next story: US-03 (summary and payment). |
 | Last updated | 2026-11-21 by orchestrator (Claude Opus 5.5) |
 
 ## Tasks
@@ -43,7 +43,7 @@ ADR (US-02-Q-01).
 | US-02-T-19 | `PlanListPage` on `/:country/planes`: rendering, recommended highlight, radio group, "Seleccionado", "Continuar" and "Atrás", message and focus, focus on the heading and document title on arrival; loading, error, retry and empty states; copy of spec §8.1 | US-02-AC-01, US-02-AC-02, US-02-AC-03, US-02-AC-04, US-02-AC-05, US-02-AC-11, US-02-AC-16, US-02-AC-17 | frontend-developer | done | c389874, 3b0efdd  |
 | US-02-T-20 | Summary route `/:country/resumen` with the step 3 guard and no page of its own (only if US-02-Q-03 is accepted) | US-02-AC-03, US-02-AC-15 | frontend-developer | done | 1491d73, c389874  |
 | US-02-T-21 | Responsive layout of the plan list (one column at narrow widths, row/grid on wide screens, 320–1440 px, target sizes) | US-02-AC-18 | frontend-developer | done (layout; AC-18 screenshots are T-22) | c389874 (manual check at HC3)  |
-| US-02-T-22 | HC3 manual checks: AC-18 screenshots of step 2 of Colombia at 360 × 740 and 1280 × 800; AC-08 published version shown while a draft change is pending (Strapi admin); AC-12 in the admin | US-02-AC-08, US-02-AC-12, US-02-AC-18 | human (HC3) | partly done: AC-18 screenshots captured by the orchestrator on a clean stack (step 1 seeded with fictitious values in sessionStorage; Playwright, headless Chromium): `docs/qa/US-02/ac-18-{co,cl}-step2-{360x740,1280x800}.png`, no horizontal scroll; remaining human checks at HC3: recommended style, screen reader, AC-08 scenario 2 and AC-12 admin part | (this commit) |
+| US-02-T-22 | HC3 manual checks: AC-18 screenshots of step 2 of Colombia at 360 × 740 and 1280 × 800; AC-08 published version shown while a draft change is pending (Strapi admin); AC-12 in the admin | US-02-AC-08, US-02-AC-12, US-02-AC-18 | human (HC3) | done: AC-18 screenshots in `docs/qa/US-02/` (orchestrator, accepted by the human); manual checks (keyboard, screen reader, Strapi change without deploy, draft rule) done by the human at HC3 | 23aebf1 |
 
 ## Gate history
 
@@ -60,6 +60,7 @@ ADR (US-02-Q-01).
 | 2026-11-21 | 5 Gate | **PASSED** on a clean stack: fe build/lint, 590/590 unit, tsc 0; be tsc/lint/build, 49/49 (after e266d9a test isolation); Reactive Forms 0; factor literals only in price-rules.ts (ADR-0007); deps pinned; full e2e 78/78 ×2; US-02 e2e files ×5 = 190/190; trace US-01 and US-02 exit 0; code secret scan exit 0 (logs now scanned separately) | orchestrator (scripts, no AI) | scripts/e2e.sh output |
 | 2026-11-21 | Review R1 fixes (decisions) | Human: fix F01+F02, F03, F04, F06. **F05 won't fix** (two non-bisectable commits, 1491d73/4f032ce; fixing needs a history rewrite on a pushed branch). **F07 recorded**: e266d9a (test isolation in plan-rules.test.ts) was written by the test-engineer subagent during step 4; no assertion changed. Fixes so far: F02 tests 7348424, F03 7732832, F04 scan-logs.sh + scan default, F06 status text (this commit) | Felipe Sabogal (human) + orchestrator | [reviews/US-02-review-R1.md](../../reviews/US-02-review-R1.md) |
 | 2026-11-21 | 5 Gate (after R1 fixes) | **PASSED**: F01 d5b154f (schema `required`+`min:1`, middleware removed; drafts may hold [] but not unset; test reframed in ae62775), F02 7348424, F03 7732832, F04 1cd234d, F06 09d968e. fe 590/590, be 54/54, lint/build both, e2e 78/78 ×2, trace US-01/US-02 exit 0, code scan exit 0, logs scan 23 = 23 | orchestrator (scripts, no AI) | scripts output |
+| 2026-11-21 | HC3 | **PASSED**: human QA on a clean local stack (CO, CL, keyboard, screen reader, plan change in Strapi without deploy); **draft rule confirmed** (US-02-R2-F01: a draft may hold [] but not an unset list; publish needs at least one coverage; spec note added); PR #5 merged by Felipe Sabogal (e7be08a). Session logs: covered by the final export (US-01's export was a snapshot) | Felipe Sabogal (human) | PR #5 |
 
 ## Session log
 
