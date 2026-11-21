@@ -94,15 +94,16 @@ export class Calendar {
     this.close();
   }
 
-  protected onGridKeydown(event: KeyboardEvent): void {
+  /** Keys on the day `from`, which is the focused one (a click or a script may focus another cell first). */
+  protected onGridKeydown(event: KeyboardEvent, from: string): void {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      this.choose(this.focused());
+      this.choose(from);
       return;
     }
     if (!MOVE_KEYS.includes(event.key)) return;
     event.preventDefault();
-    this.focused.set(nextFocusDate(this.focused(), event.key, event.shiftKey, this.data.localeTag));
+    this.focused.set(nextFocusDate(from, event.key, event.shiftKey, this.data.localeTag));
     afterNextRender(() => this.focusDay(), { injector: this.injector });
   }
 

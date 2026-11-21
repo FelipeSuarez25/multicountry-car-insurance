@@ -47,7 +47,7 @@
                   [attr.aria-selected]="day.selected ? 'true' : 'false'"
                   [attr.aria-disabled]="day.disabled ? 'true' : null"
                   (click)="choose(day.iso)"
-                  (keydown)="onGridKeydown($event)"
+                  (keydown)="onGridKeydown($event, day.iso)"
                 >
                   {{ day.day }}
                 </td>
