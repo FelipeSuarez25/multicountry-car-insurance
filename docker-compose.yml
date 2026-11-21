@@ -5,7 +5,9 @@ services:
     ports:
       # Localhost only: the dev admin password is public in the repo (US-01-R1-F07). The browser
       # reaches the content API through `web`; the host (e2e tests, admin panel) uses this port.
+      # Both loopbacks: `localhost` resolves to ::1 first on many hosts (Node 17+ keeps that order).
       - "127.0.0.1:1337:1337"
+      - "[::1]:1337:1337"
     environment:
       HOST: 0.0.0.0
       PORT: 1337
