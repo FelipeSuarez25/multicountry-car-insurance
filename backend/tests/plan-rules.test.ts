@@ -239,6 +239,44 @@ describe('US-02-BR-01 ADR-0001 plan rules (key per country, required country, at
       await expect(createPlan('probe-no-coverage', colombia, 'published', { coverages: [] })).rejects.toThrow();
     }, 60_000);
 
+    // US-02-R1-F02: the rule is proved through every path that can leave a published plan without coverages,
+    // independent of the mechanism (custom middleware or Strapi's own schema validation).
+    it('US-02-AC-09 refuses to publish an existing draft that has no coverages, and no published version appears', async () => {
+      const draft = await createPlan('probe-draft-empty-publish', colombia, 'draft', { coverages: [] });
+      await expect(plans.publish({ documentId: draft })).rejects.toThrow();
+      expect(await plans.findOne({ documentId: draft, status: 'published' })).toBeNull();
+    }, 60_000);
+
+    it('US-02-AC-09 refuses to publish an existing draft whose coverages were never set', async () => {
+      const draft = await createPlan('probe-draft-unset-publish', colombia, 'draft', { coverages: undefined });
+      await expect(plans.publish({ documentId: draft })).rejects.toThrow();
+      expect(await plans.findOne({ documentId: draft, status: 'published' })).toBeNull();
+    }, 60_000);
+
+    it('US-02-AC-09 refuses to publish a draft whose coverages an editor emptied after saving it valid', async () => {
+      const id = await createPlan('probe-draft-emptied', colombia, 'draft');
+      await plans.update({ documentId: id, data: { coverages: [] } });
+      await expect(plans.publish({ documentId: id })).rejects.toThrow();
+      expect(await plans.findOne({ documentId: id, status: 'published' })).toBeNull();
+    }, 60_000);
+
+    it('US-02-AC-09 refuses to update a published plan so that it has no coverages, and the published coverages stay', async () => {
+      const id = await createPlan('probe-update-empty', colombia, 'published');
+      await expect(plans.update({ documentId: id, data: { coverages: [] }, status: 'published' })).rejects.toThrow();
+      const stored = await plans.findOne({ documentId: id, status: 'published', populate: { coverages: true } });
+      expect(stored?.['coverages']).toEqual([expect.objectContaining({ label: 'Cobertura de prueba' })]);
+    }, 60_000);
+
+    it('US-02-AC-09 control: a draft with coverages publishes, and a published plan can be updated with other coverages', async () => {
+      const id = await createPlan('probe-coverage-control', colombia, 'draft');
+      await expect(plans.publish({ documentId: id })).resolves.toBeDefined();
+      await expect(
+        plans.update({ documentId: id, data: { coverages: [{ label: 'Otra cobertura' }] }, status: 'published' }),
+      ).resolves.toBeDefined();
+      const stored = await plans.findOne({ documentId: id, status: 'published', populate: { coverages: true } });
+      expect(stored?.['coverages']).toEqual([expect.objectContaining({ label: 'Otra cobertura' })]);
+    }, 60_000);
+
     it('US-02-AC-09 a plan with no benefits is valid (benefits are optional)', async () => {
       await expect(createPlan('probe-no-benefits', colombia, 'published', { benefits: [] })).resolves.toEqual(expect.any(String));
     }, 60_000);
