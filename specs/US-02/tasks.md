@@ -7,12 +7,12 @@
 
 | Field | Value |
 |---|---|
-| Current step | 1 Spec |
+| Current step | 2 ADR (HC1 passed: spec v0.1 Approved) |
 | Branch | feat/us-02-plan-list (to be created by the orchestrator; the spec files are uncommitted on `feat/us-01-data-form` until then) |
 | PR | — |
 | Blockers | HC1 needs answers to US-02-Q-01 (price rule, ADR), Q-02 (plan currency), Q-03 (summary route), Q-04 (e2e files) |
-| **Next action** | HC1: the human answers the blocking gaps of spec v0.1 (§6) and approves or requests changes; then the architect writes the price-rule ADR (T-01) and, if Q-03 is accepted, the ADR-0001 note (T-02). |
-| Last updated | 2026-11-21 by spec-writer (Claude Opus 5.5) |
+| **Next action** | architect writes ADR-0007 (simulated price rule, US-02-Q-01) and records the summary route/guard change (US-02-Q-03); then HC2. |
+| Last updated | 2026-11-21 by orchestrator (Claude Opus 5.5) |
 
 ## Tasks
 
@@ -51,6 +51,7 @@ ADR (US-02-Q-01).
 |---|---|---|---|---|
 | 2026-11-21 | 1 Spec | Draft v0.1 written: 7 BR, 19 AC (4 original, 15 derived), 20 Q (4 block HC1), 1 ADR needed + 1 candidate, seed annex | spec-writer (Claude Opus 5.5) | [spec.md §13](spec.md#13-review-log) |
 | 2026-11-21 | HC1 (round 1) | Answers recorded: Q-01 to an ADR with real alternatives; Q-02..Q-04 OK; other defaults accepted. Approval pending | Felipe Sabogal (human) | [spec.md §13](spec.md#13-review-log) |
+| 2026-11-21 | HC1 (round 1) | **Approved**: spec v0.1 | Felipe Sabogal (human) | [spec.md §13](spec.md#13-review-log) |
 
 ## Session log
 

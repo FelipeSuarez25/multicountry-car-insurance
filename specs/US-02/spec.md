@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Story | [story.md](story.md) (verbatim, not edited) |
-| Status | Draft — awaiting HC1 |
+| Status | Approved |
 | Version | 0.1 |
 | Author | spec-writer subagent (Claude Opus 5.5) |
-| Approved by | — (human only, see Review log) |
+| Approved by | v0.1: Felipe Sabogal, 2026-11-21 (HC1 round 1) |
 | Related ADRs | [ADR-0001](../../adr/0001-multi-country-content-strategy.md) (country relation, routes, step guards), [ADR-0002](../../adr/0002-strapi-access-and-security.md) as amended by [ADR-0005](../../adr/0005-e2e-token-scope-for-relations.md) (public `plan.find`, proxy `/api/plans`, published-only reads, e2e token scope), [ADR-0003](../../adr/0003-wizard-state-persistence.md) (chosen plan in the wizard state; prices not stored), [ADR-0006](../../adr/0006-strapi-physical-model-adjustments.md) (`localeTag`; typed attributes). **Needed:** simulated price rule (US-02-Q-01); candidate: summary route and guard before US-03 (US-02-Q-03). See §10. |
 
 Sources cited in this spec:
@@ -802,3 +802,4 @@ Generated with `scripts/trace.sh US-02` and pasted here.
 |---|---|---|---|---|
 | 2026-11-21 | spec-writer (Claude Opus 5.5) | 1 Spec | Draft v0.1 | First version from story.md, the Assessment requirements, US-01 spec v0.5 and ADR-0001..0006. 7 BR, 19 AC (4 original, 15 derived), 20 gaps (4 block HC1: Q-01 price rule [ADR], Q-02 plan currency, Q-03 summary route, Q-04 e2e files), 1 ADR needed plus 1 candidate. Seed annex [seed-plans.md](seed-plans.md). |
 | 2026-11-21 | Felipe Sabogal (human) | HC1 | Answers recorded (round 1) | Q-01: decided by an ADR with real alternatives (proposed rule as the starting point); Q-02, Q-03, Q-04 OK; all other defaults accepted. Spec approval pending the human's explicit decision. (Translated from the Spanish original in the session log.) |
+| 2026-11-21 | Felipe Sabogal (human) | HC1 | **Approved** (v0.1) | Approved as is; the answers recorded above need no text change (Q-01 goes to ADR-0007). |
