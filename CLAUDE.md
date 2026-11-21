@@ -115,7 +115,7 @@ Folders: `src/app/core/` (singletons, API clients, interceptors), `src/app/featu
 
 | ID | Decision | How it will be resolved | Blocks |
 |---|---|---|---|
-| SPIKE-01 | **Signal Forms vs Reactive Forms** for the Strapi-driven step 1 form | Throwaway spike (30–60 min) on a branch that is not merged: a minimal form built from a Strapi-like JSON with a **required number**, an **empty date**, a **select**, and a **legal-age validation**. It also checks how typing degrades with a runtime model. The findings feed an ADR (alternatives, consequences); a human accepts it. | Production form code for US-01 |
+| SPIKE-01 | **Signal Forms vs Reactive Forms** for the Strapi-driven step 1 form | Throwaway spike on a `spike/01-forms` branch that is never merged, run by the frontend-developer. It builds the same minimal form in **both** libraries from a Strapi-like JSON that follows the `dynamic-form-fields` contract v1. Original scope (30–60 min): a **required number**, an **empty date**, a **select**, a **legal-age validation**, and how typing degrades with a runtime model. Added at HC1 (Felipe Sabogal, 2026-11-20): **hydrating** the form from stored values; **dropping** values of fields no longer configured; **when errors appear** (touched / submit attempt); **focus on the first invalid field**; **integer-only** numbers; mapping empty optional fields to **`null` in the step 1 output** while the form model stays non-null (the vendored skill forbids `null` in Signal Forms models). The time box grows to 60–90 min because of the added scope. The architect summarises the findings in `docs/spikes/SPIKE-01-forms.md` and writes the forms ADR; a human accepts it. | Production form code for US-01 |
 
 The ADR backlog is in [adr/README.md](adr/README.md).
 
@@ -146,7 +146,7 @@ H0 intake (human) → 1 spec → HC1 → 2 ADRs → HC2 → 3 tests (red) → 4 
 
 | Agent | Step | Writes |
 |---|---|---|
-| `spec-writer` | 1 | `specs/US-XX/spec.md`, `tasks.md` |
+| `spec-writer` | 1 | `specs/US-XX/*.md` (spec, tasks, annexes), never `story.md` |
 | `architect` | 2, spikes write-up | `adr/**`, `docs/spikes/**`, `tasks.md` |
 | `test-engineer` | 3 | test files, `frontend/e2e/**`, `tasks.md` |
 | `strapi-developer` | 4, 7 | `backend/**` (not tests), compose, `.env.example`, `tasks.md` |

@@ -14,7 +14,7 @@ enforces its write scope (`.claude/hooks/enforce-write-scope.mjs`).
 
 | Agent | Model | Flow step | Inputs | Outputs | Allowed tools | Write scope (enforced) |
 |---|---|---|---|---|---|---|
-| [spec-writer](.claude/agents/spec-writer.md) | Opus 5.5 | 1 Spec | `story.md`, accepted ADRs, `CLAUDE.md` | `spec.md`, `tasks.md` | Read, Grep, Glob, Write, Edit, Skill | `specs/US-NN/spec.md`, `specs/US-NN/tasks.md` |
+| [spec-writer](.claude/agents/spec-writer.md) | Opus 5.5 | 1 Spec | `story.md`, accepted ADRs, `CLAUDE.md` | `spec.md`, `tasks.md` | Read, Grep, Glob, Write, Edit, Skill | `specs/US-NN/*.md` (spec, tasks, annexes), except `story.md` |
 | [architect](.claude/agents/architect.md) | Opus 5.5 | 2 ADRs, spike write-ups | approved spec (*ADRs needed*), spike results | `adr/NNNN-*.md` (Proposed), `docs/spikes/*` | Read, Grep, Glob, Write, Edit, Bash (read-only use), WebFetch, Skill | `adr/**`, `docs/spikes/**`, `tasks.md` |
 | [test-engineer](.claude/agents/test-engineer.md) | Sonnet 5.5 | 3 Tests first | approved spec, accepted ADRs | unit, component and e2e tests (red) | Read, Grep, Glob, Write, Edit, Bash, Skill | `**/*.spec.ts`, `**/*.test.ts`, `frontend/e2e/**`, `frontend/src/testing/**`, `backend/tests/**`, `tasks.md` |
 | [strapi-developer](.claude/agents/strapi-developer.md) | Sonnet 5.5 | 4 Implementation, 7 Fixes | approved spec, ADRs, tests | content types, seed, permissions | Read, Grep, Glob, Write, Edit, Bash, Skill | `backend/**` except tests, `docker-compose.yml`, `.env.example`, `tasks.md` |

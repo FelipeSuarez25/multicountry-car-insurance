@@ -15,6 +15,9 @@ first, and the change needs human approval (HC1).
 - **Outputs:**
   - `specs/US-XX/spec.md`, built from [templates/spec.md](templates/spec.md)
   - `specs/US-XX/tasks.md`, built from [templates/tasks.md](templates/tasks.md)
+  - Optional annexes `specs/US-XX/<name>.md` for bulky reference content (seed lists, copy
+    tables). The spec keeps a link and a summary; IDs are defined in the spec, never only in an
+    annex (so `scripts/trace.sh` finds them).
 - **Read before writing:** `CLAUDE.md`, the accepted ADRs in `adr/`, and the specs of the
   other stories (to keep shared concepts consistent).
 
