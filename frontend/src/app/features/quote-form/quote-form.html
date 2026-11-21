@@ -36,7 +36,7 @@
             <input
               type="number"
               (beforeinput)="flushBindings()"
-              (input)="syncNumber($event, config.key)"
+              (input)="syncNative($event, config.key)"
               [id]="id"
               [formField]="text(config.key)"
               [attr.placeholder]="config.placeholder ?? null"
@@ -48,6 +48,7 @@
           @case ('date') {
             <input
               type="date"
+              (input)="syncNative($event, config.key)"
               [id]="id"
               [formField]="text(config.key)"
               [attr.aria-required]="config.isRequired"

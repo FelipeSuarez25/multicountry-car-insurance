@@ -14,6 +14,7 @@ import { Router } from '@angular/router';
 import { CLOCK } from '../../core/clock';
 import { QuoteStore } from '../../core/quote-store';
 import type { FieldConfig, RawValues } from '../../shared/field-config.model';
+import { FALLBACK_MESSAGE } from '../../shared/field-config';
 import { validateField } from '../../shared/field-validators';
 import { hydrate } from '../../shared/field-values';
 
@@ -59,33 +60,34 @@ export class QuoteForm implements OnInit {
       {
         injector: this.injector,
         submission: {
-          // Validity is decided on the store values (an unparseable number is '' there), not on
-          // the field states: a parse error on an optional field must not block (R2-F01).
-          ignoreValidators: 'all',
-          action: async (root) => {
+          // Signal Forms decides validity: every field error, parse errors included, blocks.
+          action: async () => {
             // The model-to-store effect runs on the next change detection; a keyboard Enter can
             // arrive before it (Space on the consent box, then Enter). Flush it so the store
             // holds exactly what the user sees.
             this.flushModel();
             if (this.quote.completeStep1(configs) !== null) {
               await this.router.navigate(['/', this.countryCode().toLowerCase(), 'planes']);
-              return undefined;
             }
-            const values = this.quote.values();
-            const first = configs.find((config) => validateField(config, values[config.key], this.clock()) !== null);
-            if (first) root[first.key]().focusBoundControl();
             return undefined;
+          },
+          onInvalid: (root) => {
+            const first = configs.find((config) => root[config.key]().invalid());
+            if (first) root[first.key]().focusBoundControl();
           },
         },
       },
     );
 
-    // The raw editing values are written to the wizard state on every change (ADR-0003).
+    // The raw editing values are written to the wizard state on every change (ADR-0003). Keys of
+    // number and date fields are written only by `syncNative` (one writer per key, R3-F05):
+    // the browser may hold text the model does not, and the store must follow what the control reads.
+    const nativeKeys = new Set(configs.filter((c) => c.type === 'number' || c.type === 'date').map((c) => c.key));
     let synced: RawValues = { ...model() };
     this.flushModel = () => {
       const current = model();
       for (const [key, value] of Object.entries(current)) {
-        if (synced[key] !== value) this.quote.setValue(key, value);
+        if (!nativeKeys.has(key) && synced[key] !== value) this.quote.setValue(key, value);
       }
       synced = { ...current };
     };
@@ -118,28 +120,32 @@ export class QuoteForm implements OnInit {
   }
 
   /**
-   * After every input on a number field: text the browser cannot parse (`validity.badInput`) is
-   * stored as '' (R2-F01), parseable text as typed. The control's own model is left alone on
+   * After every input on a number or date field, the only writer of that key in the store: text
+   * the browser cannot parse (`validity.badInput`) is stored as '' (a partly cleared date reads
+   * as '' too), anything else as the control reads it. The control's own model is left alone on
    * purpose: writing '' to it makes Signal Forms write '' into the DOM, which erases the text the
-   * user typed (R1-F03). Validation, the store, the storage and the output all see ''.
+   * user typed (R1-F03). The text stays visible; the store, the storage and the output hold ''
+   * (a reload never restores a stale valid value), and the field is invalid through the Signal
+   * Forms parse error, so "Continuar" blocks.
    */
-  protected syncNumber(event: Event, key: string): void {
+  protected syncNative(event: Event, key: string): void {
     const el = event.target as HTMLInputElement;
     this.quote.setValue(key, el.validity.badInput ? '' : el.value);
   }
 
   /**
-   * The message to show (spec AC-09): unparseable number text is an empty value, so it shows
-   * `requiredMessage ?? errorMessage` when the field is required and nothing when it is optional.
+   * The message to show (spec AC-09): text the browser cannot parse is an empty value for a
+   * required field (`requiredMessage ?? errorMessage`); for an optional field it is an error
+   * (`errorMessage`, or the fallback).
    */
   protected errorOf(config: FieldConfig): string | null {
     const state = this.form[config.key]();
-    if (!state.touched()) return null;
+    if (!state.touched() || !state.invalid()) return null;
     const errors = state.errors();
     if (errors.some((error) => error.kind === 'parse')) {
-      return validateField(config, '', this.clock());
+      return validateField(config, '', this.clock()) ?? (config.errorMessage.trim() || FALLBACK_MESSAGE);
     }
-    return state.invalid() ? (errors[0]?.message ?? null) : null;
+    return errors[0]?.message ?? null;
   }
 
   protected describedBy(config: FieldConfig, error: string | null): string | null {
