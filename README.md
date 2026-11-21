@@ -57,7 +57,7 @@ the `strapi-data` volume. The first build takes a few minutes. When `strapi` is 
 | Strapi admin | http://localhost:1337/admin | Fictitious dev admin: `dev.admin@example.com` / `DevOnly-Passw0rd` |
 | Content API | http://localhost:8080/api/… | Same-origin nginx proxy; read-only, allow-listed paths (ADR-0002) |
 
-Strapi's port is published on **localhost only** (127.0.0.1 and ::1), because the dev admin password
+Strapi's port is published on **localhost only** (127.0.0.1), because the dev admin password
 is public in this repository. Never expose it on another interface. To use your own values, copy
 `.env.example` to `.env` (git-ignored) and edit it.
 
@@ -79,15 +79,20 @@ cd frontend && npm ci && npm test && npm run lint
 cd backend  && npm ci && npm test && npm run lint
 
 # End-to-end tests (Playwright), against the running stack
-cd frontend && npx playwright install chromium
-E2E_BASE_URL=http://localhost:8080 E2E_STRAPI_URL=http://localhost:1337 \
-STRAPI_ADMIN_EMAIL=dev.admin@example.com STRAPI_ADMIN_PASSWORD=DevOnly-Passw0rd \
-npx playwright test
+(cd frontend && npx playwright install chromium)
+scripts/e2e.sh                         # sets the documented env; extra args go to Playwright
 
 # Traceability matrix and secret scan (no AI)
 scripts/trace.sh US-01
 scripts/scan-secrets.sh
 ```
+
+**The e2e tests expect the seeded content.** Content you changed in the admin persists in the
+volume, so run the e2e suite on a fresh stack, either after `docker compose down -v` or on a
+separate project such as `docker compose -p e2e up --build --wait` (then
+`docker compose -p e2e down -v`; it uses the same ports, so stop the other stack first). The
+admin login used by the AC-03 test is rate-limited to 5 per 5 minutes: each `scripts/e2e.sh` run
+logs in once, and a 6th run within that window waits it out.
 
 ### Resetting the data
 
