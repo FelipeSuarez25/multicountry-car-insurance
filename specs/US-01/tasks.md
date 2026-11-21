@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Current step | 6 Review round 4 pending (R3 fixes done; spec v0.5 Approved) |
+| Current step | HC3: PR open for human QA and merge (review round 4 APPROVED) |
 | Branch | feat/us-01-data-form |
 | PR | — |
-| Blockers | none known |
-| **Next action** | Gate on a clean stack, then code-reviewer round 4; if APPROVED, push and open the PR for HC3. |
+| Blockers | none; R4-F01 (minor) and R4-F02 (nit) open: to be fixed or justified at HC3 (DoD) |
+| **Next action** | Human: QA pass (CO, CL, keyboard only, 360 px + desktop, AC-26 screenshots = T-31), decide R4-F01/R4-F02, merge the PR. Then Ready for QA + session-handoff. |
 | Last updated | 2026-11-21 by orchestrator (Claude Opus 5.5) |
 
 ## Tasks
@@ -97,6 +97,7 @@ page (US-01-Q-19).
 | 2026-11-21 | 6 Review (round 3) | **CHANGES REQUESTED**: R3-F01 major (since 40606e2 submit bypasses Signal Forms validation; dates do not map badInput, so an emptied required date submits a stale value), R3-F02/F03 minor, R3-F04/F05 nit; R2-F01..F06 verified fixed. **Human decision:** restore the Signal Forms submit gate (remove `ignoreValidators: 'all'`); spec v0.5: an OPTIONAL number field with unparseable text is an error the user must fix (supersedes the optional part of the R2-F01 decision); the store still holds '' and the typed text stays visible | code-reviewer (Opus 5.5) + Felipe Sabogal (human) | [reviews/US-01-review-R3.md](../../reviews/US-01-review-R3.md) |
 | 2026-11-21 | HC1 (round 5) | **Approved** spec v0.5: an unreadable `number` or `date` (`validity.badInput`) is invalid, required or optional; the wizard state holds `''`; the typed text stays visible. R3 fixes: F01+F05 eeb23e6 (Signal Forms gate restored, single writer `syncNative`), tests 6e2077e and 33a0c11, F02 ADR-0004 implementation note, F03+F04 98f2bc4 (README e2e steps; [::1] binding removed) | Felipe Sabogal (human) | spec.md §13 |
 | 2026-11-21 | 5 Gate (after R3 fixes) | **PASSED** on a clean stack with Strapi on 127.0.0.1 only (confirms the [::1] binding was unneeded): fe build 0 errors, 319/319 unit, tsc, lint both, be 12/12; Reactive Forms 0, `ignoreValidators` 0, casts 2; data-form-co ×15 = 225/225; full e2e 40/40 ×2; scan clean (6 exceptions). trace.sh counts R3-F01 open until review round 4 | orchestrator (scripts, no AI) | scripts/e2e.sh output |
+| 2026-11-21 | 6 Review (round 4) | **APPROVED**: R3-F01..F05 verified fixed (CO and CL, click and Enter); open: R4-F01 minor (date edited unreadable < ~25 ms after completion: screen and store diverge; not reachable at human speed), R4-F02 nit (stale wording in two test titles). Checks re-run by the reviewer: 319/319, 12/12, e2e 40/40 ×2, CO ×15 225/225 | code-reviewer (Opus 5.5) | [reviews/US-01-review-R4.md](../../reviews/US-01-review-R4.md) |
 
 ## Session log
 
