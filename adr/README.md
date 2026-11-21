@@ -14,9 +14,6 @@ Accepted ADRs are binding (`CLAUDE.md` §1, level 2) and are never rewritten; th
 | [0005](0005-e2e-token-scope-for-relations.md) | Scope of the temporary e2e API token when the created content has relations (amends ADR-0002) | Accepted | 2026-11-21 | US-01 |
 | [0006](0006-strapi-physical-model-adjustments.md) | Strapi physical model adjustments: typed validation-rule parameters and the country `localeTag` attribute (amends ADR-0001) | Accepted | 2026-11-21 | US-01, US-02 |
 
-Note: the amendment of ADR-0001 by ADR-0006 is binding only once the human accepts ADR-0006 at
-HC2. Until then ADR-0006 is `Proposed`, and ADR-0001 stays as written.
-
 ## Backlog (decisions known to be needed)
 
 Numbers are assigned when an ADR is written; this order is only provisional.
