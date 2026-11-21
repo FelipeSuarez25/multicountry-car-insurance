@@ -187,4 +187,27 @@ describe('US-03 terms boundary parser and selection', () => {
       expect(terms?.blocks.map((b) => b.kind)).toEqual(['paragraph']);
     });
   });
+
+  describe('US-03-R1-F04 one hostile entry is skipped (spec 7.2), the older well-formed one is shown', () => {
+    const older = (): StrapiItem => simpleTermsItem('Términos válidos', 'Texto válido.', OLDER, 1);
+
+    it('US-03-R1-F04 an entry whose body nests links 10 000 levels deep does not throw and does not hide the older entry', () => {
+      let node: Record<string, unknown> = text('fondo');
+      for (let level = 0; level < 10_000; level++) node = { type: 'link', url: 'https://example.invalid', children: [node] };
+      const hostile = toStrapiTermItem({ title: 'Hostil', body: [paragraph(node)], publishedAt: NEWER }, 0);
+      let terms: Terms | null = null;
+      expect(() => (terms = parse([hostile, older()]))).not.toThrow();
+      expect((terms as Terms | null)?.title).toBe('Términos válidos');
+      expect(warn).toHaveBeenCalled();
+    });
+
+    it('US-03-R1-F04 an entry with 200 000 headings does not throw and does not hide the older entry', () => {
+      const body = Array.from({ length: 200_000 }, (_, i) => ({ type: 'heading', level: 1 + (i % 6), children: [text('t')] }));
+      const hostile = toStrapiTermItem({ title: 'Enorme', body, publishedAt: NEWER }, 0);
+      let terms: Terms | null = null;
+      expect(() => (terms = parse([hostile, older()]))).not.toThrow();
+      // A huge but well-formed body may legitimately be shown; if so it is the newest. What must not happen is a throw.
+      expect(['Enorme', 'Términos válidos']).toContain((terms as Terms | null)?.title);
+    });
+  });
 });

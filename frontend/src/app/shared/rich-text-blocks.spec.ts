@@ -394,4 +394,38 @@ describe('ADR-0009 parseRichTextBlocks (US-03-AC-13 whitelist, degradation and m
       expect(JSON.stringify(wire)).toBe(before);
     });
   });
+
+  /**
+   * US-03-R1-F04. Limits these tests assume: link nesting is bounded (a link inside a link is not a
+   * supported shape or is cut at a small fixed depth; recursion never follows 10 000 levels), and
+   * nothing spreads an array into call arguments (`Math.min(...levels)`) so a body of 200 000
+   * headings cannot hit the engine's argument limit. Either a result or `null` is accepted, never a throw.
+   */
+  describe('US-03-R1-F04 hostile bodies never throw', () => {
+    it('US-03-R1-F04 links nested 10 000 levels: no throw (no RangeError), a result or null, and a warning', () => {
+      let node: WireNode = text('fondo');
+      for (let level = 0; level < 10_000; level++) node = { type: 'link', url: 'https://example.invalid', children: [node] };
+      const body = [paragraph(text('Texto base.'), node)];
+      let result: RichTextBlock[] | null | undefined;
+      expect(() => (result = parseRichTextBlocks(body))).not.toThrow();
+      expect(result === null || Array.isArray(result)).toBe(true);
+      expect(warn).toHaveBeenCalled();
+      expect(warned()).not.toContain('fondo');
+      expect(warned()).not.toContain('example.invalid');
+    });
+
+    it('US-03-R1-F04 a body of 200 000 headings: no throw (no RangeError from a spread), a result or null', () => {
+      const body = Array.from({ length: 200_000 }, (_, i) => heading(1 + (i % 6), text('titulo')));
+      let result: RichTextBlock[] | null | undefined;
+      expect(() => (result = parseRichTextBlocks(body))).not.toThrow();
+      expect(result === null || Array.isArray(result)).toBe(true);
+      if (result === null) expect(warned()).toContain('body');
+      expect(warned()).not.toContain('titulo');
+    });
+
+    it('US-03-R1-F04 a body of 200 000 paragraphs and one of 200 000 list items do not throw either', () => {
+      expect(() => parseRichTextBlocks(Array.from({ length: 200_000 }, () => paragraph(text('p'))))).not.toThrow();
+      expect(() => parseRichTextBlocks([list('unordered', ...Array.from({ length: 200_000 }, () => listItem(text('i'))))])).not.toThrow();
+    });
+  });
 });

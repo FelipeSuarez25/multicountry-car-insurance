@@ -292,4 +292,79 @@ describe('US-03-BR-07 ADR-0009 the `term` content type (name, attributes, countr
       expect(await snapshot()).toEqual(before);
     }, 120_000);
   });
+
+  /**
+   * US-03-R1-F01 (human rule): the terms seed creates a country's seed terms only when that country
+   * has no terms document at all (no draft, no published). Editors' renames, deletions and drafts
+   * are never undone by a restart. Each test wipes the terms of the countries it touched and runs the
+   * seed again, which (under the same rule) restores the annex for the tests that follow.
+   */
+  describe('US-03-R1-F01 the seed never puts its terms back over an editor\'s work', () => {
+    const docsOf = (code: string) => terms.findMany({ status: 'draft', filters: { country: { code } } });
+    const publishedOf = (code: string) => terms.findMany({ status: 'published', filters: { country: { code } }, sort: 'publishedAt:desc' });
+    async function wipe(code: string): Promise<void> {
+      for (const doc of await docsOf(code)) await terms.delete({ documentId: doc.documentId });
+    }
+    const runSeed = (): Promise<void> => seed(strapi as never);
+
+    afterEach(async () => {
+      for (const code of ['CO', 'CL']) await wipe(code);
+      await runSeed(); // the countries have no terms document now: the annex is created again
+    }, 180_000);
+
+    it('US-03-R1-F01 (a) an editor renames the published CO terms and publishes: the seed creates nothing for CO and the editor\'s terms stay the newest published', async () => {
+      const [seeded] = await publishedOf('CO');
+      expect(seeded.title).toBe(CO_TITLE);
+      await terms.update({ documentId: seeded.documentId, data: { title: 'Términos editados por el equipo' } });
+      await terms.publish({ documentId: seeded.documentId });
+      const before = (await docsOf('CO')).map((d) => d.documentId).sort();
+
+      await runSeed();
+      await runSeed();
+
+      expect((await docsOf('CO')).map((d) => d.documentId).sort()).toEqual(before);
+      const published = await publishedOf('CO');
+      expect(published.map((r) => r.title)).toEqual(['Términos editados por el equipo']);
+      const everyTitle = (await docsOf('CO')).map((d) => d.title);
+      expect(everyTitle).not.toContain(CO_TITLE);
+    }, 180_000);
+
+    it('US-03-R1-F01 (b) an editor deletes the seeded CO terms and publishes new ones with another title: the seed creates nothing', async () => {
+      await wipe('CO');
+      await createTerm('Términos propios del equipo', colombia);
+      await runSeed();
+      const titles = (await docsOf('CO')).map((d) => d.title);
+      expect(titles).toEqual(['Términos propios del equipo']);
+      expect((await publishedOf('CO')).map((r) => r.title)).toEqual(['Términos propios del equipo']);
+    }, 180_000);
+
+    it('US-03-R1-F01 (c) a country with only a draft terms document: the seed creates nothing', async () => {
+      await wipe('CO');
+      await createTerm('Borrador del equipo', colombia, 'draft');
+      await runSeed();
+      expect((await docsOf('CO')).map((d) => d.title)).toEqual(['Borrador del equipo']);
+      expect(await publishedOf('CO')).toEqual([]);
+    }, 180_000);
+
+    it('US-03-R1-F01 (d) a country with no terms document: the seed creates the annex terms (CO: the published ones and the draft-only "borrador")', async () => {
+      await wipe('CO');
+      await wipe('CL');
+      expect(await docsOf('CO')).toEqual([]);
+      await runSeed();
+      expect((await publishedOf('CO')).map((r) => r.title)).toEqual([CO_TITLE]);
+      expect((await publishedOf('CL')).map((r) => r.title)).toEqual([CL_TITLE]);
+      expect((await terms.findMany({ status: 'published', filters: { title: DRAFT_TITLE } }))).toEqual([]);
+      expect((await terms.findMany({ status: 'draft', filters: { title: DRAFT_TITLE, country: { code: 'CO' } } }))).toHaveLength(1);
+    }, 180_000);
+
+    it('US-03-R1-F01 the rule is per country: wiping only Chile recreates Chile and leaves the edited Colombia alone', async () => {
+      const [seeded] = await publishedOf('CO');
+      await terms.update({ documentId: seeded.documentId, data: { title: 'Colombia editada' } });
+      await terms.publish({ documentId: seeded.documentId });
+      await wipe('CL');
+      await runSeed();
+      expect((await publishedOf('CL')).map((r) => r.title)).toEqual([CL_TITLE]);
+      expect((await publishedOf('CO')).map((r) => r.title)).toEqual(['Colombia editada']);
+    }, 180_000);
+  });
 });

@@ -666,12 +666,15 @@ test.describe('US-03-AC-16 keyboard-only: the whole flow of Colombia to the conf
         await expectVisibleFocusIndicator(page);
       }
       if (now === 'terms region') {
-        // The region is focusable, so the arrow keys scroll it (when its text is longer than its box) and keep the focus in it.
+        // The region is focusable, so the arrow keys scroll it and keep the focus in it. The check always runs:
+        // the test shortens the region so that the seed text overflows, and fails if it still does not.
         const region = page.getByRole('region', { name: CO_TERMS_TITLE });
-        const overflows = await region.evaluate((el) => el.scrollHeight > el.clientHeight);
+        await region.evaluate((el) => (el.style.maxHeight = '80px'));
+        expect(await region.evaluate((el) => el.scrollHeight > el.clientHeight), 'the terms region must overflow for the scroll check').toBe(true);
         await page.keyboard.press('ArrowDown');
         expect(await focusedName(page)).toBe('terms region');
-        if (overflows) expect(await region.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+        // Chromium animates the keyboard scroll: poll until it has moved.
+        await expect.poll(() => region.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
       }
       if (now === 'checkbox') {
         await page.keyboard.press('Space');
