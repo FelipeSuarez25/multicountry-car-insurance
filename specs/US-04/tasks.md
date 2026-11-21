@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Current step | 4 Implementation done; two tests reported as wrong (see Blockers) |
+| Current step | 5 Gate (implementation done) |
 | Branch | feat/us-04-design-system |
 | PR | — |
-| Blockers | 2 tests believed wrong, routed to the test-engineer: `date-field.spec.ts` US-04-AC-08 "unreadable text ... Continuar" (expects focus on the date box on an otherwise empty form, but ADR-0004 focuses the first invalid field, "Tipo de documento"); `summary-page.spec.ts` US-03-AC-03 "the confirmation shows no ... 'Tus datos'" (the step indicator, required by US-04-AC-13, shows "Tus datos" on the confirmation) |
-| **Next action** | frontend-developer implements US-04 to make the tests pass; then the gate (step 5). |
+| Blockers | none (the two defective tests were fixed by the test-engineer in a16c82d) |
+| **Next action** | orchestrator runs the gate and captures the after screenshots (T-24); then review round 1. |
 | Last updated | 2026-11-21 by frontend-developer (Claude Sonnet 5.5) |
 
 ## Tasks
