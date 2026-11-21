@@ -3,7 +3,9 @@ services:
     build:
       context: ./backend
     ports:
-      - "1337:1337"
+      # Localhost only: the dev admin password is public in the repo (US-01-R1-F07). The browser
+      # reaches the content API through `web`; the host (e2e tests, admin panel) uses this port.
+      - "127.0.0.1:1337:1337"
     environment:
       HOST: 0.0.0.0
       PORT: 1337
