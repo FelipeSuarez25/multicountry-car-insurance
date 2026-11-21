@@ -43,6 +43,8 @@ export class PanelOverlay implements OnInit, OnDestroy {
       panelClass: sheet ? 'app-sheet' : 'app-popover',
       width: sheet ? undefined : origin.offsetWidth,
       disableAnimations: true,
+      // The sheet is positioned against the viewport: a top-layer popover host would size to its content.
+      usePopover: sheet ? false : undefined,
       disposeOnNavigation: true,
     });
     ref.attach(new TemplatePortal(this.template, this.container, { sheet }));

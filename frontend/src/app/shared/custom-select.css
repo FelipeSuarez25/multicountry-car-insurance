@@ -136,12 +136,13 @@
       transform: none;
     }
   }
+  /* A sheet is fixed to the bottom edge: it fades in and never slides, so its box is its final box from the first frame. */
   @keyframes sheet-enter {
     from {
-      transform: translateY(100%);
+      opacity: 0;
     }
     to {
-      transform: none;
+      opacity: 1;
     }
   }
 }

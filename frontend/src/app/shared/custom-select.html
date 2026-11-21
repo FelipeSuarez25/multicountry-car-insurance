@@ -37,7 +37,9 @@
           (valueChange)="pick($event)"
         >
           @for (option of shown(); track option.value) {
-            <li ngOption class="option" [id]="optionId(option)" [value]="option.value" [label]="option.label">
+            <!-- The row is an `option` of the Angular Aria listbox, which owns its keys and focus; the click only chooses it when it is the chosen one already. -->
+            <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+            <li ngOption class="option" [id]="optionId(option)" [value]="option.value" [label]="option.label" (click)="choose(option.value)">
               <span class="option__label">{{ option.label }}</span>
               @if (option.value === value()) {
                 <svg lucideCheck class="option__check"></svg>
@@ -95,7 +97,9 @@
           (valueChange)="pick($event)"
         >
           @for (option of shown(); track option.value) {
-            <li ngOption class="option" [id]="optionId(option)" [value]="option.value" [label]="option.label">
+            <!-- The row is an `option` of the Angular Aria listbox, which owns its keys and focus; the click only chooses it when it is the chosen one already. -->
+            <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+            <li ngOption class="option" [id]="optionId(option)" [value]="option.value" [label]="option.label" (click)="choose(option.value)">
               <span class="option__label">{{ option.label }}</span>
               @if (option.value === value()) {
                 <svg lucideCheck class="option__check"></svg>

@@ -2,6 +2,7 @@ import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { Combobox, ComboboxPopup, ComboboxWidget } from '@angular/aria/combobox';
 import { Listbox, Option } from '@angular/aria/listbox';
 import {
+  ApplicationRef,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
@@ -73,6 +74,7 @@ export class CustomSelect implements FormValueControl<string> {
   private readonly listbox = viewChild(Listbox);
   private readonly announcer = inject(LiveAnnouncer);
   private readonly injector = inject(Injector);
+  private readonly appRef = inject(ApplicationRef);
   private typed = '';
   private typedAt = 0;
   private pendingActive: string | null = null;
@@ -86,6 +88,13 @@ export class CustomSelect implements FormValueControl<string> {
         this.filterText.set(null);
         this.text.set(label);
       });
+    });
+    // Opening a searchable select with a chosen label selects it, so typing replaces it.
+    effect(() => {
+      if (!this.expanded() || !this.searchable()) return;
+      const typing = untracked(() => this.filterText() !== null);
+      if (typing) return;
+      afterNextRender(() => (this.control()?.nativeElement as HTMLInputElement | undefined)?.select(), { injector: this.injector });
     });
     // The result count, or the empty text, is announced politely while filtering (US-04-AC-07).
     effect(() => {
@@ -128,6 +137,16 @@ export class CustomSelect implements FormValueControl<string> {
 
   protected openOnClick(): void {
     if (!this.expanded()) this.expanded.set(true);
+    this.render();
+  }
+
+  /**
+   * Renders now, at the end of the current event, so the list exists and has its first option active
+   * before the next key arrives (a key sent right after "open" would otherwise be consumed by the
+   * list setting up its default state).
+   */
+  private render(): void {
+    queueMicrotask(() => this.appRef.tick());
   }
 
   /**
@@ -141,6 +160,7 @@ export class CustomSelect implements FormValueControl<string> {
     queueMicrotask(() => {
       if (!this.expanded()) this.expanded.set(true);
     });
+    this.render();
   }
 
   protected onInput(event: Event): void {
@@ -148,10 +168,24 @@ export class CustomSelect implements FormValueControl<string> {
   }
 
   protected onKeydown(event: KeyboardEvent): void {
+    this.render();
+    if (this.searchable() && event.ctrlKey && !event.metaKey && !event.altKey && event.key.toLowerCase() === 'a') {
+      // Ctrl+A selects the text on every platform (on macOS it would move to the line start).
+      event.preventDefault();
+      (event.target as HTMLInputElement).select();
+      return;
+    }
     if (this.expanded()) {
       if (event.key === 'Tab') {
         this.commit(this.activeValue());
         this.expanded.set(false);
+      } else if (event.key === 'Enter' || (event.key === ' ' && !this.searchable())) {
+        // Choosing the active option, also when it is the one already chosen (the list would toggle it off).
+        const active = this.activeValue();
+        if (active !== null) {
+          event.preventDefault();
+          this.choose(active);
+        }
       }
       return;
     }
@@ -172,15 +206,23 @@ export class CustomSelect implements FormValueControl<string> {
     }
   }
 
-  /** The option the list has as active, by the id `aria-activedescendant` points at. */
+  /** The option the list has as active, read from the list itself (the attribute lags one render). */
   private activeValue(): string | null {
-    const id = this.control()?.nativeElement.getAttribute('aria-activedescendant');
+    const id = this.listbox()?.activeDescendant();
     return this.options().find((o) => this.optionId(o) === id)?.value ?? null;
   }
 
-  /** A change of the listbox selection: choosing a row (click, Enter, Space). Clicking the chosen row again keeps it. */
+  /**
+   * The list reports a new selection when a row is chosen. An empty selection is never a choice:
+   * the list also reports it when a filter removes the chosen option from view.
+   */
   protected pick(values: readonly string[]): void {
-    this.commit(values[0] ?? this.value());
+    if (values.length > 0) this.choose(values[0]);
+  }
+
+  /** Chooses an option: stores its value, closes the list and keeps the focus on the control. */
+  protected choose(value: string): void {
+    this.commit(value);
     this.expanded.set(false);
     this.focus();
   }
