@@ -25,6 +25,9 @@ Do **not** write an ADR for local implementation details that the spec or code r
 - Decision drivers must trace back to requirements: the assessment PDF, a spec `BR`/`AC`, or
   `CLAUDE.md`.
 - Consequences include the **bad** ones and how they are mitigated.
+- **Strongest argument against** (required section): the single best case against the chosen
+  option, plus why we accept it. The human reads it at HC2 (FLOW.md). It must be in the ADR file,
+  not only in the hand-back report. (Added after US-01 HC2, finding H1.)
 - *Confirmation* says how compliance is checked: a test, a review checklist item, a script.
 - Facts about libraries (versions, API stability) must be verified against the official source
   or the installed package, with a link or version. Never state them from memory.

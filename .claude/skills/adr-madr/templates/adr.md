@@ -34,6 +34,13 @@ Chosen option: "<Option X>", because <justification tied to the drivers>.
 - Bad, because … — mitigation: …
 - Neutral: …
 
+### Strongest argument against
+
+The single best argument against the chosen option, stated as a proponent of the best
+alternative would state it. Do not soften it.
+
+**Why we accept it:** the mitigation, or the reason the drivers still favour this option.
+
 ### Confirmation
 
 How we verify that the implementation complies (test, review checklist item, script).
