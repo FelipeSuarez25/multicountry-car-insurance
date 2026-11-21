@@ -587,7 +587,7 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
     });
   });
 
-  describe('US-01-AC-09 / US-01-AC-21 a number the browser cannot parse reaches the model and the store as empty (R2-F01)', () => {
+  describe('US-01-AC-09 / US-01-AC-21 a number the browser cannot parse is invalid and the wizard state and sessionStorage hold an empty string (R2-F01)', () => {
     /**
      * What Chromium reports for "1e" or "2015e" in a number input: the text is on screen
      * (`validity.badInput` is true), the sanitised `value` reads back as ''. jsdom has no such

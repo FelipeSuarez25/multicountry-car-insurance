@@ -108,7 +108,7 @@ test.describe('US-01-AC-02 / US-01-AC-10 / US-01-AC-18 a required date partly cl
   });
 });
 
-test.describe('US-01-AC-09 a number the browser cannot parse counts as empty', () => {
+test.describe('US-01-AC-09 a number the browser cannot parse is invalid and the wizard state holds an empty string', () => {
   test.beforeEach(async ({ page }) => {
     await page.clock.setFixedTime(TODAY);
   });
@@ -125,7 +125,7 @@ test.describe('US-01-AC-09 a number the browser cannot parse counts as empty', (
     // `value` reads '' both when "1e" is still on screen and when the text was wiped (US-01-R1-F03),
     // so it cannot tell them apart. `validity.badInput` is true only while unparseable text is shown.
     await expect.poll(() => year.evaluate((el: HTMLInputElement) => el.validity.badInput)).toBe(true);
-    // The model and the stored state hold '' (AC-09 note, AC-21), not the last parseable text "1".
+    // The wizard state and sessionStorage hold '' (AC-09 note, AC-21), not the last parseable text "1"; the typed text stays visible.
     await expect
       .poll(() => page.evaluate(() => JSON.parse(sessionStorage.getItem('quote-wizard') ?? '{}').step1?.values?.vehicleYear))
       .toBe('');
