@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Current step | 6 Review R2: APPROVED with 4 minor + 2 nit; all to be fixed before HC3 (human decision) |
+| Current step | 6 Review round 3 (R2 findings fixed; gate passed with repeat runs) |
 | Branch | feat/us-01-data-form |
 | PR | — |
 | Blockers | none known; R2 verifies F01-F11 against their fix commits |
-| **Next action** | Tests first (R2-F01 behaviour, R2-F02, R2-F03), R2-F04 DB volume, R2-F06 stale text, README run instructions (R2-F05); then R2-F01 frontend fix; then gate, short review round 3, PR for HC3. |
+| **Next action** | code-reviewer writes reviews/US-01-review-R3.md; if APPROVED, the orchestrator opens the PR for HC3. |
 | Last updated | 2026-11-21 by orchestrator (Claude Opus 5.5) |
 
 ## Tasks
@@ -93,6 +93,7 @@ page (US-01-Q-19).
 | 2026-11-21 | 5 Gate (after R1 fixes) | **PASSED**. Fix commits: F01 c3bdb56+345a016, F02 8d0a658, F03 a76ea4c, F04 f39ff8d+dd364a6, F05 d84cf82+6ccd4aa, F07 9f4f08d+4a82769, F08 7476019+f33d527, F09 e6a1611, F10 dce1165, F11 1d65723+595e11c; F06 recorded in spec v0.4 §8.1. Clean volumes: builds, lint both sides, 304/304 unit, 9/9 backend, e2e 38/38 twice, wire shapes per spec §7.5 confirmed with curl, scan clean (6 explicit exceptions). trace.sh still counts F01/F02 open until R2 verifies them | orchestrator (scripts, no AI) | Playwright output |
 | 2026-11-21 | 6 Review (round 2) | **APPROVED** (0 blocker/major); R1 F01-F11 verified fixed. Human decisions: **R2-F01 follow the spec** (unparseable number = empty in model/store, optional stays valid, typed text stays visible); **R2-F04 fix before HC3** (SQLite file inside the volume); fix R2-F02, R2-F03, R2-F05, R2-F06 before HC3 | code-reviewer (Opus 5.5) + Felipe Sabogal (human) | [reviews/US-01-review-R2.md](../../reviews/US-01-review-R2.md) |
 | 2026-11-21 | Gate (after R2 fixes) + correction | Checks green: fe build, 309/309 unit, tsc, lint both sides, be 12/12 (incl. R2-F03 router guard), trace exit 0, scan clean. **Correction:** the earlier "F07 IPv6 regression" was an orchestrator shell bug (`env $ENV` in zsh), not a product defect; recorded in FLOW.md. With `scripts/e2e.sh`: full e2e 38/38 on runs 1-2, then **HTTP 429 on the Strapi admin login** in runs 3-5 (AC-03 and the AC-28 valid-token test): the admin login rate limit is hit when the suite is repeated against one stack. AC-24 alone 20/20. Test-isolation issue, routed to test-engineer | orchestrator (scripts, no AI) | scripts/e2e.sh output |
+| 2026-11-21 | 5 Gate (after R2 fixes, final) | **PASSED**. R2 fix commits: F01 40606e2 (+ e92e2c7, AC-24 keyboard regression it caused: store one write behind on fast Enter), F02 778f3e9, F03 6495aa9, F04 e4755af, F05 63a05b7, F06 d1e78f3; e2e admin login once per run (be39451, 429 on repeated runs). Clean volumes, via scripts/e2e.sh: data-form-co ×15 = 195/195 (was ~1/3 AC-24 failures after 40606e2), full suite 38/38 ×3; 309/309 unit, 12/12 backend, lint both, trace exit 0, scan clean | orchestrator (scripts, no AI) | scripts/e2e.sh output |
 
 ## Session log
 
