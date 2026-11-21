@@ -7,12 +7,12 @@
 
 | Field | Value |
 |---|---|
-| Current step | 4 Implementation (backend done; frontend in progress) |
+| Current step | 6 Review round 1 (gate attempt 1 passed) |
 | Branch | feat/us-03-summary-payment |
 | PR | — |
 | Blockers | none |
-| **Next action** | frontend-developer implements T-13..T-18; then the automated gate (step 5). |
-| Last updated | 2026-11-21 by test-engineer (Claude Sonnet 5.5) |
+| **Next action** | code-reviewer runs review round 1 on the branch. |
+| Last updated | 2026-11-21 by orchestrator (Claude Opus 5.5) |
 
 ## Tasks
 
@@ -53,6 +53,7 @@ T-12 and T-15 on the terms-format ADR (US-03-Q-02); T-10..T-13 on the content-ty
 | 2026-11-21 | HC2 | **Accepted**: ADR-0008 (simulated payment, option A) and ADR-0009 (terms as Strapi blocks with a whitelist renderer, option D); ADR-0002 implementation note for the `term` type | Felipe Sabogal (human) | adr/0008, adr/0009 |
 | 2026-11-21 | 3 Tests | Tests written first and red for the right reason: `tsc -p tsconfig.spec.json` has only TS2307 for the planned modules; `backend/tests/terms-rules.test.ts` fails only because `api::term.term` does not exist (and the replaced public-role assertion of `plan-rules.test.ts` for the missing `term.find`); `playwright test --list` loads 124 tests in 7 files. Every existing frontend test (590) and backend test stays green. The page, pure-function, gateway, store, terms and renderer tests were also run against throwaway prototypes outside the repository (all green) to prove they are coherent and not red for a test defect. 19 AC and 8 BR are covered, AC-18 is manual (spec). | test-engineer (Claude Sonnet 5.5) | this file, `scripts/trace.sh US-03` |
 | 2026-11-21 | Step 3 test decisions | **Decided**: (1) terms title is an `h3` under the `h2` section and the body renders with `headingLevel` 4; (2) a select value with no matching option, or an invalid date string, is shown raw (row kept); (3) nested lists render up to 6 levels, a 7th is dropped with the `list-depth` warning; (4) accepted as proposed: the names `maskDocumentNumber`, `buildSummaryRows`, `parseTerms`, `TermsApi.load`, `QuoteStore.clearQuote`; a value-free warning when a country has more than one published terms; AC-15 measured with a 1.4–4 s tolerance; AC-16 real scroll checked at HC3 | Felipe Sabogal (human) | test commit 67462f5 |
+| 2026-11-21 | Gate (attempt 1) | **PASSED** (run by the orchestrator on a clean stack): frontend lint 0, build 0, unit 945/945; backend lint 0, build 0, 81/81; e2e 124/124 twice (7 files, US-01..US-03); `trace.sh` US-01/02/03 exit 0 (US-03: ACs without test 0); code scan exit 0 (6 known exceptions); log scan 23 = 23. Before the gate, two test defects found by the frontend-developer were confirmed by the orchestrator and fixed by the test-engineer (d530005) | orchestrator | d530005 |
 
 ## Session log
 
