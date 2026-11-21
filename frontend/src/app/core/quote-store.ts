@@ -50,6 +50,19 @@ export class QuoteStore {
     this.persist();
   }
 
+  /**
+   * Closes the quote after a successful payment (ADR-0003, US-03-BR-06): the entry is removed and
+   * the in-memory country, values, typed output and plan are reset, so a reload or a back action
+   * leads to an empty step 1.
+   */
+  clearQuote(): void {
+    this.countrySignal.set(null);
+    this.valuesSignal.set({});
+    this.outputSignal.set(null);
+    this.planSignal.set(null);
+    this.clearStorage();
+  }
+
   setValue(key: string, value: RawValue): void {
     this.valuesSignal.update((values) => ({ ...values, [key]: value }));
     this.outputSignal.set(null);
