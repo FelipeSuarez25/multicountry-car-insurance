@@ -4,10 +4,10 @@
 |---|---|
 | Story | [story.md](story.md) (verbatim, not edited) |
 | Status | Approved |
-| Version | 0.3 |
+| Version | 0.4 |
 | Author | spec-writer subagent (Claude Opus 5.5) |
-| Approved by | v0.2: Felipe Sabogal, 2026-11-20 (HC1 round 2). v0.3: Felipe Sabogal, 2026-11-20 (HC1 round 3). |
-| Related ADRs | [ADR-0001](../../adr/0001-multi-country-content-strategy.md) (multi-country content and routes), [ADR-0002](../../adr/0002-strapi-access-and-security.md) (Strapi access and security), [ADR-0003](../../adr/0003-wizard-state-persistence.md) (wizard state persistence), [ADR-0004](../../adr/0004-forms-library.md) (forms library). All Accepted at HC2, 2026-11-20 (see §10). |
+| Approved by | v0.2: Felipe Sabogal, 2026-11-20 (HC1 round 2). v0.3: Felipe Sabogal, 2026-11-20 (HC1 round 3). v0.4: Felipe Sabogal, 2026-11-21 (HC1 round 4). |
+| Related ADRs | [ADR-0001](../../adr/0001-multi-country-content-strategy.md) (multi-country content and routes), [ADR-0002](../../adr/0002-strapi-access-and-security.md) (Strapi access and security), [ADR-0003](../../adr/0003-wizard-state-persistence.md) (wizard state persistence), [ADR-0004](../../adr/0004-forms-library.md) (forms library). All Accepted at HC2, 2026-11-20 (see §10). ADR-0006 (amends ADR-0001's physical model: structured rule attributes and the country `localeTag` attribute), being written after code review round 1 (see §10). |
 
 Sources cited in this spec:
 
@@ -19,6 +19,9 @@ Sources cited in this spec:
   `strapi-content-modeling`. This spec refines that contract; the differences are listed in §7.4.
 - **ADR-0001..0004**: the accepted ADRs (precedence level 2, binding since HC2). Since v0.3 the
   spec cites them by number.
+- **Review R1**: [reviews/US-01-review-R1.md](../../reviews/US-01-review-R1.md), code review
+  round 1 (2026-11-21), and the human decisions on it recorded in `tasks.md`, *Gate history*,
+  row "6 Review (round 1)". Source of the v0.4 changes (findings US-01-R1-F02, F04, F05, F06).
 
 ## 1. Summary
 
@@ -89,6 +92,8 @@ countries.
 | Wizard | The three-step flow: step 1 data (this story), step 2 plans (US-02), step 3 summary and payment (US-03). |
 | Wizard state | The step 1 values (and later the chosen plan) held on the front end between steps, in `sessionStorage` for one country, as decided in ADR-0003 (US-01-Q-15). It holds the raw editing values; the typed step 1 output (§7.3) is produced from them only on a valid "Continuar". |
 | Boundary validation | Checking the Strapi response against the expected contract before using it. Invalid items are dropped and logged without user data. |
+| Wire shape / logical shape | The *wire shape* is the JSON that the Strapi 5 REST API returns, with Strapi's attribute names (for example a rule's `pattern`, a country's `localeTag`). The *logical shape* is the typed model the front-end boundary parser produces from it (§7.1 `ValidationRule`, the country entry of §7.5). The mapping between the two is stated in §7.5 (added in v0.4). |
+| Anonymous request | Any request to the content API that Strapi does not authenticate with a valid token: no `Authorization` header, a scheme other than `Bearer` (`foo`, `Basic …`), `Bearer` with no token, or an invalid token, on any letter case of the `/api` path, on Strapi's own port or through the proxy (added in v0.4, US-01-R1-F02). |
 | Today | The current local calendar date of the browser, read from an injectable clock (US-01-Q-06). |
 | Línea (CO) | Colombian term for the vehicle model name (for example "Spark GT"). In Colombia "modelo" usually means the model **year**, so the CO seed labels follow local usage (§7.2). |
 | Placa / Patente | Vehicle licence plate in Colombia / Chile. |
@@ -103,8 +108,8 @@ countries.
 | US-01-BR-03 | Story: "The vehicle year cannot be later than next year or more than 20 years old." | With `Y` = the calendar year of *today*, a vehicle year `v` is valid if and only if `v` is an integer and `Y − 20 ≤ v ≤ Y + 1` (both limits inclusive). On 2026-11-20 the valid range is 2006–2027. The limits 20 and 1 are parameters of the `yearRange` rule in the configuration (seeded as 20 and 1 for both countries), so the business can change them (US-01-Q-05). | US-01-AC-05 |
 | US-01-BR-04 | Story: "The policyholder must be of legal age." | The birth date is valid if and only if the age in completed years on *today* is ≥ the configured `minAge` (seeded as 18 for CO and for CL). A person turns N on the anniversary of their birth date; for a 29 February birth date, in non-leap years the anniversary is 1 March (US-01-Q-07). Birth dates after today are invalid. | US-01-AC-06 |
 | US-01-BR-05 | Story context: "In Colombia the identity document is usually the citizenship ID (cédula de ciudadanía) or foreigner ID (cédula de extranjería), and the vehicle is identified by its license plate (placa). In Chile the document is the RUT and the vehicle is identified by its license plate (patente)." | CO step 1 includes a document type select with options CC "Cédula de ciudadanía" and CE "Cédula de extranjería", a document number (digits only, 6–10) and a plate labelled "Placa" (3 letters + 3 digits). CL step 1 includes a document number labelled "RUT" (with or without dots and dash, check digit `0–9`/`K`, check digit verified per US-01-Q-09) and a plate labelled "Patente" (2 letters + 4 digits, or 4 letters + 2 digits). CL has no document type field. These are **seed content**, not code; the seed is summarised in §7.2 and listed in full in the annex [seed-fields.md](seed-fields.md) (US-01-Q-03). | US-01-AC-01, US-01-AC-11, US-01-AC-12 |
-| US-01-BR-06 | Story context: "The business team wants to add, remove or reorder fields from Strapi without asking development for changes." Assessment: "Changing a form field or a plan in Strapi must be reflected in the app without changing code." | Publishing, unpublishing or editing a field configuration (including its order, options, rules and copy) is reflected in step 1 on the next full page load of the app, with no code change, build or deployment. No browser-side or proxy cache may delay this beyond that reload (US-01-Q-16). Unpublished (draft) changes are never shown, and no anonymous caller can read them, not even by asking the content API for `status=draft` (ADR-0002). | US-01-AC-03, US-01-AC-13, US-01-AC-23, US-01-AC-28 |
-| US-01-BR-07 | Assessment: "The same application and the same build serve Colombia and Chile." Business context: "Each country has its own regulations, identity documents, currency, coverages and copy, so the content the app consumes changes by country." | One production build serves both countries. The supported countries are the published `country` entries in Strapi, loaded once per full page load (ADR-0001); no country code, country name or country list exists in front-end code. The country context selects which content is loaded; no country-specific branch, field list or copy exists in front-end code (wizard chrome copy excepted, US-01-Q-14). A country code that is not in the loaded list shows the unknown-country state and loads no form. If the country list cannot be loaded, the root chooser and the unknown-country page show a load error with "Reintentar", never "Este país no está disponible." (ADR-0001). Data entered in one country context is never shown in the other (US-01-Q-02). | US-01-AC-01, US-01-AC-17, US-01-AC-22 |
+| US-01-BR-06 | Story context: "The business team wants to add, remove or reorder fields from Strapi without asking development for changes." Assessment: "Changing a form field or a plan in Strapi must be reflected in the app without changing code." | Publishing, unpublishing or editing a field configuration (including its order, options, rules and copy) is reflected in step 1 on the next full page load of the app, with no code change, build or deployment. No browser-side or proxy cache may delay this beyond that reload (US-01-Q-16). Unpublished (draft) changes are never shown, and no anonymous caller (glossary: any request Strapi does not authenticate, whatever its headers or path letter case) can read them, not even by asking the content API for `status=draft` (ADR-0002). | US-01-AC-03, US-01-AC-13, US-01-AC-23, US-01-AC-28 |
+| US-01-BR-07 | Assessment: "The same application and the same build serve Colombia and Chile." Business context: "Each country has its own regulations, identity documents, currency, coverages and copy, so the content the app consumes changes by country." | One production build serves both countries. The supported countries are the published `country` entries in Strapi, loaded once per full page load (ADR-0001); no country code, country name or country list exists in front-end code. The country context selects which content is loaded; no country-specific branch, field list or copy exists in front-end code (wizard chrome copy excepted, US-01-Q-14; the complete list is §8.1). A country code that is not in the loaded list shows the unknown-country state and loads no form. If the country list cannot be loaded, the root chooser and the unknown-country page show a load error with "Reintentar", never "Este país no está disponible." (ADR-0001). Data entered in one country context is never shown in the other (US-01-Q-02). | US-01-AC-01, US-01-AC-17, US-01-AC-22 |
 | US-01-BR-08 | Assessment: "Use a front-end strategy to persist the data; a database is not required." Story AC "Keep data when going back". | Step 1 values stay in the browser: they are held in the wizard state on the front end and never sent to Strapi or any other server. They survive moving between steps (in-app and browser navigation) and a reload in the same tab; they are kept in `sessionStorage` for one country and cleared when the tab closes, when another country's context is entered and after a successful payment (ADR-0003). The store keeps the raw editing values and writes them on every change, so a reload restores exactly what was typed, valid or not (ADR-0003, HC2). Step 1 hands its values to the next steps only through the wizard state, as the typed output of §7.3, which is produced only on a valid "Continuar". | US-01-AC-04, US-01-AC-18, US-01-AC-20, US-01-AC-21, US-01-AC-27 |
 
 ## 5. Acceptance criteria
@@ -409,7 +414,13 @@ Scenario Outline: Malformed field configuration is skipped
     | its key "plate" duplicates a field earlier in sortOrder (the earlier one is kept) |
     | its label is empty                               |
     | its minAge rule has no number of years           |
+    | its pattern rule has "pattern" null and its regex in "value" |
+    | its minLength rule has "value" as the text "3" instead of a number |
 ```
+
+The last two rows were added in v0.4 (US-01-R1-F04): they apply the §7.5 wire-to-logical
+mapping, where each rule kind reads its parameter from its own typed attribute and a missing or
+wrong-type parameter makes the rule, and so the field, malformed.
 
 ### US-01-AC-15 — Content cannot be loaded (derived from Q-17)
 
@@ -643,19 +654,48 @@ requests are inspected from the first page load until that navigation.
 
 ### US-01-AC-28 — Anonymous callers cannot read drafts or write content (derived from US-01-BR-06 / ADR-0002)
 
-New in v0.3 (HC2 decision: the ADR-0002 security check is traced as an AC).
+New in v0.3 (HC2 decision: the ADR-0002 security check is traced as an AC). Widened in v0.4
+(US-01-R1-F01/F02): "anonymous" means any request that Strapi does not authenticate (glossary),
+not only a request without an `Authorization` header, and the `/api` path may use any letter
+case, on Strapi's own port as well as through the proxy.
 
 ```gherkin
 Scenario Outline: Anonymous requests never return draft content
   Given the seed field "Correo electrónico" (key "email") exists for Colombia only as a draft
-  When an anonymous client, without any token, requests the Colombia form fields with
-    "status=draft" and "filters[key][$eq]=email" through <entry point>
+  When an anonymous client sends <authorization> and requests the Colombia form fields at the
+    path <path> with "status=draft" and "filters[key][$eq]=email" through <entry point>
   Then the response contains no field with key "email"
+  And every entry the response returns, if any, has a non-null "publishedAt"
 
   Examples:
-    | entry point                                 |
-    | Strapi's own port (bypassing the proxy)     |
-    | the same-origin proxy at the relative "/api" |
+    | entry point                                  | path               | authorization                                      |
+    | Strapi's own port (bypassing the proxy)      | "/api/form-fields" | no Authorization header                            |
+    | Strapi's own port (bypassing the proxy)      | "/api/form-fields" | the header Authorization "foo"                     |
+    | Strapi's own port (bypassing the proxy)      | "/api/form-fields" | the header Authorization "Basic Zm9vOmJhcg=="      |
+    | Strapi's own port (bypassing the proxy)      | "/api/form-fields" | the header Authorization "Bearer" (no token)       |
+    | Strapi's own port (bypassing the proxy)      | "/api/form-fields" | the header Authorization "Bearer not-a-real-token" |
+    | Strapi's own port (bypassing the proxy)      | "/API/form-fields" | no Authorization header                            |
+    | Strapi's own port (bypassing the proxy)      | "/Api/form-fields" | no Authorization header                            |
+    | the same-origin proxy at the relative "/api" | "/api/form-fields" | no Authorization header                            |
+    | the same-origin proxy at the relative "/api" | "/api/form-fields" | the header Authorization "foo"                     |
+    | the same-origin proxy at the relative "/api" | "/api/form-fields" | the header Authorization "Basic Zm9vOmJhcg=="      |
+    | the same-origin proxy at the relative "/api" | "/api/form-fields" | the header Authorization "Bearer" (no token)       |
+    | the same-origin proxy at the relative "/api" | "/api/form-fields" | the header Authorization "Bearer not-a-real-token" |
+    | the same-origin proxy at the relative "/api" | "/API/form-fields" | no Authorization header                            |
+    | the same-origin proxy at the relative "/api" | "/Api/form-fields" | no Authorization header                            |
+
+Scenario Outline: Anonymous requests never return draft countries
+  When an anonymous client sends <authorization> and requests the country list at the path
+    <path> with "status=draft" through <entry point>
+  Then every entry the response returns, if any, has a non-null "publishedAt"
+
+  Examples:
+    | entry point                                  | path             | authorization                                |
+    | Strapi's own port (bypassing the proxy)      | "/api/countries" | the header Authorization "foo"               |
+    | Strapi's own port (bypassing the proxy)      | "/api/countries" | the header Authorization "Bearer" (no token) |
+    | Strapi's own port (bypassing the proxy)      | "/API/countries" | no Authorization header                      |
+    | the same-origin proxy at the relative "/api" | "/api/countries" | the header Authorization "foo"               |
+    | the same-origin proxy at the relative "/api" | "/API/countries" | no Authorization header                      |
 
 Scenario: Writes through the same-origin proxy are rejected
   When an anonymous client sends "POST /api/form-fields" through the same-origin proxy, with a
@@ -664,8 +704,16 @@ Scenario: Writes through the same-origin proxy are rejected
   And an anonymous read of the Colombia form fields returns no field with key "securityProbe"
 ```
 
+Reading the draft scenarios (v0.4): an error response (for example 400 from the proxy for any
+`Authorization` header, 401 from Strapi for an invalid `Bearer` token) or a response that is not
+the content API (for example the proxy answering `/API/…` with the app's `index.html`) carries no
+draft and satisfies the `Then` steps. What is required is that no response ever carries a draft.
+The same rows apply with each of the other publication parameters that ADR-0002's published-only
+rule strips (`publicationFilter`, `hasPublishedVersion`, `publicationState`) in place of
+`status=draft`.
+
 Verification: e2e file `us-01-security.spec.ts`, as API requests from the Playwright Node
-process with no browser and no token (ADR-0002 *Confirmation*). The
+process with no browser and no valid token (ADR-0002 *Confirmation*). The
 check is re-run on every Strapi upgrade (ADR-0002, *Strongest argument against*).
 
 ## 6. Gaps and open questions
@@ -711,9 +759,12 @@ typing their own data (US-03 masks the summary).
 
 ## 7. Content contract (what Strapi must provide)
 
-This section is **logical**. The physical model is fixed by ADR-0001 and implemented by the
+This section is **logical**, except §7.5, which fixes the **wire shape** (the JSON of the
+Strapi 5 REST API) and its mapping to the logical shape (v0.4). The physical model is fixed by
+ADR-0001, as amended by ADR-0006 (amends ADR-0001's physical model), and implemented by the
 strapi-developer following `strapi-content-modeling`: a `country` collection type (`code`
-ISO 3166-1 alpha-2 upper case, unique; `name`; `currencyCode`; `locale`; `sortOrder`; draft &
+ISO 3166-1 alpha-2 upper case, unique; `name`; `currencyCode`; `localeTag`, the BCP 47 tag, named
+so because Strapi reserves `locale` (ADR-0006, US-01-R1-F05); `sortOrder`; draft &
 publish on) and a `form-field` collection type with a **required `manyToOne` relation
 `country`**; `documents.strictRelations: true`, so an item without a country cannot be
 published; `key` uniqueness per country enforced by a Document Service middleware (Strapi's
@@ -738,7 +789,10 @@ filtered by `country.code`, and reads only published content through the same-or
 | `requiredMessage` | string | Optional. Overrides `errorMessage` for the `required` check. |
 | `country` | required `manyToOne` relation to `country` (ADR-0001) | Exactly one country per field. Publishing without it is rejected (`strictRelations`). |
 
-Rule kinds (structured, not free JSON):
+Rule kinds (structured, not free JSON). The parameters below are the **logical** `ValidationRule`
+the boundary parser produces. On the wire each parameter type has its own typed attribute (for
+example a pattern arrives in `pattern`, not in `value`); the wire shape and the mapping are in
+§7.5 (v0.4, US-01-R1-F04, ADR-0006). No rule attribute is free JSON.
 
 | Kind | Parameters | Applies to | Semantics |
 |---|---|---|---|
@@ -816,6 +870,113 @@ PR. Differences proposed here:
 3. `number` fields are integers only (US-01-Q-12).
 4. Empty optional fields skip all rules (US-01-Q-26). The skill does not state this.
 5. Rules carry an applicability by field type (§7.1); a mismatch is malformed.
+6. (v0.4, US-01-R1-F04) On the wire, a rule has one typed attribute per parameter type
+   (`value` number, `pattern` text, `years`, `maxYearsOld`, `maxYearsAhead` integers); no
+   free-JSON attribute. The logical `ValidationRule` is unchanged (§7.5).
+
+### 7.5 Wire shapes (Strapi 5 REST) and mapping to the logical shape (v0.4)
+
+Added in v0.4 after code review round 1 (US-01-R1-F04, US-01-R1-F05; human decisions of
+2026-11-21; physical model in ADR-0006, which amends ADR-0001's physical model). The developers
+implement the backend to return exactly these shapes, and the front-end boundary parser
+(`field-config.ts`, `country.ts`) maps them to the logical shapes. The test-engineer derives the
+parser fixtures from them.
+
+#### 7.5.1 Validation rule (`form.validation-rule` component, inside a form field's `rules`)
+
+Every rule on the wire carries **all** of the attributes below. The attributes its kind does not
+use are `null`. Strapi adds the component `id`, which the parser ignores.
+
+| Wire attribute | JSON type on the wire | Used by kind(s) | Editor input (Strapi admin) |
+|---|---|---|---|
+| `kind` | string, one of `minLength`, `maxLength`, `min`, `max`, `pattern`, `minAge`, `yearRange`, `rutCheckDigit` | all | enumeration (required) |
+| `value` | number or `null` | `minLength`, `maxLength`, `min`, `max` | numeric input |
+| `pattern` | string or `null` | `pattern` | plain text input: the regex is typed as is (`^\d+$`), with no JSON quoting or doubled backslashes |
+| `years` | integer or `null` | `minAge` | integer input |
+| `maxYearsOld` | integer or `null` | `yearRange` | integer input |
+| `maxYearsAhead` | integer or `null` | `yearRange` | integer input |
+| `message` | string or `null` | all (optional override, US-01-Q-04) | text input |
+
+The Strapi attribute types (for example `integer` versus `decimal` for `value`, `string` versus
+`text` for `pattern`) and their schema-level minimums are fixed in ADR-0006; whatever they are,
+the JSON types above hold. Every current use of `value` is an integer (lengths, and bounds of
+integer-only `number` fields, US-01-Q-12).
+
+Examples (wire), as returned inside `data[i].rules` of `GET /api/form-fields`:
+
+```json
+{ "id": 41, "kind": "pattern",   "value": null, "pattern": "^[A-Za-z]{3}[0-9]{3}$", "years": null, "maxYearsOld": null, "maxYearsAhead": null, "message": null }
+{ "id": 42, "kind": "minLength", "value": 3,    "pattern": null, "years": null, "maxYearsOld": null, "maxYearsAhead": null, "message": "Ingresa tu nombre completo (entre 3 y 80 caracteres)." }
+{ "id": 43, "kind": "minAge",    "value": null, "pattern": null, "years": 18,   "maxYearsOld": null, "maxYearsAhead": null, "message": null }
+{ "id": 44, "kind": "yearRange", "value": null, "pattern": null, "years": null, "maxYearsOld": 20,   "maxYearsAhead": 1,    "message": null }
+{ "id": 45, "kind": "rutCheckDigit", "value": null, "pattern": null, "years": null, "maxYearsOld": null, "maxYearsAhead": null, "message": null }
+```
+
+(The values are illustrative; the seed values are in [seed-fields.md](seed-fields.md).)
+
+Mapping wire → logical `ValidationRule` (§7.1), applied per rule by the boundary parser:
+
+| Wire `kind` | Parameter read from the wire | Valid when | Logical rule produced |
+|---|---|---|---|
+| `minLength`, `maxLength` | `value` | a JSON number, integer, ≥ 0 | `{ kind, value }` |
+| `min`, `max` | `value` | a JSON number, finite | `{ kind, value }` |
+| `pattern` | `pattern` | a non-empty JSON string that compiles as an ECMAScript regex with no flags | `{ kind: 'pattern', value: <pattern> }` |
+| `minAge` | `years` | a JSON number, integer, > 0 | `{ kind: 'minAge', years }` |
+| `yearRange` | `maxYearsOld`, `maxYearsAhead` | both JSON numbers, integers, ≥ 0 | `{ kind: 'yearRange', maxYearsOld, maxYearsAhead }` |
+| `rutCheckDigit` | none | always | `{ kind: 'rutCheckDigit' }` |
+
+Rules of the mapping:
+
+1. The logical `ValidationRule` of §7.1 is unchanged: the logical `pattern` rule keeps its
+   regex in `value`, so validators and their tests do not change. Only the parser reads a
+   different wire attribute for `pattern`.
+2. `message`: a non-empty string becomes the logical `message`; `null`, an empty or a blank
+   string means "no override".
+3. Attributes the kind does not use are **ignored**, whatever their value (an editor who
+   changes a rule's kind may leave a stale value behind). They are `null` in the seed.
+4. A rule is **malformed** when its `kind` is unknown, does not apply to the field's type
+   (§7.1), or the parameter its kind reads is missing, `null`, of the wrong JSON type (numeric
+   text such as `"3"` is a wrong type) or out of range. A malformed rule makes its field
+   malformed: the field is dropped with a `console.warn` naming the field key and the problem,
+   with no user data (US-01-Q-18, AC-14).
+
+#### 7.5.2 Country (`country` collection type)
+
+The API exposes the stored attribute name **`localeTag`**, with no renaming in the backend (no
+custom controller mapping `fields`, `sort` or `filters`; human decision on US-01-R1-F05). It can
+therefore be selected, sorted and filtered as `localeTag` like any other attribute. The front end
+requests it by that name (for example `fields[3]=localeTag`), never as `locale`.
+
+Example (wire), `GET /api/countries?fields[0]=code&fields[1]=name&fields[2]=currencyCode&fields[3]=localeTag&fields[4]=sortOrder&sort=sortOrder:asc`
+(published content only, ADR-0002):
+
+```json
+{
+  "data": [
+    { "id": 1, "documentId": "…", "code": "CO", "name": "Colombia", "currencyCode": "COP", "localeTag": "es-CO", "sortOrder": 10 },
+    { "id": 2, "documentId": "…", "code": "CL", "name": "Chile",    "currencyCode": "CLP", "localeTag": "es-CL", "sortOrder": 20 }
+  ],
+  "meta": { "pagination": { "page": 1, "pageSize": 25, "pageCount": 1, "total": 2 } }
+}
+```
+
+(`id`, `documentId` and `meta` are added by Strapi and ignored by the parser. The `sortOrder`
+values are those of the current seed.)
+
+Mapping wire → logical country entry (the front-end `Country` model):
+
+| Wire attribute | Valid when | Logical attribute |
+|---|---|---|
+| `code` | a string matching `^[A-Z]{2}$` | `code` |
+| `name` | a non-empty string | `name` |
+| `currencyCode` | a string matching `^[A-Z]{3}$` | `currencyCode` |
+| `localeTag` | a non-empty string | `locale` |
+| `sortOrder` | a JSON number | `sortOrder` |
+
+The logical attribute keeps the name `locale` (it is the BCP 47 tag that US-02 and US-03 use for
+number and currency formatting); only the boundary parser knows the wire name `localeTag`. An
+entry that fails any row is dropped with a `console.warn` that carries no content (ADR-0001). A
+wire entry with `locale` but no `localeTag` is invalid.
 
 ## 8. UI states
 
@@ -824,6 +985,7 @@ PR. Differences proposed here:
 | Loading | Country resolved, configuration request in flight | Step heading and "Cargando formulario…"; no fields, no "Continuar" | Container has `aria-busy="true"`; the loading text is in a polite live region |
 | Country list loading | Root chooser or unknown-country page, country list request in flight (ADR-0001) | "Cargando…" (proposed, US-01-Q-28); no country link, no "Este país no está disponible." | Container has `aria-busy="true"`; the loading text is in a polite live region |
 | Country list unavailable | Root chooser or unknown-country page; the country list request times out (10 s) or fails (ADR-0001) | "No pudimos cargar la lista de países. Intenta de nuevo." (proposed, US-01-Q-28) and "Reintentar"; no country link, and never "Este país no está disponible." (AC-17) | Message in `role="alert"`; focus moves to "Reintentar" |
+| Country chooser (v0.4) | Root address `/`, country list loaded (ADR-0001, US-01-Q-01) | Heading "Elige tu país" and a link to each published country (seed: "Colombia", "Chile") | The heading is the page's main heading; links are reachable by Tab |
 | Unsupported country | Country list loaded, and the code in the address is not in it (US-01-Q-01, ADR-0001) | "Este país no está disponible." and a link to each published country (seed: "Colombia", "Chile") | Message is the page's main heading; links are reachable by Tab |
 | Error | Timeout (10 s), network or HTTP error, or zero valid fields | "No pudimos cargar el formulario. Intenta de nuevo." and "Reintentar" | Message in `role="alert"`; focus moves to "Reintentar" |
 | Partial content | Some fields malformed | The valid fields only; nothing extra is shown to the user | Console warning only (no user data) |
@@ -832,6 +994,33 @@ PR. Differences proposed here:
 | Failed continue | "Continuar" with invalid fields | All errors shown; step does not change | Focus on the first invalid field in sortOrder |
 | Success | "Continuar" with a valid form | The address changes to the step 2 route; its page is US-02's (no page of its own in US-01, US-01-Q-27) | Focus on the step 2 heading and document title: defined and verified in US-02 |
 | Back to step 1 | Browser back (and "Atrás" on step 2, once US-02 exists) | Step 1 with the stored values, no errors | Focus on the step 1 heading |
+
+### 8.1 Code-owned chrome copy (complete list)
+
+Added in v0.4 to keep the code-owned end-user copy in one place (US-01-R1-F06). It collects the
+strings of US-01-Q-14 and US-01-Q-28 (approved at HC1; their §6 cells are unchanged) and adds two
+strings approved at review round 1. Spanish, the same for both countries, in front-end code. No
+other end-user string may live in front-end code (BR-07); every field-related string comes from
+Strapi.
+
+| String | Where | Source |
+|---|---|---|
+| "Continuar" | Step 1 button | US-01-Q-14 |
+| "Atrás" | Step navigation button (on the step 2 page, US-02) | US-01-Q-14 |
+| "Tus datos y los de tu vehículo" | Step 1 heading | US-01-Q-14 |
+| "Selecciona una opción" | Non-selectable prompt of every `select` | US-01-Q-14 |
+| "Cargando formulario…" | Step 1 loading state | US-01-Q-14 |
+| "No pudimos cargar el formulario. Intenta de nuevo." | Step 1 error state | US-01-Q-14 |
+| "Reintentar" | Retry button of every load-error state | US-01-Q-14 |
+| "Revisa este campo." | Generic error fallback (US-01-Q-04) | US-01-Q-14 |
+| "Este país no está disponible." | Unsupported-country page heading | US-01-Q-14 |
+| "*" and "Los campos marcados con * son obligatorios." | Required marker and its note | US-01-Q-14 |
+| "Cargando…" | Country list loading state | US-01-Q-28 |
+| "No pudimos cargar la lista de países. Intenta de nuevo." | Country list error state | US-01-Q-28 |
+| "Elige tu país" | Country chooser main heading (root address `/`) | Approved at review round 1 (F06), Felipe Sabogal, 2026-11-21 |
+| "Cotizador de seguro de auto" | Page `<title>` (document title) of the US-01 pages; a per-step title is US-02's concern (§8 *Success*) | Approved at review round 1 (F06), Felipe Sabogal, 2026-11-21 |
+
+The country names shown in links ("Colombia", "Chile") are content (`country.name`), not code.
 
 ## 9. Non-functional requirements
 
@@ -884,7 +1073,13 @@ PR. Differences proposed here:
   4. [ADR-0004](../../adr/0004-forms-library.md) — Forms library: Signal Forms over a shared,
      library-agnostic validation core; string editing model; unparseable numbers reach the model
      as empty. Covers v0.2 need 2 (SPIKE-01). Used by: §7.3, AC-09, AC-10.
-- **Needed:** none.
+- **In progress (v0.4, not yet accepted):** ADR-0006 (amends ADR-0001's physical model), being
+  written in parallel after code review round 1: structured rule attributes, one typed attribute
+  per parameter type (US-01-R1-F04), and the country attribute `localeTag`, exposed by the API
+  under that name with no backend renaming (US-01-R1-F05). Used by: §7, §7.1, §7.4, §7.5, AC-14.
+  Until it is accepted, ADR-0001 still names the attribute `locale`; this spec follows the human
+  decisions of 2026-11-21 that ADR-0006 records.
+- **Needed:** none beyond ADR-0006 above.
 
 ## 11. Test mapping
 
@@ -900,7 +1095,7 @@ this story:
 | `frontend/e2e/us-01-data-form-co.spec.ts` | US-01-AC-01 (CO), US-01-AC-02, US-01-AC-09 (unparseable number, real browser; v0.3), US-01-AC-13, US-01-AC-24 (keyboard) |
 | `frontend/e2e/us-01-country-context.spec.ts` | US-01-AC-01 (CL), US-01-AC-17 (both scenarios), US-01-AC-22 |
 | `frontend/e2e/us-01-config-change.spec.ts` | US-01-AC-03 |
-| `frontend/e2e/us-01-security.spec.ts` | US-01-AC-27, US-01-AC-28 (v0.3, ADR-0002) |
+| `frontend/e2e/us-01-security.spec.ts` | US-01-AC-27, US-01-AC-28 (v0.3, ADR-0002; widened in v0.4 to every anonymous variant, US-01-R1-F02) |
 
 Every other AC is covered by unit or component tests. AC-26 is checked by hand at HC3. The e2e
 part of AC-04, AC-18, AC-20 and AC-21 needs the step 2 page and is completed when US-02 exists
@@ -929,10 +1124,10 @@ Short names below: `field-config.spec.ts` = `frontend/src/app/shared/field-confi
 | US-01-AC-11 | unit (seed rule values, every row) | `field-validators.spec.ts` |
 | US-01-AC-12 | unit | `field-validators.spec.ts` |
 | US-01-AC-13 | e2e (seeded draft field) | `us-01-data-form-co.spec.ts` |
-| US-01-AC-14 | unit | `field-config.spec.ts` (boundary parser) |
+| US-01-AC-14 | unit | `field-config.spec.ts` (boundary parser; v0.4: fixtures use the §7.5.1 wire shape, including the two new rows) |
 | US-01-AC-15 | component (mocked HTTP, fake timers) | `quote-form-page.spec.ts` |
 | US-01-AC-16 | component | `quote-form-page.spec.ts` |
-| US-01-AC-17 | e2e (both scenarios; the country list failure is simulated in the browser context by aborting the `/api/countries` request) + unit (country resolution: code matching, case normalisation, unknown code, list not loaded) | `us-01-country-context.spec.ts`, `supported-country-guard.spec.ts` (ADR-0001) |
+| US-01-AC-17 | e2e (both scenarios; the country list failure is simulated in the browser context by aborting the `/api/countries` request) + unit (country resolution: code matching, case normalisation, unknown code, list not loaded; v0.4: the country boundary parser maps wire `localeTag` to logical `locale`, §7.5.2) | `us-01-country-context.spec.ts`, `supported-country-guard.spec.ts` (ADR-0001); the parser's unit test location is the test-engineer's choice |
 | US-01-AC-18 | unit (store: §7.3 typed output only on a valid "Continuar") + component (navigation to the step 2 route); e2e completed in US-02 | `quote-store.spec.ts`, `quote-form-page.spec.ts` |
 | US-01-AC-19 | unit (guard) | `wizard-step-guard.spec.ts` |
 | US-01-AC-20 | unit (store) + component (router history back from the step 2 route); e2e completed in US-02 | `quote-store.spec.ts`, `quote-form-page.spec.ts` |
@@ -943,7 +1138,7 @@ Short names below: `field-config.spec.ts` = `frontend/src/app/shared/field-confi
 | US-01-AC-25 | component (accessible name, description, invalid and required states) | `quote-form-page.spec.ts`; plus screen reader check at HC3 |
 | US-01-AC-26 | manual (HC3: screenshots at 360 px and desktop) | None automated. The human attaches two screenshots of step 1 of Colombia, at 360 × 740 and at 1280 × 800, to the HC3 record. |
 | US-01-AC-27 | e2e (network inspection) | `us-01-security.spec.ts`; plus code review and `scripts/scan-secrets.sh` |
-| US-01-AC-28 | e2e (API requests from the Playwright Node process, no browser, no token; source ADR-0002) | `us-01-security.spec.ts`; re-run on every Strapi upgrade |
+| US-01-AC-28 | e2e (API requests from the Playwright Node process, no browser, no valid token; source ADR-0002). v0.4: every row of both draft outlines, on Strapi's own port and through the proxy: no header, non-Bearer schemes (`foo`, `Basic …`), `Bearer` with no token, an invalid `Bearer` token, and the `/API/` and `/Api/` paths; for `form-fields` and `countries` (US-01-R1-F02) | `us-01-security.spec.ts`; re-run on every Strapi upgrade |
 
 ## 12. Traceability matrix (filled before HC3)
 
@@ -960,3 +1155,5 @@ Generated with `scripts/trace.sh US-01` and pasted here.
 | 2026-11-20 | Felipe Sabogal (human) | HC1 round 2 | **Approved** (v0.2) | Spec v0.2 approved as is. SPIKE-01 scope widened at the same checkpoint (CLAUDE.md §7). Next: step 2, ADRs. |
 | 2026-11-20 | spec-writer (Claude Opus 5.5) | 1 Spec | Draft v0.3 | Revision after HC2 (ADR-0001..0004 Accepted). Status "Draft — awaiting HC1 (round 3)". **(1) Country type (ADR-0001):** §7.3 `country` is an ISO 3166-1 alpha-2 code checked against the published `country` entries loaded from Strapi, not `'CO' \| 'CL'`; glossary *Country context*, §2 and BR-07 aligned; seed and examples unchanged. **(2) Country list unavailable (ADR-0001):** §8 new rows *Country list loading* and *Country list unavailable* for the root chooser and the unknown-country page (error with "Reintentar", never "Este país no está disponible."); *Unsupported country* row now requires the list to be loaded. AC-17 gets a `Given` for the loaded list and a second scenario (outline over `/`, `/ar/datos`, `/co/datos`). Proposed copy "No pudimos cargar la lista de países. Intenta de nuevo." and "Cargando…" as code-owned strings, recorded as new non-blocking gap **US-01-Q-28** (consistent with Q-14; Q-14 row not edited). **(3) New AC-28 (ADR-0002, HC2 decision):** anonymous `status=draft` requests never return the seeded draft `email` field (Strapi port and proxy); `POST /api/form-fields` through the proxy returns 405. Linked to BR-06 (drafts never shown); e2e in `us-01-security.spec.ts`; §11 and the BR coverage column updated; still 4 e2e files. **(4) Tasks (ADR-0001, ADR-0002):** T-18 (public role, users-permissions defaults, `allow_register` false), T-19 (compose topology with nginx `frontend`, `.env.example`) and T-20 (relative `/api`, dev-server proxy, replacing the runtime API URL) re-scoped; added T-32 (dev super admin from env vars, delete default Full Access token), T-33 (published-only middleware, CORS allow-list), T-34 (`strictRelations`, key-uniqueness middleware, ADR-0001), T-35 (nginx GET-only allow-listed proxy, `no-store`), T-36 (`CountryStore` and its loading/error states), T-37 (`supported-country-guard.spec.ts`), T-38 (backend test of the ADR-0001 rules); other tasks reworded to cite ADR numbers (see tasks.md). **(5) §11:** AC-17's unit file is `supported-country-guard.spec.ts` (ADR-0001). **(6) Checkbox (HC2 decision):** unchecked optional checkbox → `false` in §7.3; "empty optional → `null`" now applies to text, number, select and date only. **(7) Store shape (HC2 decision, ADR-0003):** §7.3 split into stored raw editing values (written on every change) and the typed output (only on a valid "Continuar", consumed by US-02/US-03); BR-08 and glossary *Wizard state* aligned; AC-18 Gherkin reworded to "typed step 1 output" plus a second scenario (no typed output on an invalid "Continuar"); AC-21 preamble updated (sessionStorage applies) plus a second scenario (an unfinished step 1 is restored as typed); AC-23 preamble updated. AC-20 checked: no conflict, unchanged. **(8) AC-09 (HC2 decision, ADR-0004):** new scenario and note: an unparseable number (`abc`, `1e`) reaches the model as empty, so a required field shows `requiredMessage`/`errorMessage` and an optional one is empty; confirmed in a real browser by `us-01-data-form-co.spec.ts` (§11 rows and e2e table updated). **(9) ADR references:** "multi-country / persistence / security ADR" replaced by ADR-0001..0004 in the metadata, sources, §2, §3, §4, §5 conventions, §7, §7.1, §7.3, §9 and §11; §10 lists the four accepted ADRs and "Needed: none". No ID renumbered or retired; added: AC-28, Q-28, T-32..T-38. Unchanged: §1, BR-01..BR-05, Q-01..Q-27 (including all *Human answer* cells), §7.2, §7.4, §12, AC-01..AC-08, AC-10..AC-16, AC-19, AC-20, AC-22, AC-24..AC-27. Counts: 8 BR, 28 AC (4 original, 24 derived), 28 Q (none blocks HC1). |
 | 2026-11-20 | Felipe Sabogal (human) | HC1 round 3 | **Approved** (v0.3) | Spec v0.3 approved as is; US-01-Q-28 default accepted. Next: step 3, tests first. |
+| 2026-11-21 | spec-writer (Claude Opus 5.5) | 1 Spec | Draft v0.4 | Revision after code review round 1 ([reviews/US-01-review-R1.md](../../reviews/US-01-review-R1.md)), applying the human decisions of Felipe Sabogal, 2026-11-21, recorded in `tasks.md`, *Gate history*, row "6 Review (round 1)". Status "Draft — awaiting HC1 (round 4)". **(1) US-01-R1-F04, structured rule attributes (human decision: typed component attributes per parameter):** new §7.5 (§7.5.1) fixes the wire shape of a rule in the Strapi 5 REST response: `kind`, `value` (number: minLength, maxLength, min, max), `pattern` (text: pattern), `years` (minAge), `maxYearsOld`/`maxYearsAhead` (yearRange), `message`; unused attributes `null`; no free JSON. Explicit wire → logical mapping; the logical `ValidationRule` of §7.1 is unchanged (a logical `pattern` rule keeps its regex in `value`). A missing, `null`, wrong-type (numeric text included) or out-of-range parameter makes the rule and its field malformed, dropped with a warning (AC-14). §7 intro and the §7.1 rule-kinds preamble point to §7.5; §7.4 item 6 added; AC-14 gets two Examples rows (`pattern` null with the regex in `value`; `minLength` `value` as text "3") and a note; §11 AC-14 row notes the wire fixtures. **(2) US-01-R1-F05, `localeTag` (human decision: the API exposes `localeTag`, no backend renaming):** §7 intro names the country attribute `localeTag` (Strapi reserves `locale`); §7.5.2 gives the country wire shape and the mapping `localeTag` → logical `locale` in the front-end boundary parser; requests select `localeTag`; §11 AC-17 row adds the parser unit test. No AC, BR or glossary entry named the country `locale` attribute, so none changed for this item. **(3) US-01-R1-F06, copy (human decision: both strings approved):** new §8.1 lists all code-owned chrome copy (US-01-Q-14 and Q-28 strings, unchanged) plus "Elige tu país" (country chooser heading) and "Cotizador de seguro de auto" (page `<title>`), marked "Approved at review round 1 (F06)"; new §8 row *Country chooser*; BR-07 points to §8.1. Q-14 and Q-28 cells untouched. **(4) US-01-R1-F02 (context of F01), AC-28 widened, ID kept:** glossary entry *Anonymous request* (any request Strapi does not authenticate: no header, non-Bearer scheme, empty or invalid `Bearer`, any letter case of `/api`, Strapi's port or the proxy); BR-06 references it; AC-28's draft outline now has 14 rows (7 variants × 2 entry points) and a `publishedAt` check, a new outline for draft countries (5 rows), and a note that error responses satisfy the `Then` and that the other publication parameters are covered by the same rows; write scenario unchanged; §11 e2e table and AC-28 row updated (still 4 e2e files). **(5) ADRs:** ADR-0006 (amends ADR-0001's physical model) referenced in the metadata and in §7 and §10 as in progress. Also: new glossary entry *Wire shape / logical shape*; sources list adds Review R1. No ID renumbered or retired; no ID added. Unchanged: §1, §2, BR-01..BR-05, BR-08, AC-01..AC-13, AC-15..AC-27, §6 (all rows and *Human answer* cells), §7.2, §7.3, §9, §12. Counts: 8 BR, 28 AC (4 original, 24 derived), 28 Q (none blocks HC1). |
+| 2026-11-21 | Felipe Sabogal (human) | HC1 round 4 | **Approved** (v0.4) | Spec v0.4 approved as is, together with the acceptance of ADR-0006. Next: tests for the new wire shapes (AC-14 rows, country parser), then the backend and frontend fixes. |
