@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Current step | 6 Review R1 fixes: spec v0.4 Approved, ADR-0006 Accepted; F01, F02, F07, F08 (backend), F09, F11 (backend) committed; F01 e2e proof pending |
+| Current step | 6 Review round 2 (all R1 findings addressed; gate passed after the fixes) |
 | Branch | feat/us-01-data-form |
 | PR | — |
-| Blockers | US-01-R1-F01 (blocker: anonymous draft reads on Strapi's own port) and US-01-R1-F02 (major: AC-28 tests miss those variants) |
-| **Next action** | Orchestrator proves F01 with e2e on a clean stack; test-engineer writes the tests for spec v0.4 (AC-14 rows, country parser, fixtures); then strapi-developer (F04, F05) and frontend-developer (parser, F03, F08, F10, F11); then gate and review round 2. |
+| Blockers | none known; R2 verifies F01-F11 against their fix commits |
+| **Next action** | code-reviewer writes reviews/US-01-review-R2.md; if APPROVED, the orchestrator opens the PR for HC3 (human QA incl. AC-26 screenshots, merge). |
 | Last updated | 2026-11-21 by orchestrator (Claude Opus 5.5) |
 
 ## Tasks
@@ -90,6 +90,7 @@ page (US-01-Q-19).
 | 2026-11-21 | 5 Gate (attempt 3/3) | **PASSED**. Fixes since attempt 2: f01aab4 (AC-09 race: late Signal Forms DOM write), 645bd25 (custom controller reverted, ADR-0005), f1fc135 (e2e token + country.find, pre-test cleanup). Clean volumes. Frontend build 0 errors, 263/263 unit, tsc 0; backend build OK, 9/9; Reactive Forms 0, casts 2; **e2e 32/32 twice in a row**; 10 CO fields after the runs (no leftovers); trace.sh exit 0 (0 ACs without test, 0 open blocker/major); scan clean, 5 explicit exceptions | orchestrator (scripts, no AI) | Playwright output |
 | 2026-11-21 | 6 Review (round 1) | **CHANGES REQUESTED**: F01 blocker (anonymous draft reads on :1337 via non-Bearer Authorization or upper-case /API/, reproduced independently by the orchestrator), F02 major (AC-28 tests miss those variants), F03-F09 minor, F10-F11 nit. Human decisions: F04 structured rule attributes; F05 expose `localeTag` without mapping (F04+F05 recorded in ADR-0006); F06 copy approved ("Elige tu país", title "Cotizador de seguro de auto"); fix F03, F07, F08, F10, F11 in this round; F09 fixed by the orchestrator (this table) | code-reviewer (Opus 5.5) + Felipe Sabogal (human) | [reviews/US-01-review-R1.md](../../reviews/US-01-review-R1.md) |
 | 2026-11-21 | HC1 (round 4) + HC2 (ADR-0006) | **Approved** spec v0.4 (F04 wire shapes §7.5, F05 `localeTag`, F06 copy §8.1, AC-28 widened to 19 variants); **Accepted** ADR-0006 (typed rule attributes; `localeTag` exposed, no renaming controller) | Felipe Sabogal (human) | spec.md §13, adr/0006 |
+| 2026-11-21 | 5 Gate (after R1 fixes) | **PASSED**. Fix commits: F01 c3bdb56+345a016, F02 8d0a658, F03 a76ea4c, F04 f39ff8d+dd364a6, F05 d84cf82+6ccd4aa, F07 9f4f08d+4a82769, F08 7476019+f33d527, F09 e6a1611, F10 dce1165, F11 1d65723+595e11c; F06 recorded in spec v0.4 §8.1. Clean volumes: builds, lint both sides, 304/304 unit, 9/9 backend, e2e 38/38 twice, wire shapes per spec §7.5 confirmed with curl, scan clean (6 explicit exceptions). trace.sh still counts F01/F02 open until R2 verifies them | orchestrator (scripts, no AI) | Playwright output |
 
 ## Session log
 
