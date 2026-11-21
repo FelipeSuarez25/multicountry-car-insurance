@@ -1,0 +1,71 @@
+# Same-origin proxy and static host of the Angular build (ADR-0002).
+# Processed by the nginx image's envsubst at container start: only ${STRAPI_UPSTREAM} is
+# substituted, nginx variables ($uri, $request_method, ...) are untouched.
+
+server {
+    listen 80;
+    server_name _;
+    server_tokens off;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    # --- Content API: read-only, allow-listed, never cached ---------------------------------
+
+    # Allow-list (US-01): the published countries and form fields. US-02 and US-03 extend it.
+    location ~ ^/api/(countries|form-fields)/?$ {
+        # Only GET (and the implicit HEAD) reaches Strapi.
+        if ($request_method !~ ^(GET|HEAD)$) {
+            add_header Cache-Control "no-store" always;
+            add_header Allow "GET, HEAD" always;
+            return 405;
+        }
+        # The proxy can never be used to replay a token from a browser.
+        if ($http_authorization != "") {
+            add_header Cache-Control "no-store" always;
+            return 400;
+        }
+
+        proxy_pass ${STRAPI_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Authorization "";
+        proxy_read_timeout 15s;
+        proxy_cache off;
+        # Business content must be fresh (US-01-BR-06): one Cache-Control, ours.
+        proxy_hide_header Cache-Control;
+        proxy_hide_header Expires;
+        proxy_hide_header ETag;
+        proxy_hide_header Last-Modified;
+        add_header Cache-Control "no-store" always;
+    }
+
+    # Any other path under /api/ is answered here and never reaches Strapi.
+    location /api/ {
+        add_header Cache-Control "no-store" always;
+        return 404;
+    }
+
+    # --- Angular build -----------------------------------------------------------------------
+
+    # The entry point is revalidated on every load; it names the hashed bundles.
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+    }
+
+    # Hashed bundles may be cached for a long time: their names change on every build.
+    location ~* \.(?:js|css)$ {
+        try_files $uri =404;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+
+    # Client-side routes (/, /co/datos, ...) fall back to index.html.
+    location / {
+        try_files $uri /index.html;
+    }
+}
