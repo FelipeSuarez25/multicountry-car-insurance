@@ -93,9 +93,19 @@ export class QuoteForm implements OnInit {
     return this.form[key] as unknown as FieldTree<boolean>;
   }
 
-  protected errorOf(key: string): string | null {
-    const state = this.form[key]();
-    return state.touched() && state.invalid() ? (state.errors()[0]?.message ?? null) : null;
+  /**
+   * The message to show (spec AC-09): input the browser cannot parse never reaches the model (it
+   * keeps the last parseable text) but Signal Forms reports a parse error without a message, so
+   * that case is evaluated as an empty value: `requiredMessage ?? errorMessage`.
+   */
+  protected errorOf(config: FieldConfig): string | null {
+    const state = this.form[config.key]();
+    if (!state.touched() || !state.invalid()) return null;
+    const errors = state.errors();
+    if (errors.some((error) => error.kind === 'parse')) {
+      return validateField(config, '', this.clock()) ?? config.errorMessage;
+    }
+    return errors[0]?.message ?? null;
   }
 
   protected describedBy(config: FieldConfig, error: string | null): string | null {

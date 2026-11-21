@@ -1,7 +1,7 @@
 <form [formRoot]="form" class="form">
   <p class="form__note">Los campos marcados con * son obligatorios.</p>
   @for (config of configs(); track config.key) {
-    @let error = errorOf(config.key);
+    @let error = errorOf(config);
     @let described = describedBy(config, error);
     @let id = 'field-' + config.key;
     <div class="field" [class.field--checkbox]="config.type === 'checkbox'">
