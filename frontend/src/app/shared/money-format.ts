@@ -10,15 +10,15 @@ export function formatMoney(amount: number, locale: string, currencyCode: string
   const cacheKey = `${locale}|${currencyCode}`;
   let formatter = formatters.get(cacheKey);
   if (!formatter) {
-    // `useGrouping: 'always'` (ES2023) is missing from the ES2022 typings of this project; Spanish
+    // `useGrouping: 'always'` (ES2023.Intl typings, added to tsconfig `lib`): Spanish
     // locales would otherwise leave four-digit amounts ungrouped.
-    const options = {
+    const options: Intl.NumberFormatOptions = {
       style: 'currency',
       currency: currencyCode,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
       useGrouping: 'always',
-    } as unknown as Intl.NumberFormatOptions;
+    };
     formatter = new Intl.NumberFormat(locale, options);
     formatters.set(cacheKey, formatter);
   }
