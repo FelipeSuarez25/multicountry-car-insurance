@@ -445,14 +445,16 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       expect(typeof store().step1Output()?.values['vehicleYear']).toBe('number');
     });
 
-    it('US-01-AC-18 the step 2 route has no page of its own in US-01: no heading, no field, no button', async () => {
+    // Replaces the US-01 test "the step 2 route has no page of its own" (US-01-Q-27): US-02 attaches
+    // its page to this route, so the step 2 address now shows the plan list, not an empty area.
+    it('US-01-AC-18 "I see step 2": after a valid "Continuar" the step 2 route shows the plan list page (heading "Elige tu plan"), with no step 1 field', async () => {
       await start();
       await app.open('/co/datos');
       await fillCo();
       await continuar();
-      expect(app.root.querySelector('h1')).toBeNull();
-      expect(allControls(app.root)).toEqual([]);
-      expect(app.root.querySelectorAll('button')).toHaveLength(0);
+      expect(normalise(heading().textContent)).toBe('Elige tu plan');
+      expect(allControls(app.root).filter((c) => c.type !== 'radio')).toEqual([]);
+      expect(maybeButton(app.root, 'Atrás')).not.toBeNull();
     });
 
     it('US-01-AC-18 an invalid "Continuar" ("Modelo (año)" = 2005) stays on step 1, produces no typed output and keeps the typed values', async () => {
