@@ -40,6 +40,8 @@ export class QuoteForm implements OnInit {
   private readonly router = inject(Router);
 
   protected form!: FieldTree<RawValues>;
+  /** Copies the editing model into the wizard state, key by key, only what changed since the last copy. */
+  private flushModel: () => void = () => undefined;
 
   ngOnInit(): void {
     const configs = this.configs();
@@ -61,6 +63,10 @@ export class QuoteForm implements OnInit {
           // the field states: a parse error on an optional field must not block (R2-F01).
           ignoreValidators: 'all',
           action: async (root) => {
+            // The model-to-store effect runs on the next change detection; a keyboard Enter can
+            // arrive before it (Space on the consent box, then Enter). Flush it so the store
+            // holds exactly what the user sees.
+            this.flushModel();
             if (this.quote.completeStep1(configs) !== null) {
               await this.router.navigate(['/', this.countryCode().toLowerCase(), 'planes']);
               return undefined;
@@ -76,15 +82,17 @@ export class QuoteForm implements OnInit {
 
     // The raw editing values are written to the wizard state on every change (ADR-0003).
     let synced: RawValues = { ...model() };
+    this.flushModel = () => {
+      const current = model();
+      for (const [key, value] of Object.entries(current)) {
+        if (synced[key] !== value) this.quote.setValue(key, value);
+      }
+      synced = { ...current };
+    };
     effect(
       () => {
-        const current = model();
-        untracked(() => {
-          for (const [key, value] of Object.entries(current)) {
-            if (synced[key] !== value) this.quote.setValue(key, value);
-          }
-          synced = { ...current };
-        });
+        model();
+        untracked(() => this.flushModel());
       },
       { injector: this.injector },
     );
