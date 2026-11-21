@@ -44,5 +44,19 @@ No subagent transcript contained the address. Later exports use `scripts/redact-
 
 | Date | File | Finding | Human decision |
 |---|---|---|---|
-| 2026-11-21 | `2026-11-21-067ab97b/subagents/agent-a3deae299b5217d40.jsonl:189` | `strapi-or-generic-secret-assignment`: the review-round-4 agent read `.env.example`, and the value is exactly the fictitious placeholder `toBeModifiedTransferTokenSalt` (exact match verified by the orchestrator) | Accepted as a false positive; the log stays unedited (Felipe Sabogal, 2026-11-21) |
-| 2026-11-21 | several subagent transcripts | `bearer-header` / `strapi-or-generic-secret-assignment` lines that carry the repo's explicit `scan-secrets: allow (…)` markers (fictitious test values quoted by agents) | Already justified by the markers in the source files |
+> **Correction (2026-11-21).** The first version of this table, merged in PR #4, listed one
+> exception. The scanner actually reported **23 unmarked findings** in that export. The
+> orchestrator had read only the last lines of the scanner output. All 23 were then classified by a
+> script that never prints values. The complete classification is below; no log was edited for it.
+
+| Date | Where (`2026-11-21-067ab97b/`) | Finding | Classification (verified) | Human decision |
+|---|---|---|---|---|
+| 2026-11-21 | 7 subagent transcripts (`a075d5c9…`, `a2ffb675…`, `a3deae29…`, `a6282abb…`, `a650a409…`, `a83f4bb7…`, `adcd7645…`) and `main-session.jsonl` | `strapi-or-generic-secret-assignment`, `bearer-header` | Fictitious only: `.env.example` placeholders (`toBeModified…`), the e2e helper's `test…` secrets, the negative-test bearer value, `docker-compose.yml` `${VAR:-}` lines, and agents quoting files that carry the `scan-secrets: allow (…)` markers | Accepted (Felipe Sabogal, 2026-11-21) |
+| 2026-11-21 | `main-session.jsonl` (2 matches) | `strapi-or-generic-secret-assignment` | `realLookingValue1234567890`: a fictitious value the orchestrator wrote to test the scanner (exact match verified) | Accepted (Felipe Sabogal, 2026-11-21) |
+| 2026-11-21 | `main-session.jsonl:519` (2 matches) | `private-key` | The scanner's own rule text (`-----BEGIN [A-Z ]*PRIVATE KEY-----`) as written into `scripts/scan-secrets.sh`; no key material follows | Accepted (Felipe Sabogal, 2026-11-21) |
+| 2026-11-21 | `subagents/agent-a69213286f947f6bb.jsonl:54` (one token, 2 matches) | `jwt` | **Real token**: a Strapi admin *refresh* token for the fictitious dev admin (`userId 1`) of the throwaway stack `mci-db` (R2-F04 persistence check). It **expired at 2026-11-21T16:16:25Z**, and it was signed with an `ADMIN_JWT_SECRET` generated inside that stack's volume, **which was deleted** (`down -v`), so it cannot be validated anywhere. | Accepted as an exception; the log stays unedited (Felipe Sabogal, 2026-11-21) |
+| 2026-11-21 | several subagent transcripts | `bearer-header` / `strapi-or-generic-secret-assignment` reported as `ALLOWED` | Lines that carry the repo's explicit `scan-secrets: allow (…)` markers | Already justified by the markers |
+
+**Procedure from now on** (`session-handoff` skill): run the scanner on the **full** export and
+read the **complete** output. The number of `SECRET?` lines must equal the number of findings
+classified in this table before a log is committed.
