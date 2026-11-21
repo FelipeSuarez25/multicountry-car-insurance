@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Current step | 6 Review round 3 (R2 findings fixed; gate passed with repeat runs) |
+| Current step | 6 Review R3: CHANGES REQUESTED (R3-F01 major) → restore the Signal Forms submit gate (human decision) |
 | Branch | feat/us-01-data-form |
 | PR | — |
-| Blockers | none known; R2 verifies F01-F11 against their fix commits |
-| **Next action** | code-reviewer writes reviews/US-01-review-R3.md; if APPROVED, the orchestrator opens the PR for HC3. |
+| Blockers | US-01-R3-F01 (major): emptied required date submits a stale value |
+| **Next action** | spec v0.5 (optional unparseable number = error) + tests for R3-F01 and the new optional behaviour, in parallel; then frontend-developer restores the Signal Forms gate; then ADR-0004 note, gate, review round 4. |
 | Last updated | 2026-11-21 by orchestrator (Claude Opus 5.5) |
 
 ## Tasks
@@ -94,6 +94,7 @@ page (US-01-Q-19).
 | 2026-11-21 | 6 Review (round 2) | **APPROVED** (0 blocker/major); R1 F01-F11 verified fixed. Human decisions: **R2-F01 follow the spec** (unparseable number = empty in model/store, optional stays valid, typed text stays visible); **R2-F04 fix before HC3** (SQLite file inside the volume); fix R2-F02, R2-F03, R2-F05, R2-F06 before HC3 | code-reviewer (Opus 5.5) + Felipe Sabogal (human) | [reviews/US-01-review-R2.md](../../reviews/US-01-review-R2.md) |
 | 2026-11-21 | Gate (after R2 fixes) + correction | Checks green: fe build, 309/309 unit, tsc, lint both sides, be 12/12 (incl. R2-F03 router guard), trace exit 0, scan clean. **Correction:** the earlier "F07 IPv6 regression" was an orchestrator shell bug (`env $ENV` in zsh), not a product defect; recorded in FLOW.md. With `scripts/e2e.sh`: full e2e 38/38 on runs 1-2, then **HTTP 429 on the Strapi admin login** in runs 3-5 (AC-03 and the AC-28 valid-token test): the admin login rate limit is hit when the suite is repeated against one stack. AC-24 alone 20/20. Test-isolation issue, routed to test-engineer | orchestrator (scripts, no AI) | scripts/e2e.sh output |
 | 2026-11-21 | 5 Gate (after R2 fixes, final) | **PASSED**. R2 fix commits: F01 40606e2 (+ e92e2c7, AC-24 keyboard regression it caused: store one write behind on fast Enter), F02 778f3e9, F03 6495aa9, F04 e4755af, F05 63a05b7, F06 d1e78f3; e2e admin login once per run (be39451, 429 on repeated runs). Clean volumes, via scripts/e2e.sh: data-form-co ×15 = 195/195 (was ~1/3 AC-24 failures after 40606e2), full suite 38/38 ×3; 309/309 unit, 12/12 backend, lint both, trace exit 0, scan clean | orchestrator (scripts, no AI) | scripts/e2e.sh output |
+| 2026-11-21 | 6 Review (round 3) | **CHANGES REQUESTED**: R3-F01 major (since 40606e2 submit bypasses Signal Forms validation; dates do not map badInput, so an emptied required date submits a stale value), R3-F02/F03 minor, R3-F04/F05 nit; R2-F01..F06 verified fixed. **Human decision:** restore the Signal Forms submit gate (remove `ignoreValidators: 'all'`); spec v0.5: an OPTIONAL number field with unparseable text is an error the user must fix (supersedes the optional part of the R2-F01 decision); the store still holds '' and the typed text stays visible | code-reviewer (Opus 5.5) + Felipe Sabogal (human) | [reviews/US-01-review-R3.md](../../reviews/US-01-review-R3.md) |
 
 ## Session log
 
