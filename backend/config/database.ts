@@ -58,12 +58,11 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Database 
     sqlite: {
       client: 'sqlite',
       connection: {
-        filename: path.join(
-          __dirname,
-          '..',
-          '..',
-          sqliteFilename === '' ? '.tmp/data.db' : sqliteFilename
-        ),
+        // An absolute path (the container sets /data/data.db, the named volume) is used as is:
+        // path.join would nest it under the app root and the database would leave the volume.
+        filename: path.isAbsolute(sqliteFilename)
+          ? sqliteFilename
+          : path.join(__dirname, '..', '..', sqliteFilename === '' ? '.tmp/data.db' : sqliteFilename),
       },
       useNullAsDefault: true,
     },
