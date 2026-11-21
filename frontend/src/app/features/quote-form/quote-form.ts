@@ -7,6 +7,7 @@ import {
   input,
   signal,
   untracked,
+  type WritableSignal,
 } from '@angular/core';
 import { FieldTree, FormField, FormRoot, REQUIRED, form, metadata, validate } from '@angular/forms/signals';
 import { Router } from '@angular/router';
@@ -38,10 +39,12 @@ export class QuoteForm implements OnInit {
   private readonly router = inject(Router);
 
   protected form!: FieldTree<RawValues>;
+  private model!: WritableSignal<RawValues>;
 
   ngOnInit(): void {
     const configs = this.configs();
     const model = signal<RawValues>(hydrate(configs, this.quote.values()));
+    this.model = model;
     this.form = form(
       model,
       (root) => {
@@ -91,6 +94,19 @@ export class QuoteForm implements OnInit {
   }
   protected flag(key: string): FieldTree<boolean> {
     return this.form[key] as unknown as FieldTree<boolean>;
+  }
+
+  /**
+   * A number input the browser cannot parse (`1e`) reads back as '' and Signal Forms keeps the
+   * previous text in the model. That stale text would later be written back into the DOM by the
+   * deferred control binding, replacing what the user is typing, so the model follows the
+   * input: unparseable counts as empty (spec AC-09).
+   */
+  protected onNumberInput(key: string, event: Event): void {
+    const input = event.target;
+    if (input instanceof HTMLInputElement && input.validity.badInput && this.model()[key] !== '') {
+      this.model.update((values) => ({ ...values, [key]: '' }));
+    }
   }
 
   /**
