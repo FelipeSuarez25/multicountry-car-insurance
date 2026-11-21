@@ -1,0 +1,78 @@
+<form [formRoot]="form" class="form">
+  <p class="form__note">Los campos marcados con * son obligatorios.</p>
+  @for (config of configs(); track config.key) {
+    @let error = errorOf(config.key);
+    @let described = describedBy(config, error);
+    @let id = 'field-' + config.key;
+    <div class="field" [class.field--checkbox]="config.type === 'checkbox'">
+      @if (config.type === 'checkbox') {
+        <input
+          type="checkbox"
+          [id]="id"
+          [formField]="flag(config.key)"
+          [attr.aria-required]="config.isRequired"
+          [attr.aria-invalid]="error ? 'true' : null"
+          [attr.aria-describedby]="described"
+        />
+        <label [for]="id">{{ config.label }}@if (config.isRequired) {<span aria-hidden="true"> *</span>}</label>
+      } @else {
+        <label [for]="id">{{ config.label }}@if (config.isRequired) {<span aria-hidden="true"> *</span>}</label>
+        @switch (config.type) {
+          @case ('select') {
+            <select
+              [id]="id"
+              [formField]="text(config.key)"
+              [attr.aria-required]="config.isRequired"
+              [attr.aria-invalid]="error ? 'true' : null"
+              [attr.aria-describedby]="described"
+            >
+              <option value="" disabled>Selecciona una opción</option>
+              @for (option of config.options; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          }
+          @case ('number') {
+            <input
+              type="number"
+              [id]="id"
+              [formField]="text(config.key)"
+              [attr.placeholder]="config.placeholder ?? null"
+              [attr.aria-required]="config.isRequired"
+              [attr.aria-invalid]="error ? 'true' : null"
+              [attr.aria-describedby]="described"
+            />
+          }
+          @case ('date') {
+            <input
+              type="date"
+              [id]="id"
+              [formField]="text(config.key)"
+              [attr.aria-required]="config.isRequired"
+              [attr.aria-invalid]="error ? 'true' : null"
+              [attr.aria-describedby]="described"
+            />
+          }
+          @default {
+            <input
+              type="text"
+              [id]="id"
+              [formField]="text(config.key)"
+              [attr.placeholder]="config.placeholder ?? null"
+              [attr.aria-required]="config.isRequired"
+              [attr.aria-invalid]="error ? 'true' : null"
+              [attr.aria-describedby]="described"
+            />
+          }
+        }
+      }
+      @if (config.helpText) {
+        <p class="field__help" [id]="config.key + '-help'">{{ config.helpText }}</p>
+      }
+      @if (error) {
+        <p class="field__error" [id]="config.key + '-error'" role="alert">{{ error }}</p>
+      }
+    </div>
+  }
+  <button type="submit" class="form__submit">Continuar</button>
+</form>
