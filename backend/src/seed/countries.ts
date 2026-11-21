@@ -3,11 +3,12 @@ export interface SeedCountry {
   code: string;
   name: string;
   currencyCode: string;
-  locale: string;
+  /** BCP 47 tag. Stored as `localeTag`: `locale` is a reserved Strapi attribute, the API still answers `locale`. */
+  localeTag: string;
   sortOrder: number;
 }
 
 export const SEED_COUNTRIES: SeedCountry[] = [
-  { code: 'CO', name: 'Colombia', currencyCode: 'COP', locale: 'es-CO', sortOrder: 10 },
-  { code: 'CL', name: 'Chile', currencyCode: 'CLP', locale: 'es-CL', sortOrder: 20 },
+  { code: 'CO', name: 'Colombia', currencyCode: 'COP', localeTag: 'es-CO', sortOrder: 10 },
+  { code: 'CL', name: 'Chile', currencyCode: 'CLP', localeTag: 'es-CL', sortOrder: 20 },
 ];

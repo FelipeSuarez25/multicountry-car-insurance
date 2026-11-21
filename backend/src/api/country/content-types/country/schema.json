@@ -29,7 +29,7 @@
       "required": true,
       "regex": "^[A-Z]{3}$"
     },
-    "locale": {
+    "localeTag": {
       "type": "string",
       "required": true
     },
