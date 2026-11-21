@@ -586,6 +586,97 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
     });
   });
 
+  describe('US-01-AC-09 / US-01-AC-21 a number the browser cannot parse reaches the model and the store as empty (R2-F01)', () => {
+    /**
+     * What Chromium reports for "1e" or "2015e" in a number input: the text is on screen
+     * (`validity.badInput` is true), the sanitised `value` reads back as ''. jsdom has no such
+     * state, so the control is made to report it. Then the input event a keystroke would fire.
+     */
+    function typeUnparseable(el: HTMLInputElement): void {
+      Object.defineProperty(el, 'validity', { configurable: true, get: () => ({ badInput: true, valid: false }) });
+      el.value = '';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    const storedValues = (): Record<string, unknown> => JSON.parse(sessionStorage.getItem(WIZARD_STORAGE_KEY) ?? '{}').step1.values;
+    const makeYearOptional = (items: StrapiItem[]): StrapiItem[] =>
+      items.map((i) => (i['key'] === 'vehicleYear' ? { ...i, isRequired: false } : i));
+
+    it('US-01-AC-09 after "2015" and then unparseable text, the store holds "" (not the last parseable "2015")', async () => {
+      await start();
+      await app.open('/cl/datos');
+      const year = control(app.root, 'Año') as HTMLInputElement;
+      typeInto(year, '2015');
+      await app.settle();
+      expect(store().values()['vehicleYear']).toBe('2015');
+      typeUnparseable(year);
+      leave(year);
+      await app.settle();
+      expect(store().values()['vehicleYear']).toBe('');
+    });
+
+    it('US-01-AC-21 the browser storage holds "" for the unparseable entry, so a reload does not restore a valid "2015"', async () => {
+      await start();
+      await app.open('/cl/datos');
+      const year = control(app.root, 'Año') as HTMLInputElement;
+      typeInto(year, '2015');
+      await app.settle();
+      typeUnparseable(year);
+      await app.settle();
+      expect(storedValues()['vehicleYear']).toBe('');
+    });
+
+    it('US-01-AC-09 a required number with unparseable text shows requiredMessage ?? errorMessage and "Continuar" stays on step 1', async () => {
+      await start();
+      await app.open('/cl/datos');
+      await fillCl({ Año: null });
+      const year = control(app.root, 'Año') as HTMLInputElement;
+      typeUnparseable(year);
+      leave(year);
+      await app.settle();
+      await continuar();
+      expect(describedText(year)).toContain('El año debe estar entre los últimos 20 años y el próximo año.');
+      expect(year.getAttribute('aria-invalid')).toBe('true');
+      expect(app.path()).toBe('/cl/datos');
+      expect(store().step1Output()).toBeNull();
+    });
+
+    it('US-01-AC-09 a required number with a requiredMessage shows that message for unparseable text', async () => {
+      await start();
+      app.server.fields['CL'] = seedStrapiItems('CL').map((i) =>
+        i['key'] === 'vehicleYear' ? { ...i, requiredMessage: 'Indica el año de tu vehículo.' } : i,
+      );
+      await app.open('/cl/datos');
+      await fillCl({ Año: null });
+      const year = control(app.root, 'Año') as HTMLInputElement;
+      typeUnparseable(year);
+      leave(year);
+      await app.settle();
+      await continuar();
+      expect(describedText(year)).toContain('Indica el año de tu vehículo.');
+      expect(app.path()).toBe('/cl/datos');
+    });
+
+    it('US-01-AC-09 an optional number with unparseable text counts as empty: no error, "Continuar" is not blocked, output is null', async () => {
+      await start();
+      app.server.fields['CL'] = makeYearOptional(seedStrapiItems('CL'));
+      await app.open('/cl/datos');
+      await fillCl({ Año: null });
+      const year = control(app.root, 'Año') as HTMLInputElement;
+      typeInto(year, '2015');
+      await app.settle();
+      typeUnparseable(year);
+      leave(year);
+      await app.settle();
+      expect(store().values()['vehicleYear']).toBe('');
+      expect(describedText(year)).not.toContain('El año debe estar entre');
+      expect(year.getAttribute('aria-invalid')).not.toBe('true');
+
+      await continuar();
+      expect(app.path()).toBe('/cl/planes');
+      expect(store().step1Output()?.values['vehicleYear']).toBeNull();
+    });
+  });
+
   describe('US-01-AC-23 configuration changed while data is stored', () => {
     it('US-01-AC-23 the removed field is not shown, the removed option leaves "Ciudad" at the prompt, and "Continuar" asks for the city', async () => {
       await start(wizardEntry('CO', CO_VALID_RAW));
