@@ -4,10 +4,10 @@
 |---|---|
 | Story | [story.md](story.md) (verbatim, not edited) |
 | Status | Approved |
-| Version | 0.2 |
+| Version | 0.3 |
 | Author | spec-writer subagent (Claude Opus 5.5) |
-| Approved by | Felipe Sabogal, 2026-11-20 (HC1 round 2, version 0.2) |
-| Related ADRs | None accepted yet. Four ADRs are needed (see §10). |
+| Approved by | v0.2: Felipe Sabogal, 2026-11-20 (HC1 round 2). v0.3: Felipe Sabogal, 2026-11-20 (HC1 round 3). |
+| Related ADRs | [ADR-0001](../../adr/0001-multi-country-content-strategy.md) (multi-country content and routes), [ADR-0002](../../adr/0002-strapi-access-and-security.md) (Strapi access and security), [ADR-0003](../../adr/0003-wizard-state-persistence.md) (wizard state persistence), [ADR-0004](../../adr/0004-forms-library.md) (forms library). All Accepted at HC2, 2026-11-20 (see §10). |
 
 Sources cited in this spec:
 
@@ -17,6 +17,8 @@ Sources cited in this spec:
   in the repository yet.
 - **Skill**: the project skills `dynamic-form-fields` (FieldConfig contract v0) and
   `strapi-content-modeling`. This spec refines that contract; the differences are listed in §7.4.
+- **ADR-0001..0004**: the accepted ADRs (precedence level 2, binding since HC2). Since v0.3 the
+  spec cites them by number.
 
 ## 1. Summary
 
@@ -32,7 +34,9 @@ countries.
 
 **In scope**
 
-- Resolving the country context (CO or CL) for step 1, and the unknown-country state.
+- Resolving the country context for step 1 from the URL and the published country list loaded
+  from Strapi (ADR-0001; CO and CL in the seed), the unknown-country state, and the state shown
+  when the country list cannot be loaded.
 - Loading the published field configuration of that country from Strapi, validating it at the
   boundary, ordering it, and rendering it as an accessible form with the five field types
   `text`, `number`, `select`, `date`, `checkbox`.
@@ -42,13 +46,16 @@ countries.
   form is invalid.
 - Navigating to the step 2 route on a valid "Continuar", and keeping the step 1 data in the
   wizard state so that it is shown again when the user returns to step 1 (in-app "Atrás" and
-  browser back), with the reload behaviour decided in US-01-Q-15. In US-01 this is verified with
+  browser back), surviving a reload in the same tab (ADR-0003). In US-01 this is verified with
   unit tests of the store and component tests; the end-to-end part is completed in US-02
   (US-01-Q-19, §11).
 - A guard that keeps step 2 unreachable while step 1 is incomplete or invalid (AC-19), and the
   step 2 route it protects, without a page of its own (US-01-Q-27).
 - Loading, error and retry states for the content request.
-- The Strapi content type(s) for form fields and the idempotent seed for CO and CL (§7).
+- The Strapi content types for countries and form fields and the idempotent seed for CO and CL
+  (§7, ADR-0001).
+- The Strapi access rules (public role, published-only reads, CORS, bootstrap) and the
+  same-origin read-only proxy through which the browser reaches the content API (ADR-0002).
 - Keyboard-only completion, accessible labels and errors, mobile and desktop layouts.
 
 **Out of scope**
@@ -73,14 +80,14 @@ countries.
 
 | Term | Meaning in this project |
 |---|---|
-| Country context | The country (`CO` or `CL`) for which the wizard is running. How it is resolved is decided by the multi-country ADR (US-01-Q-01). |
+| Country context | The country for which the wizard is running: an ISO 3166-1 alpha-2 code that matches a published `country` entry in Strapi (`CO` and `CL` in the seed). It is resolved from the URL path segment (`/co/…`, `/cl/…`) as decided in ADR-0001 (US-01-Q-01). |
 | Field configuration | One published Strapi entry describing one form field for one country (§7.1). |
 | Field key | Stable machine name of a field, unique per country (for example `documentNumber`). Used to store values and to pass them to US-02 and US-03. Never shown to the user. |
 | Reserved key | A field key that other stories rely on (§7.3, US-01-Q-08). |
 | Editor | A member of the business team who edits content in the Strapi admin. Non-technical. |
 | Published | A Strapi document whose published version exists. Drafts are never visible to end users. |
 | Wizard | The three-step flow: step 1 data (this story), step 2 plans (US-02), step 3 summary and payment (US-03). |
-| Wizard state | The step 1 values (and later the chosen plan) held on the front end between steps. Where and how long is decided by the persistence ADR (US-01-Q-15). |
+| Wizard state | The step 1 values (and later the chosen plan) held on the front end between steps, in `sessionStorage` for one country, as decided in ADR-0003 (US-01-Q-15). It holds the raw editing values; the typed step 1 output (§7.3) is produced from them only on a valid "Continuar". |
 | Boundary validation | Checking the Strapi response against the expected contract before using it. Invalid items are dropped and logged without user data. |
 | Today | The current local calendar date of the browser, read from an injectable clock (US-01-Q-06). |
 | Línea (CO) | Colombian term for the vehicle model name (for example "Spark GT"). In Colombia "modelo" usually means the model **year**, so the CO seed labels follow local usage (§7.2). |
@@ -96,9 +103,9 @@ countries.
 | US-01-BR-03 | Story: "The vehicle year cannot be later than next year or more than 20 years old." | With `Y` = the calendar year of *today*, a vehicle year `v` is valid if and only if `v` is an integer and `Y − 20 ≤ v ≤ Y + 1` (both limits inclusive). On 2026-11-20 the valid range is 2006–2027. The limits 20 and 1 are parameters of the `yearRange` rule in the configuration (seeded as 20 and 1 for both countries), so the business can change them (US-01-Q-05). | US-01-AC-05 |
 | US-01-BR-04 | Story: "The policyholder must be of legal age." | The birth date is valid if and only if the age in completed years on *today* is ≥ the configured `minAge` (seeded as 18 for CO and for CL). A person turns N on the anniversary of their birth date; for a 29 February birth date, in non-leap years the anniversary is 1 March (US-01-Q-07). Birth dates after today are invalid. | US-01-AC-06 |
 | US-01-BR-05 | Story context: "In Colombia the identity document is usually the citizenship ID (cédula de ciudadanía) or foreigner ID (cédula de extranjería), and the vehicle is identified by its license plate (placa). In Chile the document is the RUT and the vehicle is identified by its license plate (patente)." | CO step 1 includes a document type select with options CC "Cédula de ciudadanía" and CE "Cédula de extranjería", a document number (digits only, 6–10) and a plate labelled "Placa" (3 letters + 3 digits). CL step 1 includes a document number labelled "RUT" (with or without dots and dash, check digit `0–9`/`K`, check digit verified per US-01-Q-09) and a plate labelled "Patente" (2 letters + 4 digits, or 4 letters + 2 digits). CL has no document type field. These are **seed content**, not code; the seed is summarised in §7.2 and listed in full in the annex [seed-fields.md](seed-fields.md) (US-01-Q-03). | US-01-AC-01, US-01-AC-11, US-01-AC-12 |
-| US-01-BR-06 | Story context: "The business team wants to add, remove or reorder fields from Strapi without asking development for changes." Assessment: "Changing a form field or a plan in Strapi must be reflected in the app without changing code." | Publishing, unpublishing or editing a field configuration (including its order, options, rules and copy) is reflected in step 1 on the next full page load of the app, with no code change, build or deployment. No browser-side or proxy cache may delay this beyond that reload (US-01-Q-16). Unpublished (draft) changes are never shown. | US-01-AC-03, US-01-AC-13, US-01-AC-23 |
-| US-01-BR-07 | Assessment: "The same application and the same build serve Colombia and Chile." Business context: "Each country has its own regulations, identity documents, currency, coverages and copy, so the content the app consumes changes by country." | One production build serves both countries. The country context selects which content is loaded; no country-specific branch, field list or copy exists in front-end code (wizard chrome copy excepted, US-01-Q-14). An unsupported or missing country shows the unknown-country state and loads no form. Data entered in one country context is never shown in the other (US-01-Q-02). | US-01-AC-01, US-01-AC-17, US-01-AC-22 |
-| US-01-BR-08 | Assessment: "Use a front-end strategy to persist the data; a database is not required." Story AC "Keep data when going back". | Step 1 values stay in the browser: they are held in the wizard state on the front end and never sent to Strapi or any other server. They survive moving between steps (in-app and browser navigation). Whether they survive a reload, and when they are cleared, is decided by the persistence ADR (proposed default in US-01-Q-15). Step 1 hands its values to the next steps only through the wizard state, in the shape of §7.3. | US-01-AC-04, US-01-AC-18, US-01-AC-20, US-01-AC-21, US-01-AC-27 |
+| US-01-BR-06 | Story context: "The business team wants to add, remove or reorder fields from Strapi without asking development for changes." Assessment: "Changing a form field or a plan in Strapi must be reflected in the app without changing code." | Publishing, unpublishing or editing a field configuration (including its order, options, rules and copy) is reflected in step 1 on the next full page load of the app, with no code change, build or deployment. No browser-side or proxy cache may delay this beyond that reload (US-01-Q-16). Unpublished (draft) changes are never shown, and no anonymous caller can read them, not even by asking the content API for `status=draft` (ADR-0002). | US-01-AC-03, US-01-AC-13, US-01-AC-23, US-01-AC-28 |
+| US-01-BR-07 | Assessment: "The same application and the same build serve Colombia and Chile." Business context: "Each country has its own regulations, identity documents, currency, coverages and copy, so the content the app consumes changes by country." | One production build serves both countries. The supported countries are the published `country` entries in Strapi, loaded once per full page load (ADR-0001); no country code, country name or country list exists in front-end code. The country context selects which content is loaded; no country-specific branch, field list or copy exists in front-end code (wizard chrome copy excepted, US-01-Q-14). A country code that is not in the loaded list shows the unknown-country state and loads no form. If the country list cannot be loaded, the root chooser and the unknown-country page show a load error with "Reintentar", never "Este país no está disponible." (ADR-0001). Data entered in one country context is never shown in the other (US-01-Q-02). | US-01-AC-01, US-01-AC-17, US-01-AC-22 |
+| US-01-BR-08 | Assessment: "Use a front-end strategy to persist the data; a database is not required." Story AC "Keep data when going back". | Step 1 values stay in the browser: they are held in the wizard state on the front end and never sent to Strapi or any other server. They survive moving between steps (in-app and browser navigation) and a reload in the same tab; they are kept in `sessionStorage` for one country and cleared when the tab closes, when another country's context is entered and after a successful payment (ADR-0003). The store keeps the raw editing values and writes them on every change, so a reload restores exactly what was typed, valid or not (ADR-0003, HC2). Step 1 hands its values to the next steps only through the wizard state, as the typed output of §7.3, which is produced only on a valid "Continuar". | US-01-AC-04, US-01-AC-18, US-01-AC-20, US-01-AC-21, US-01-AC-27 |
 
 ## 5. Acceptance criteria
 
@@ -109,9 +116,9 @@ Conventions for every scenario:
 - "Step 2" in a scenario means the step 2 route. Its page belongs to US-02 (US-01-Q-19,
   US-01-Q-27). Where a scenario needs that page, the note under it says what US-01 verifies and
   what is completed when US-02 exists.
-- "In the context of Colombia/Chile" means the country context resolved as decided in the
-  multi-country ADR (proposed default in US-01-Q-01). The scenarios do not depend on the
-  mechanism.
+- "In the context of Colombia/Chile" means the country context resolved from the URL path
+  segment as decided in ADR-0001 (`/co/…`, `/cl/…`; step 1 at `/<country>/datos`, step 2 route
+  at `/<country>/planes`). The scenarios do not depend on the mechanism.
 - Where a scenario depends on *today*, the clock is pinned to the date given in the scenario.
 - "Continuar" and "Atrás" are the step navigation buttons (code-owned copy, US-01-Q-14).
 
@@ -287,7 +294,25 @@ Scenario: Generic fallback when no message can be resolved
   When the field is invalid and the error is shown
   Then the message is "Revisa este campo."
   And no rule name or English text is shown to the user
+
+Scenario: A number the browser cannot parse counts as empty
+  Given I am filling out the form in the context of Colombia, with today pinned to 2026-11-20
+  And the required field "Modelo (año)" has no rule-specific message for "required"
+  When I type "1e" key by key in "Modelo (año)" and activate "Continuar"
+  Then I see the message "El modelo debe estar entre los últimos 20 años y el próximo año." next to it
+  And I stay on step 1
 ```
+
+Note (added in v0.3, HC2 decision, ADR-0004): a `number` input whose text the browser cannot
+parse (for example `abc` or `1e`) reaches the form model as empty (`''`), because of the HTML
+value sanitisation rule for `<input type="number">`. The field is then handled as empty: a
+**required** field fails the `required` check and shows its `requiredMessage` if configured,
+otherwise its `errorMessage` (the seed's CO "Modelo (año)" has no `requiredMessage`, so the
+field-level message is shown); an **optional** field is treated as empty, so it is valid and
+its output is `null` (US-01-Q-26, §7.3). The app does not show a separate "not a number"
+message. Unit tests cover the empty-value path; the CO e2e test
+(`us-01-data-form-co.spec.ts`) confirms the sanitisation in a real browser, because jsdom does
+not reproduce it (SPIKE-01, *Not verified* item 1).
 
 ### US-01-AC-10 — When errors are shown, and focus on a failed attempt (derived from Q-13)
 
@@ -412,11 +437,32 @@ Scenario: No valid fields
 
 ```gherkin
 Scenario: Unsupported country
+  Given the published countries loaded from Strapi are "Colombia" (CO) and "Chile" (CL)
   When I open the application with the country code "AR"
   Then I see "Este país no está disponible."
   And I see links to "Colombia" and "Chile" that open step 1 in that country context
   And no form field is requested or shown
+
+Scenario Outline: The country list cannot be loaded
+  Given the content backend does not answer the country list request within 10 seconds, or answers with an error
+  When I open the address <address>
+  Then I see "No pudimos cargar la lista de países. Intenta de nuevo." and a "Reintentar" button
+  And I do not see "Este país no está disponible."
+  And no country link is shown and no form field is requested or shown
+  When the content backend is available again and I activate "Reintentar"
+  Then I see <result>
+
+  Examples:
+    | address    | result |
+    | /          | the country chooser with the links "Colombia" and "Chile" |
+    | /ar/datos  | "Este país no está disponible." with the links "Colombia" and "Chile" |
+    | /co/datos  | step 1 of Colombia |
 ```
+
+The country links come from the published `country` entries, not from code (ADR-0001). The
+second scenario was added in v0.3 (ADR-0001: "The app never claims a country is unavailable when
+it simply could not check"); its copy is proposed in US-01-Q-28. The 10-second limit reuses the
+US-01-Q-17 timeout.
 
 ### US-01-AC-18 — A valid form moves to step 2 (derived from US-01-BR-08 / Q-08, Q-19)
 
@@ -425,15 +471,28 @@ Scenario: A valid form moves to step 2
   Given I filled step 1 in the context of Colombia with the values of US-01-AC-04
   When I activate "Continuar"
   Then I see step 2
-  And the wizard state holds, for country "CO", the values
+  And the wizard state holds the typed step 1 output (§7.3) for country "CO", with the values
     documentType "CC", documentNumber "1012345678", fullName "Ana Prueba Ficticia",
     birthDate "1990-05-15", city "MDE", plate "ABC123", make "mazda", model "3 Touring",
-    vehicleYear 2022, dataConsent true
+    vehicleYear 2022 (an integer), dataConsent true
+
+Scenario: No typed output on an invalid "Continuar"
+  Given the wizard state holds no typed step 1 output for Colombia
+  And I filled step 1 in the context of Colombia with the values of US-01-AC-04, except "Modelo (año)" = "2005"
+  When I activate "Continuar"
+  Then I stay on step 1
+  And the wizard state still holds no typed step 1 output for Colombia
+  And it holds the raw editing values I typed, including "Modelo (año)" = "2005"
 ```
 
-Verification in US-01 (US-01-Q-19): a unit test of the wizard store (the saved shape matches
-§7.3) and a component test ("Continuar" navigates to the step 2 route of Colombia). "I see step
-2" is completed end to end when US-02 exists.
+The wizard state keeps the raw editing values on every change (strings, booleans, `''`;
+ADR-0003, HC2 decision); the typed output of §7.3 is produced from them only on a valid
+"Continuar", and that output is what US-02 and US-03 consume.
+
+Verification in US-01 (US-01-Q-19): a unit test of the wizard store (the typed output matches
+§7.3 and is produced only on a valid "Continuar", never on an invalid one; ADR-0003
+*Confirmation*) and a component test ("Continuar" navigates to the step 2 route of Colombia). "I
+see step 2" is completed end to end when US-02 exists.
 
 ### US-01-AC-19 — Step 2 cannot be reached with an incomplete step 1 (derived from Q-19)
 
@@ -464,8 +523,9 @@ to end part is completed when US-02 exists.
 
 ### US-01-AC-21 — Data survives a reload (derived from US-01-BR-08 / Q-15)
 
-Depends on the persistence ADR. If US-01-Q-15 is answered "memory only", this AC is rewritten to
-"a reload starts an empty step 1".
+ADR-0003 keeps the wizard state in `sessionStorage`, so this AC applies as written (the "memory
+only" rewrite foreseen in v0.2 does not apply). The store keeps the raw editing values (HC2
+decision), so a reload restores exactly what was typed, valid or not.
 
 ```gherkin
 Scenario: Data survives a reload
@@ -473,11 +533,19 @@ Scenario: Data survives a reload
   When I reload the page in the same browser tab
   And I go back to step 1 with "Atrás"
   Then every field shows the value I entered
+
+Scenario: An unfinished step 1 survives a reload as typed
+  Given I am on step 1 in the context of Chile
+  And I typed "Ana" in "Nombre completo" and "2015.5" in "Año", without activating "Continuar"
+  When I reload the page in the same browser tab
+  Then "Nombre completo" shows "Ana" and "Año" shows "2015.5"
+  And no error message is shown
 ```
 
 Verification in US-01 (US-01-Q-19): a unit test of the store (a new store instance, as after a
-reload, restores the values from the storage chosen by the persistence ADR) and a component test
-(step 1 renders the restored values). The end-to-end part is completed when US-02 exists.
+reload, restores the raw editing values exactly from `sessionStorage`, including an in-progress
+invalid value such as `'2015.5'`; ADR-0003) and a component test (step 1 renders the restored
+values, pristine). The end-to-end part of the first scenario is completed when US-02 exists.
 
 ### US-01-AC-22 — Data does not cross countries (derived from US-01-BR-07 / Q-02)
 
@@ -492,8 +560,9 @@ Scenario: Data does not cross countries
 
 ### US-01-AC-23 — Configuration changed while data is stored (derived from US-01-BR-06 / Q-16)
 
-If US-01-Q-15 is answered "memory only", the reload step does not apply. The behaviour is then
-verified when the stored values meet a changed configuration (unit and component level).
+ADR-0003 keeps the wizard state in `sessionStorage`, so the reload step applies. The stored raw
+values are pruned when step 1 renders with the configuration of this page load, and the pruned
+state is written back (ADR-0003).
 
 ```gherkin
 Scenario: Configuration changed while data is stored
@@ -572,6 +641,33 @@ Scenario: Read-only content access, data stays in the browser
 "Reach step 2" means that a valid "Continuar" leads to the step 2 address (US-01-Q-27). The
 requests are inspected from the first page load until that navigation.
 
+### US-01-AC-28 — Anonymous callers cannot read drafts or write content (derived from US-01-BR-06 / ADR-0002)
+
+New in v0.3 (HC2 decision: the ADR-0002 security check is traced as an AC).
+
+```gherkin
+Scenario Outline: Anonymous requests never return draft content
+  Given the seed field "Correo electrónico" (key "email") exists for Colombia only as a draft
+  When an anonymous client, without any token, requests the Colombia form fields with
+    "status=draft" and "filters[key][$eq]=email" through <entry point>
+  Then the response contains no field with key "email"
+
+  Examples:
+    | entry point                                 |
+    | Strapi's own port (bypassing the proxy)     |
+    | the same-origin proxy at the relative "/api" |
+
+Scenario: Writes through the same-origin proxy are rejected
+  When an anonymous client sends "POST /api/form-fields" through the same-origin proxy, with a
+    Colombia field of key "securityProbe", type "text", label "Prueba"
+  Then the response status is 405
+  And an anonymous read of the Colombia form fields returns no field with key "securityProbe"
+```
+
+Verification: e2e file `us-01-security.spec.ts`, as API requests from the Playwright Node
+process with no browser and no token (ADR-0002 *Confirmation*). The
+check is re-run on every Strapi upgrade (ADR-0002, *Strongest argument against*).
+
 ## 6. Gaps and open questions
 
 Gaps marked **[Blocks HC1]** change the ACs or a contract shared with other stories, so they need
@@ -606,6 +702,7 @@ an explicit answer. For the others, the proposed default applies if the human do
 | US-01-Q-25 | "A simple form": one page or several? Sections such as "Tus datos" / "Tu vehículo"? | Layout, configuration model (a section attribute) and the number of wizard steps. | One page, one column, fields in sortOrder, no sections. Sections would need a new configuration attribute and are out of scope. | Default accepted. — Felipe Sabogal, 2026-11-20 (HC1) |
 | US-01-Q-26 | Do validation rules apply to an empty optional field? | Otherwise an optional field with a pattern would block progress when left empty. | No. Rules run only on non-empty values; an empty optional field is valid (AC-08). | Default accepted. — Felipe Sabogal, 2026-11-20 (HC1) |
 | US-01-Q-27 | **[Blocks HC1]** (new in v0.2, a consequence of the Q-19 answer) With no provisional step 2, what does the running US-01 app do after a valid "Continuar", before US-02 is merged? Does US-01 register the step 2 route at all? | The e2e tests of AC-24 and AC-27 and the HC3 check of AC-26 end with "reach step 2". The guard of AC-19 needs a route to protect. If the route does not exist, a valid "Continuar" fails or falls into the not-found handling, and those checks cannot pass. | US-01 registers the step 2 route of each country (address per the routing decision, §10) with the AC-19 guard and **no page of its own**: no heading, no copy, no buttons. US-02 attaches its page to that route without changing the address or the guard. Until then, a valid "Continuar" changes the address to step 2 and shows an empty content area (the browser back action returns to step 1 with its data); tests assert the address, not page content. Alternative: US-01 registers no step 2 route; the e2e tests of AC-24 and AC-27 stop at activating "Continuar" with a valid form, and the AC-19 guard is merged without a route. | Proposed default accepted: US-01 registers each country's step 2 route with the AC-19 guard and no page of its own; US-02 attaches its page to that route without changing the address or the guard; tests assert the address. — Felipe Sabogal, 2026-11-20 (HC1 round 2) |
+| US-01-Q-28 | (new in v0.3, a consequence of ADR-0001) The country list is now content loaded from Strapi, so the root chooser and the unknown-country page have a loading state and a load-error state (§8, AC-17). ADR-0001 leaves their copy to the spec. "No pudimos cargar el formulario. Intenta de nuevo." is form-specific. What copy do they show? | Without it the developer invents end-user copy, or reuses the form message on a page that has no form. A wrong "Este país no está disponible." must never stand in for a load failure (ADR-0001). | Code-owned chrome copy, Spanish, the same for both countries, added to the US-01-Q-14 list: load error "No pudimos cargar la lista de países. Intenta de nuevo." with the existing "Reintentar"; loading "Cargando…". Same rules as the step 1 load states: 10 s timeout (US-01-Q-17), no automatic retries, error in `role="alert"`, focus on "Reintentar". | OK (proposed default accepted). — Felipe Sabogal, 2026-11-20 (HC1 round 3) |
 
 Checklist items with no gap: *double clicks / submits* — step 1 sends nothing to a server, and a
 second activation of "Continuar" while on step 2 has no effect. *Currency and number
@@ -614,9 +711,15 @@ typing their own data (US-03 masks the summary).
 
 ## 7. Content contract (what Strapi must provide)
 
-No multi-country ADR is accepted yet, so this section is **logical**. The physical modelling
-(content types, components, how the country is attached, the API IDs) is decided by the
-multi-country ADR and implemented by the strapi-developer following `strapi-content-modeling`.
+This section is **logical**. The physical model is fixed by ADR-0001 and implemented by the
+strapi-developer following `strapi-content-modeling`: a `country` collection type (`code`
+ISO 3166-1 alpha-2 upper case, unique; `name`; `currencyCode`; `locale`; `sortOrder`; draft &
+publish on) and a `form-field` collection type with a **required `manyToOne` relation
+`country`**; `documents.strictRelations: true`, so an item without a country cannot be
+published; `key` uniqueness per country enforced by a Document Service middleware (Strapi's
+`unique` is not scoped by relation). The front end reads one country's fields in one request
+filtered by `country.code`, and reads only published content through the same-origin proxy
+(ADR-0002).
 
 ### 7.1 Field configuration (per country, draft & publish on)
 
@@ -633,7 +736,7 @@ multi-country ADR and implemented by the strapi-developer following `strapi-cont
 | `options` | list of { `value` string, `label` string, `sortOrder` integer } | Required and non-empty when `type` is `select`; ignored otherwise. `value` unique within the field. |
 | `rules` | list of structured rules (below) | Zero or more, in evaluation order. Each may carry an optional `message` (Spanish) that overrides `errorMessage`. |
 | `requiredMessage` | string | Optional. Overrides `errorMessage` for the `required` check. |
-| country | per multi-country ADR | Exactly one country per field. |
+| `country` | required `manyToOne` relation to `country` (ADR-0001) | Exactly one country per field. Publishing without it is rejected (`strictRelations`). |
 
 Rule kinds (structured, not free JSON):
 
@@ -676,13 +779,29 @@ Reserved keys (US-01-Q-08, §7.3): `documentType` (CO only), `documentNumber`, `
 
 ### 7.3 Step 1 output (consumed by US-02 and US-03 through the wizard state)
 
-- `country`: `'CO' | 'CL'`.
+Two shapes exist (ADR-0003, HC2 decision). Only the second one is consumed by US-02 and US-03.
+
+**Stored editing values** (written on every change; what a reload restores):
+
+- `country`: the country code of the context (see below).
+- `values`: a map from field `key` to the **raw editing value** of the form model, as typed:
+  a string for `text`, `number`, `select` and `date`, a boolean for `checkbox`, and `''` for an
+  empty field. In-progress invalid values (for example `'2015.5'`) are stored as typed. The model
+  never holds `null` (ADR-0004).
+
+**Typed step 1 output** (produced only on a valid "Continuar"; never on an invalid one):
+
+- `country`: an ISO 3166-1 alpha-2 code in upper case (`^[A-Z]{2}$`) that matches a published
+  `country` entry loaded from Strapi in this page load (ADR-0001). `CO` and `CL` are the seeded
+  values; the type is not a fixed union of them.
 - `values`: a map from field `key` to value. `text` → trimmed string; `number` → integer;
-  `select` → option `value`; `date` → ISO `YYYY-MM-DD` string; `checkbox` → boolean. An empty
-  optional field → `null`.
-- The field configuration used to render the step (labels and option labels), so later steps can
-  display values without refetching or hard-coding labels. Whether it is stored or refetched is a
-  persistence ADR detail.
+  `select` → option `value`; `date` → ISO `YYYY-MM-DD` string. An empty **optional** `text`,
+  `number`, `select` or `date` field → `null`. `checkbox` → always a boolean: checked → `true`,
+  unchecked → `false`, also when the checkbox is optional (HC2 decision); a checkbox is never
+  `null`.
+- The field configuration is **not** stored: later steps read labels and option labels from the
+  configuration fetched in the same page load (refetched on every full page load, ADR-0003,
+  US-01-Q-16).
 - Reserved keys (US-01-Q-08): `documentType` (CO only), `documentNumber`, `fullName`,
   `birthDate`, `plate`, `make`, `model`, `vehicleYear`.
 
@@ -703,7 +822,9 @@ PR. Differences proposed here:
 | State | Trigger | What the user sees | Accessibility notes |
 |---|---|---|---|
 | Loading | Country resolved, configuration request in flight | Step heading and "Cargando formulario…"; no fields, no "Continuar" | Container has `aria-busy="true"`; the loading text is in a polite live region |
-| Unsupported country | Missing or unsupported country (US-01-Q-01) | "Este país no está disponible." and links "Colombia", "Chile" | Message is the page's main heading; links are reachable by Tab |
+| Country list loading | Root chooser or unknown-country page, country list request in flight (ADR-0001) | "Cargando…" (proposed, US-01-Q-28); no country link, no "Este país no está disponible." | Container has `aria-busy="true"`; the loading text is in a polite live region |
+| Country list unavailable | Root chooser or unknown-country page; the country list request times out (10 s) or fails (ADR-0001) | "No pudimos cargar la lista de países. Intenta de nuevo." (proposed, US-01-Q-28) and "Reintentar"; no country link, and never "Este país no está disponible." (AC-17) | Message in `role="alert"`; focus moves to "Reintentar" |
+| Unsupported country | Country list loaded, and the code in the address is not in it (US-01-Q-01, ADR-0001) | "Este país no está disponible." and a link to each published country (seed: "Colombia", "Chile") | Message is the page's main heading; links are reachable by Tab |
 | Error | Timeout (10 s), network or HTTP error, or zero valid fields | "No pudimos cargar el formulario. Intenta de nuevo." and "Reintentar" | Message in `role="alert"`; focus moves to "Reintentar" |
 | Partial content | Some fields malformed | The valid fields only; nothing extra is shown to the user | Console warning only (no user data) |
 | Ready (pristine) | Configuration loaded | Fields in sortOrder, help texts, required marker note, "Continuar" | Label bound to every control; help text in `aria-describedby`; required exposed |
@@ -730,7 +851,9 @@ PR. Differences proposed here:
   model (§7.1) before it reaches the form; validators are pure functions with an injectable clock.
 - **Security / privacy (Assessment, CLAUDE.md §3):** no Strapi token with write permissions
   reaches the browser; the browser only reads content (AC-27). Public role permissions are
-  minimal and justified in the security ADR. Step 1 values are never sent to a server or written
+  minimal and justified in ADR-0002 (`find` on `country` and `form-field` only); anonymous reads
+  return published content only, and the browser reaches the content API only through the
+  same-origin, GET-only proxy at the relative `/api` (ADR-0002, AC-28). Step 1 values are never sent to a server or written
   to logs; console warnings contain no user data. Seed and test data are fictitious.
 - **Performance:** the configuration of a country is loaded with as few requests as the content
   model allows (target: one), with options and rules populated in the same response. No request
@@ -741,35 +864,32 @@ PR. Differences proposed here:
 
 ## 10. ADRs
 
-- **Referenced (accepted):** none yet.
-- **Needed (for the architect):**
-  1. **Multi-country content strategy:** the Strapi model for country-specific fields (options
-     A–D in `strapi-content-modeling`), where country metadata lives, and how Angular resolves
-     the country context, including the root address, unsupported countries and switching.
-     Inputs: BR-07, US-01-Q-01, US-01-Q-02, §7. Shared with US-02 and US-03.
-  2. **Forms library (SPIKE-01):** Signal Forms vs Reactive Forms for a form built at runtime
-     from §7.1. Beyond the cases already listed in CLAUDE.md §7 (required number, empty date,
-     select, legal age), the spike should also cover: hydrating the form from the wizard state
-     (AC-04), dropping stored values for removed fields (AC-23), error display timing and focusing
-     the first invalid field (AC-10), and integer-only numbers (AC-05). This spec is
-     library-agnostic.
-  3. **Strapi access and security model:** public role (`find` only) vs. a read-only token
-     behind a server-side proxy; runtime configuration of the API URL so the same build serves
-     every environment; no caching that breaks BR-06 (US-01-Q-16); how e2e tests write test
-     content without exposing write tokens to the browser (US-01-Q-23). Inputs: AC-27, AC-03.
-  4. **Front-end persistence of wizard state:** in-memory vs `sessionStorage` vs `localStorage`;
-     what is stored (personal data included), scoping per country, and when it is cleared
-     (country switch, tab close, after payment in US-03). Inputs: BR-08, US-01-Q-02,
-     US-01-Q-15, AC-04, AC-20, AC-21, AC-22.
-  - Candidate for the architect to fold into ADR 1 or write separately: **wizard routing and
-    step guards** (step URLs, history entries per step, guard rule of US-01-Q-19, focus
-    management on step change). Shared by all three stories. Since v0.2 it also covers how the
-    step 2 route exists before its page (US-01-Q-27).
+- **Referenced (accepted at HC2, 2026-11-20; binding, precedence level 2):**
+  1. [ADR-0001](../../adr/0001-multi-country-content-strategy.md) — Multi-country content
+     strategy and country context: `country` collection type + required `manyToOne` relation,
+     `strictRelations`, `key` uniqueness middleware, country list as content, URL path segment
+     (`/co`, `/cl`), root chooser, unknown-country page, country-list error state, and the wizard
+     routes and step guards (folds in the v0.2 routing candidate and US-01-Q-27). Covers v0.2
+     need 1 and the candidate. Used by: BR-07, §2, §3, §5 conventions, AC-17, AC-19, §7, §7.3, §8.
+  2. [ADR-0002](../../adr/0002-strapi-access-and-security.md) — Strapi access and security:
+     same-origin nginx proxy (GET only, allow-listed `/api/` paths, `no-store`, `Authorization`
+     rejected), relative `/api` in the front end, public role with `find` only, published-only
+     middleware, CORS allow-list, bootstrap (dev super admin from env vars, default Full Access
+     token deleted, `allow_register` false), e2e write flow for AC-03. Covers v0.2 need 3. Used
+     by: BR-06, §9, AC-03, AC-27, AC-28.
+  3. [ADR-0003](../../adr/0003-wizard-state-persistence.md) — Wizard state persistence:
+     `sessionStorage`, one country per entry, raw editing values written on every change, typed
+     §7.3 output only on a valid "Continuar", clearing rules. Covers v0.2 need 4. Used by: BR-08,
+     §3, §7.3, AC-18, AC-21, AC-22, AC-23.
+  4. [ADR-0004](../../adr/0004-forms-library.md) — Forms library: Signal Forms over a shared,
+     library-agnostic validation core; string editing model; unparseable numbers reach the model
+     as empty. Covers v0.2 need 2 (SPIKE-01). Used by: §7.3, AC-09, AC-10.
+- **Needed:** none.
 
 ## 11. Test mapping
 
-Planned locations follow CLAUDE.md §6; the test-engineer may adjust the unit and component paths
-once the ADRs fix the structure. "HC3" notes are extra human checks, not a replacement for the
+Planned locations follow CLAUDE.md §6 and the file names fixed in the *Confirmation* sections of
+ADR-0001..0004; the test-engineer may adjust other unit and component paths. "HC3" notes are extra human checks, not a replacement for the
 automated test.
 
 US-01 has **exactly four** e2e files (HC1 round 1, correction 3); no other e2e file is added in
@@ -777,10 +897,10 @@ this story:
 
 | E2E file | ACs |
 |---|---|
-| `frontend/e2e/us-01-data-form-co.spec.ts` | US-01-AC-01 (CO), US-01-AC-02, US-01-AC-13, US-01-AC-24 (keyboard) |
-| `frontend/e2e/us-01-country-context.spec.ts` | US-01-AC-01 (CL), US-01-AC-17, US-01-AC-22 |
+| `frontend/e2e/us-01-data-form-co.spec.ts` | US-01-AC-01 (CO), US-01-AC-02, US-01-AC-09 (unparseable number, real browser; v0.3), US-01-AC-13, US-01-AC-24 (keyboard) |
+| `frontend/e2e/us-01-country-context.spec.ts` | US-01-AC-01 (CL), US-01-AC-17 (both scenarios), US-01-AC-22 |
 | `frontend/e2e/us-01-config-change.spec.ts` | US-01-AC-03 |
-| `frontend/e2e/us-01-security.spec.ts` | US-01-AC-27 |
+| `frontend/e2e/us-01-security.spec.ts` | US-01-AC-27, US-01-AC-28 (v0.3, ADR-0002) |
 
 Every other AC is covered by unit or component tests. AC-26 is checked by hand at HC3. The e2e
 part of AC-04, AC-18, AC-20 and AC-21 needs the step 2 page and is completed when US-02 exists
@@ -790,7 +910,9 @@ Short names below: `field-config.spec.ts` = `frontend/src/app/shared/field-confi
 `field-validators.spec.ts` = `frontend/src/app/shared/field-validators.spec.ts`;
 `quote-form-page.spec.ts` = `frontend/src/app/features/quote-form/quote-form-page.spec.ts`;
 `quote-store.spec.ts` = `frontend/src/app/core/quote-store.spec.ts`;
-`wizard-step-guard.spec.ts` = `frontend/src/app/core/wizard-step-guard.spec.ts`.
+`wizard-step-guard.spec.ts` = `frontend/src/app/core/wizard-step-guard.spec.ts`;
+`supported-country-guard.spec.ts` = `frontend/src/app/core/supported-country-guard.spec.ts`
+(ADR-0001, *Confirmation*).
 
 | AC | Level (unit / component / e2e / manual) | Planned test location |
 |---|---|---|
@@ -802,7 +924,7 @@ Short names below: `field-config.spec.ts` = `frontend/src/app/shared/field-confi
 | US-01-AC-06 | unit (pinned clock) | `field-validators.spec.ts` |
 | US-01-AC-07 | component | `quote-form-page.spec.ts` (CO and CL options) |
 | US-01-AC-08 | unit | `field-validators.spec.ts` |
-| US-01-AC-09 | unit | `field-validators.spec.ts` (message resolution) |
+| US-01-AC-09 | unit + e2e (unparseable number in a real browser) | `field-validators.spec.ts` (message resolution, empty-value path), `us-01-data-form-co.spec.ts` ("1e" typed key by key in "Modelo (año)") |
 | US-01-AC-10 | component | `quote-form-page.spec.ts` |
 | US-01-AC-11 | unit (seed rule values, every row) | `field-validators.spec.ts` |
 | US-01-AC-12 | unit | `field-validators.spec.ts` |
@@ -810,17 +932,18 @@ Short names below: `field-config.spec.ts` = `frontend/src/app/shared/field-confi
 | US-01-AC-14 | unit | `field-config.spec.ts` (boundary parser) |
 | US-01-AC-15 | component (mocked HTTP, fake timers) | `quote-form-page.spec.ts` |
 | US-01-AC-16 | component | `quote-form-page.spec.ts` |
-| US-01-AC-17 | e2e + unit (country resolution) | `us-01-country-context.spec.ts`; unit file per the multi-country ADR |
-| US-01-AC-18 | unit (store, §7.3 shape) + component (navigation to the step 2 route); e2e completed in US-02 | `quote-store.spec.ts`, `quote-form-page.spec.ts` |
+| US-01-AC-17 | e2e (both scenarios; the country list failure is simulated in the browser context by aborting the `/api/countries` request) + unit (country resolution: code matching, case normalisation, unknown code, list not loaded) | `us-01-country-context.spec.ts`, `supported-country-guard.spec.ts` (ADR-0001) |
+| US-01-AC-18 | unit (store: §7.3 typed output only on a valid "Continuar") + component (navigation to the step 2 route); e2e completed in US-02 | `quote-store.spec.ts`, `quote-form-page.spec.ts` |
 | US-01-AC-19 | unit (guard) | `wizard-step-guard.spec.ts` |
 | US-01-AC-20 | unit (store) + component (router history back from the step 2 route); e2e completed in US-02 | `quote-store.spec.ts`, `quote-form-page.spec.ts` |
-| US-01-AC-21 | unit (store restored by a new instance) + component (step 1 renders restored values); e2e completed in US-02 | `quote-store.spec.ts`, `quote-form-page.spec.ts` |
+| US-01-AC-21 | unit (raw editing values restored exactly by a new instance) + component (step 1 renders restored values); e2e completed in US-02 | `quote-store.spec.ts`, `quote-form-page.spec.ts` |
 | US-01-AC-22 | e2e + unit (store scoped per country) | `us-01-country-context.spec.ts`, `quote-store.spec.ts` |
 | US-01-AC-23 | unit (hydration) + component | `quote-store.spec.ts`, `quote-form-page.spec.ts` |
 | US-01-AC-24 | e2e (keyboard only, up to the step 2 address; focus on the step 2 heading completed in US-02) | `us-01-data-form-co.spec.ts`; plus hand check at HC3 |
 | US-01-AC-25 | component (accessible name, description, invalid and required states) | `quote-form-page.spec.ts`; plus screen reader check at HC3 |
 | US-01-AC-26 | manual (HC3: screenshots at 360 px and desktop) | None automated. The human attaches two screenshots of step 1 of Colombia, at 360 × 740 and at 1280 × 800, to the HC3 record. |
 | US-01-AC-27 | e2e (network inspection) | `us-01-security.spec.ts`; plus code review and `scripts/scan-secrets.sh` |
+| US-01-AC-28 | e2e (API requests from the Playwright Node process, no browser, no token; source ADR-0002) | `us-01-security.spec.ts`; re-run on every Strapi upgrade |
 
 ## 12. Traceability matrix (filled before HC3)
 
@@ -835,3 +958,5 @@ Generated with `scripts/trace.sh US-01` and pasted here.
 | 2026-11-20 | spec-writer (Claude Opus 5.5) | 1 Spec | Draft v0.2 | Revision after HC1 round 1. Status set to "Draft — awaiting HC1 (round 2)". **(1) Seed annex:** §7.2 reduced to a link to `seed-fields.md`, a summary of the fields per country (key → label, in sortOrder, draft fields marked) and the reserved keys; BR-05 and the §5 conventions point to the annex. No seed value changed. *Partly applied:* the write-scope hook still allowed only `spec.md` and `tasks.md`, so `seed-fields.md` could not be created; the full seed is kept verbatim in *Annex A (staging)* at the end of this file until the orchestrator moves it (US-01-T-30). **(2) No provisional step 2 (Q-19 rejected):** §2 scope bullet about the placeholder step 2 removed; navigation and guard bullets reworded; "any step 2 page" added to out of scope; §5 convention on what "step 2" means; "Verification in US-01" notes added under AC-04, AC-18, AC-19, AC-20, AC-21, AC-24, AC-26 and AC-27 (Gherkin unchanged); §8 *Success* and *Back to step 1* rows no longer mention a placeholder; §10 routing candidate mentions Q-27. New gap **US-01-Q-27 [Blocks HC1]**: whether US-01 registers the step 2 route without a page, needed for "reach step 2" in AC-24, AC-26 and AC-27 and for the AC-19 guard. AC-19 kept and verified by a unit test only. **(3) E2E limited to 4 files:** §11 rewritten with the exact file → AC mapping requested; `us-01-data-form-cl.spec.ts`, `us-01-keyboard.spec.ts` and `us-01-responsive.spec.ts` removed; AC-07 and AC-11 now component/unit only; AC-04, AC-18, AC-20, AC-21 unit (store) + component (step 2 route), e2e completed in US-02; AC-19 unit only; AC-26 `manual` in the level column (HC3 screenshots at 360 × 740 and 1280 × 800); §9 responsive bullet aligned. **(4) IDs:** no BR, AC, Q or T renumbered or retired (none existed only for the provisional step 2); one Q added (Q-27) and two T added (T-30 move the annex, T-31 AC-26 evidence at HC3). Unchanged: §1, §3, §4 (except the BR-05 pointer), §6 rows Q-01..Q-26, §7.1, §7.3, §7.4, §12. |
 | 2026-11-20 | Orchestrator (Claude Opus 5.5) for Felipe Sabogal | HC1 round 2 | Q-27 answered; T-30 done | Human answered Q-27: proposed default accepted (empty step 2 route + AC-19 guard; see §6). T-30: Annex A moved verbatim to [seed-fields.md](seed-fields.md) and the staging note removed (the spec-writer's hook ran with the definition loaded at session start, before its write scope was widened to annexes). Verified: the annex body is identical to v0.1 §7.2 except that the two country subtitles changed from bold text to `###` headings. No content or ID changed. Spec awaits the human's HC1 decision. |
 | 2026-11-20 | Felipe Sabogal (human) | HC1 round 2 | **Approved** (v0.2) | Spec v0.2 approved as is. SPIKE-01 scope widened at the same checkpoint (CLAUDE.md §7). Next: step 2, ADRs. |
+| 2026-11-20 | spec-writer (Claude Opus 5.5) | 1 Spec | Draft v0.3 | Revision after HC2 (ADR-0001..0004 Accepted). Status "Draft — awaiting HC1 (round 3)". **(1) Country type (ADR-0001):** §7.3 `country` is an ISO 3166-1 alpha-2 code checked against the published `country` entries loaded from Strapi, not `'CO' \| 'CL'`; glossary *Country context*, §2 and BR-07 aligned; seed and examples unchanged. **(2) Country list unavailable (ADR-0001):** §8 new rows *Country list loading* and *Country list unavailable* for the root chooser and the unknown-country page (error with "Reintentar", never "Este país no está disponible."); *Unsupported country* row now requires the list to be loaded. AC-17 gets a `Given` for the loaded list and a second scenario (outline over `/`, `/ar/datos`, `/co/datos`). Proposed copy "No pudimos cargar la lista de países. Intenta de nuevo." and "Cargando…" as code-owned strings, recorded as new non-blocking gap **US-01-Q-28** (consistent with Q-14; Q-14 row not edited). **(3) New AC-28 (ADR-0002, HC2 decision):** anonymous `status=draft` requests never return the seeded draft `email` field (Strapi port and proxy); `POST /api/form-fields` through the proxy returns 405. Linked to BR-06 (drafts never shown); e2e in `us-01-security.spec.ts`; §11 and the BR coverage column updated; still 4 e2e files. **(4) Tasks (ADR-0001, ADR-0002):** T-18 (public role, users-permissions defaults, `allow_register` false), T-19 (compose topology with nginx `frontend`, `.env.example`) and T-20 (relative `/api`, dev-server proxy, replacing the runtime API URL) re-scoped; added T-32 (dev super admin from env vars, delete default Full Access token), T-33 (published-only middleware, CORS allow-list), T-34 (`strictRelations`, key-uniqueness middleware, ADR-0001), T-35 (nginx GET-only allow-listed proxy, `no-store`), T-36 (`CountryStore` and its loading/error states), T-37 (`supported-country-guard.spec.ts`), T-38 (backend test of the ADR-0001 rules); other tasks reworded to cite ADR numbers (see tasks.md). **(5) §11:** AC-17's unit file is `supported-country-guard.spec.ts` (ADR-0001). **(6) Checkbox (HC2 decision):** unchecked optional checkbox → `false` in §7.3; "empty optional → `null`" now applies to text, number, select and date only. **(7) Store shape (HC2 decision, ADR-0003):** §7.3 split into stored raw editing values (written on every change) and the typed output (only on a valid "Continuar", consumed by US-02/US-03); BR-08 and glossary *Wizard state* aligned; AC-18 Gherkin reworded to "typed step 1 output" plus a second scenario (no typed output on an invalid "Continuar"); AC-21 preamble updated (sessionStorage applies) plus a second scenario (an unfinished step 1 is restored as typed); AC-23 preamble updated. AC-20 checked: no conflict, unchanged. **(8) AC-09 (HC2 decision, ADR-0004):** new scenario and note: an unparseable number (`abc`, `1e`) reaches the model as empty, so a required field shows `requiredMessage`/`errorMessage` and an optional one is empty; confirmed in a real browser by `us-01-data-form-co.spec.ts` (§11 rows and e2e table updated). **(9) ADR references:** "multi-country / persistence / security ADR" replaced by ADR-0001..0004 in the metadata, sources, §2, §3, §4, §5 conventions, §7, §7.1, §7.3, §9 and §11; §10 lists the four accepted ADRs and "Needed: none". No ID renumbered or retired; added: AC-28, Q-28, T-32..T-38. Unchanged: §1, BR-01..BR-05, Q-01..Q-27 (including all *Human answer* cells), §7.2, §7.4, §12, AC-01..AC-08, AC-10..AC-16, AC-19, AC-20, AC-22, AC-24..AC-27. Counts: 8 BR, 28 AC (4 original, 24 derived), 28 Q (none blocks HC1). |
+| 2026-11-20 | Felipe Sabogal (human) | HC1 round 3 | **Approved** (v0.3) | Spec v0.3 approved as is; US-01-Q-28 default accepted. Next: step 3, tests first. |
