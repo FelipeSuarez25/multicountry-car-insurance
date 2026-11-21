@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Current step | 6 Review round 1 (gate passed) |
+| Current step | 6 Review round 2 (verification of the R1 fixes; gate passed) |
 | Branch | feat/us-02-plan-list |
 | PR | — |
 | Blockers | none |
-| **Next action** | code-reviewer writes reviews/US-02-review-R1.md. |
+| **Next action** | code-reviewer verifies R1 fixes in reviews/US-02-review-R2.md; then PR for HC3. |
 | Last updated | 2026-11-21 by orchestrator (Claude Opus 5.5) |
 
 ## Tasks
@@ -59,6 +59,7 @@ ADR (US-02-Q-01).
 | 2026-11-21 | Step 3 decisions | Accepted the test-engineer's six calls: (1) the US-01 'step 2 has no page' test replaced by 'plan list page shows'; (2) unexpected plans response shape → error state with Reintentar; (3) summary guard when the plans request fails → /planes; (4) basePrice max 2,147,483,647 enforced in Strapi too; (5) focus indicator on the native radio; (6) recommended visual style and screen-reader announcement are manual HC3 checks | Felipe Sabogal (human) | 56fa702 |
 | 2026-11-21 | 5 Gate | **PASSED** on a clean stack: fe build/lint, 590/590 unit, tsc 0; be tsc/lint/build, 49/49 (after e266d9a test isolation); Reactive Forms 0; factor literals only in price-rules.ts (ADR-0007); deps pinned; full e2e 78/78 ×2; US-02 e2e files ×5 = 190/190; trace US-01 and US-02 exit 0; code secret scan exit 0 (logs now scanned separately) | orchestrator (scripts, no AI) | scripts/e2e.sh output |
 | 2026-11-21 | Review R1 fixes (decisions) | Human: fix F01+F02, F03, F04, F06. **F05 won't fix** (two non-bisectable commits, 1491d73/4f032ce; fixing needs a history rewrite on a pushed branch). **F07 recorded**: e266d9a (test isolation in plan-rules.test.ts) was written by the test-engineer subagent during step 4; no assertion changed. Fixes so far: F02 tests 7348424, F03 7732832, F04 scan-logs.sh + scan default, F06 status text (this commit) | Felipe Sabogal (human) + orchestrator | [reviews/US-02-review-R1.md](../../reviews/US-02-review-R1.md) |
+| 2026-11-21 | 5 Gate (after R1 fixes) | **PASSED**: F01 d5b154f (schema `required`+`min:1`, middleware removed; drafts may hold [] but not unset; test reframed in ae62775), F02 7348424, F03 7732832, F04 1cd234d, F06 09d968e. fe 590/590, be 54/54, lint/build both, e2e 78/78 ×2, trace US-01/US-02 exit 0, code scan exit 0, logs scan 23 = 23 | orchestrator (scripts, no AI) | scripts output |
 
 ## Session log
 
