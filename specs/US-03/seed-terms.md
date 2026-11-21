@@ -8,7 +8,11 @@ of `body` (Strapi `blocks`, Markdown `richtext` or plain `text`) is decided by t
 US-03-Q-02; the strapi-developer writes these blocks in that format. With the proposed default
 (Strapi `blocks`), each row is one top-level block node.
 
-Natural key for idempotency: country code + `title`.
+Seed rule (human decision, US-03-R1-F01, 2026-11-21; full text in [spec.md §7.3](spec.md#73-seed-summary)):
+a country's seed terms below are created **only when that country has no terms document at all**
+(neither draft nor published). Once an editor has any terms for a country, the seed never creates,
+updates or republishes terms for it again. If every terms document of a country is deleted, the
+next restart seeds these fictitious terms again.
 
 ## CO — published
 

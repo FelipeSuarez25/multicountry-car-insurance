@@ -7,7 +7,7 @@
 | Version | 0.1 |
 | Author | spec-writer subagent (Claude Opus 5.5) |
 | Approved by | v0.1: Felipe Sabogal, 2026-11-21 (HC1 round 1) |
-| Related ADRs | [ADR-0001](../../adr/0001-multi-country-content-strategy.md) (`terms` per country with a required `country` relation; `/:country/resumen`; implementation note: summary route and `summaryStepGuard` registered by US-02), [ADR-0002](../../adr/0002-strapi-access-and-security.md) as amended by [ADR-0005](../../adr/0005-e2e-token-scope-for-relations.md) (public `find` on terms, proxy `/api/terms`, published-only reads, e2e token scope), [ADR-0003](../../adr/0003-wizard-state-persistence.md) (clear on successful payment, keep on rejected payment, terms and payment data never stored), [ADR-0006](../../adr/0006-strapi-physical-model-adjustments.md) (typed attributes, `localeTag`), [ADR-0007](../../adr/0007-simulated-price-rule.md) (`calculateFinalPrice` reused). **Needed:** simulated payment design (US-03-Q-01); terms rich-text format and safe rendering (US-03-Q-02). See §10. |
+| Related ADRs | [ADR-0001](../../adr/0001-multi-country-content-strategy.md) (`terms` per country with a required `country` relation; `/:country/resumen`; implementation note: summary route and `summaryStepGuard` registered by US-02), [ADR-0002](../../adr/0002-strapi-access-and-security.md) as amended by [ADR-0005](../../adr/0005-e2e-token-scope-for-relations.md) (public `find` on terms, proxy `/api/terms`, published-only reads, e2e token scope), [ADR-0003](../../adr/0003-wizard-state-persistence.md) (clear on successful payment, keep on rejected payment, terms and payment data never stored), [ADR-0006](../../adr/0006-strapi-physical-model-adjustments.md) (typed attributes, `localeTag`), [ADR-0007](../../adr/0007-simulated-price-rule.md) (`calculateFinalPrice` reused), [ADR-0008](../../adr/0008-simulated-payment.md) (simulated payment; resolves US-03-Q-01; Accepted at HC2, 2026-11-21), [ADR-0009](../../adr/0009-terms-rich-text-rendering.md) (terms rich-text format and safe rendering; resolves US-03-Q-02; Accepted at HC2, 2026-11-21). See §10. |
 
 Sources cited in this spec:
 
@@ -19,7 +19,8 @@ Sources cited in this spec:
 - **US-02**: [specs/US-02/spec.md](../US-02/spec.md) v0.1 (Approved): the stored `plan: { key }`,
   the offered plans, price display and formatting (BR-03), what it handed to US-03 (§7.4), and the
   summary route and guard (US-02-Q-03, US-02-AC-15).
-- **ADR-0001..0007**: accepted ADRs (precedence level 2), with the implementation notes in
+- **ADR-0001..0009**: accepted ADRs (precedence level 2; ADR-0008 and ADR-0009 accepted at HC2,
+  2026-11-21, for US-03-Q-01 and US-03-Q-02), with the implementation notes in
   [adr/README.md](../../adr/README.md).
 - **Reviews** of US-01 (R1..R4) and US-02 (R1, R2): lessons for a new content type (published-only
   router config, anonymous variants in the draft checks, no bespoke backend code where the schema
@@ -521,7 +522,7 @@ Logical model below; the physical model follows ADR-0001 (required `manyToOne` `
 | Attribute | Strapi type | Rules |
 |---|---|---|
 | `title` | string, required, `maxLength: 150` | Spanish, non-blank. Shown as the terms heading and the region's accessible name. |
-| `body` | per the ADR of US-03-Q-02 (proposed: `blocks`), required | Spanish formatted text. |
+| `body` | `blocks` per ADR-0009 (US-03-Q-02), required | Spanish formatted text. |
 | `country` | required `manyToOne` relation to `country` | ADR-0001; publishing without it is rejected (`strictRelations`). |
 
 No `key`, `sortOrder`, `isActive` or `version`: unpublishing is how an editor withdraws terms, and
@@ -543,7 +544,7 @@ Mapping wire → logical `Terms` (boundary parser):
 | Wire attribute | Valid when | Logical attribute |
 |---|---|---|
 | `title` | non-blank string | `title` |
-| `body` | per the ADR of US-03-Q-02; with `blocks`: an array whose supported nodes yield at least one non-blank text | `blocks` (the whitelisted, typed node tree) |
+| `body` | `blocks` per ADR-0009 (US-03-Q-02): an array whose supported nodes yield at least one non-blank text | `blocks` (the whitelisted, typed node tree) |
 | `publishedAt` | ISO date-time string | used for ordering only |
 
 The parser sorts by `publishedAt` descending itself and does not rely on the server sort. A
@@ -551,8 +552,17 @@ malformed entry is skipped with a `console.warn` naming the problem, never the t
 
 ### 7.3 Seed (summary)
 
-Full text in the annex [seed-terms.md](seed-terms.md). Idempotent, natural key country code +
-`title`.
+Full text in the annex [seed-terms.md](seed-terms.md).
+
+**Seed rule (human decision, US-03-R1-F01, Felipe Sabogal, 2026-11-21).** The seed creates a
+country's seed terms (the published document and, for CO, the draft-only document below) **only
+when that country has no terms document at all**, neither draft nor published. Once an editor has
+any terms for a country, the seed never creates, updates or republishes terms for that country
+again: renaming, replacing, unpublishing, or deleting and recreating terms in the Strapi admin
+survives a restart. The check is per country, so CO and CL are decided independently. Edge case:
+if an editor deletes every terms document of a country, the next restart seeds the fictitious
+terms again, because they are the documented starting content. This replaces the earlier
+"natural key country code + `title`" rule for terms; the seed of other content types is unchanged.
 
 | Country | Published | Draft only |
 |---|---|---|
@@ -665,14 +675,15 @@ Spanish, the same for both countries, in front-end code; extends US-01 §8.1 and
      copied, with the same `CLOCK`. Used by: BR-01, AC-01, AC-07.
   6. ADR-0004 applies to the step 1 form only; the summary's checkbox and radio group are plain
      controls, not a Strapi-driven form.
-- **Needed (for the architect):**
-  1. **Simulated payment design** (US-03-Q-01): where the outcome comes from (visible simulation
-     choice, mock gateway page, fictitious test cards, hidden trigger), processing time and its
-     injection for tests, the service boundary a real gateway would replace, no request and no
-     card data. Proposed default in US-03-Q-01.
-  2. **Terms rich-text format and safe rendering** (US-03-Q-02): `blocks` with a whitelist
-     renderer vs Markdown `richtext` with a parser and sanitised `[innerHTML]` vs plain `text`;
-     dependency impact; how unsupported nodes degrade. Proposed default in US-03-Q-02.
+  7. [ADR-0008](../../adr/0008-simulated-payment.md) — simulated payment (US-03-Q-01; Accepted at
+     HC2, 2026-11-21): visible simulation choice, processing time and its injection for tests, the
+     gateway service boundary a real gateway would replace, no request and no card data; unit
+     test `simulated-payment-gateway.spec.ts`. Used by: BR-05, BR-06, BR-08, AC-03, AC-04, AC-09, AC-15.
+  8. [ADR-0009](../../adr/0009-terms-rich-text-rendering.md) — terms rich text (US-03-Q-02;
+     Accepted at HC2, 2026-11-21): `body` is a Strapi `blocks` attribute rendered by a whitelist
+     component through template bindings. Used by: BR-07, §7.1, §7.2, AC-13.
+- **Needed (for the architect):** none. The two ADRs this spec asked for (US-03-Q-01, US-03-Q-02)
+  are ADR-0008 and ADR-0009 above.
 - **Implementation notes (no new decision), if the defaults are accepted:** the terms permission
   name `api::term.term.find` on ADR-0002 (US-03-Q-03). Only if US-03-Q-06 takes the alternative:
   a confirmation route on ADR-0001.
@@ -686,7 +697,8 @@ values); `quote-number.spec.ts` = `frontend/src/app/shared/quote-number.spec.ts`
 `terms.spec.ts` = `frontend/src/app/shared/terms.spec.ts` (boundary parser and selection);
 `terms-api.spec.ts` = `frontend/src/app/core/terms-api.spec.ts`;
 `rich-text.spec.ts` = `frontend/src/app/shared/rich-text.spec.ts` (renderer component);
-`payment.spec.ts` = the simulated payment service test (name per the ADR of US-03-Q-01);
+`payment.spec.ts` = the simulated payment service test, named `simulated-payment-gateway.spec.ts`
+per ADR-0008 (US-03-Q-01);
 `quote-store-clear.spec.ts` = `frontend/src/app/core/quote-store-clear.spec.ts`;
 `summary-page.spec.ts` = `frontend/src/app/features/summary/summary-page.spec.ts`;
 `full-flow-co` = `frontend/e2e/us-01-03-full-flow-co.spec.ts`;
@@ -724,7 +736,10 @@ E2E tests pin the browser clock to 2026-11-21 (prices and quote number date).
 Backend test (supports BR-07 and §7.4, no AC of its own): `backend/tests/terms-rules.test.ts` —
 publishing terms without `country` is rejected, the public role is reconciled to exactly
 `country.find`, `form-field.find`, `plan.find` and the terms `find`, and the seed creates the CO
-and CL published terms and the CO draft once (idempotent).
+and CL published terms and the CO draft once (idempotent). Idempotency follows the §7.3 seed rule
+(US-03-R1-F01): a country that already has any terms document (draft or published, including
+editor-renamed or replaced terms) gets nothing created, updated or republished on a restart; a
+country with no terms document at all is seeded again.
 
 ## 12. Traceability matrix (filled before HC3)
 
@@ -736,3 +751,4 @@ Generated with `scripts/trace.sh US-03` and pasted here.
 |---|---|---|---|---|
 | 2026-11-21 | spec-writer (Claude Opus 5.5) | 1 Spec | Draft v0.1 | First version from story.md, the Assessment requirements, US-01 spec v0.5, US-02 spec v0.1, ADR-0001..0007 and the US-01/US-02 reviews. 8 BR, 19 AC (4 original, 15 derived), 17 gaps (6 block HC1: Q-01 simulated payment [ADR], Q-02 terms format and rendering [ADR], Q-03 terms content-type name vs Strapi, Q-04 masking rule, Q-05 which data are shown, Q-06 confirmation route), 2 ADRs needed. Seed annex [seed-terms.md](seed-terms.md). |
 | 2026-11-21 | Felipe Sabogal (human) | HC1 | **Approved** (v0.1) | Q-01..Q-06 accepted as proposed (Q-01 and Q-02 go to ADRs; Q-03 requires the CLAUDE.md §6 correction, done by the orchestrator); all other defaults accepted. (Translated from the Spanish original in the session log.) |
+| 2026-11-21 | Felipe Sabogal (human) | Review R1 | Seed rule decided (US-03-R1-F01); header ADR list updated (F06) | §7.3 updated by the spec-writer; seed rule also stated in §11 (backend test note) and in the annex [seed-terms.md](seed-terms.md) (old "country code + `title`" natural key removed); §10 lists ADR-0008/0009 as referenced (Accepted at HC2) and no ADR as needed; Sources, §7.1, §7.2 and §11 name ADR-0008/0009 instead of "the ADR of US-03-Q-01/Q-02". |
