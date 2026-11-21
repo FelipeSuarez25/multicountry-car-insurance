@@ -4,7 +4,7 @@
  * `seedFieldConfigs` returns the typed contract (spec section 7.1, FieldConfig) of the *published* seed
  * fields. The `toStrapi*` builders turn the same data into what Strapi 5 answers over REST
  * (flattened attributes, `documentId`, nullable optional attributes, components with `id` and
- * `__component`), so that tests exercise the real boundary.
+ * `__component`, the v0.4 wire shapes of spec 7.5), so that tests exercise the real boundary.
  */
 import type { FieldConfig, SelectOption, ValidationRule } from '../app/shared/field-config.model';
 
@@ -270,7 +270,10 @@ function ruleComponent(rule: ValidationRule, id: number): StrapiItem {
     id,
     __component: 'form.validation-rule',
     kind: r['kind'],
-    value: r['value'] ?? null,
+    // Spec 7.5.1: a pattern rule carries its regex in `pattern` (the logical rule keeps it in `value`);
+    // `value` is a number (or null) and every unused attribute is null.
+    value: r['kind'] === 'pattern' ? null : (r['value'] ?? null),
+    pattern: r['kind'] === 'pattern' ? (r['value'] ?? null) : null,
     years: r['years'] ?? null,
     maxYearsOld: r['maxYearsOld'] ?? null,
     maxYearsAhead: r['maxYearsAhead'] ?? null,
@@ -321,7 +324,8 @@ export function strapiCountryItem(code: string, name: string, currencyCode: stri
     code,
     name,
     currencyCode,
-    locale,
+    // Spec 7.5.2: the wire attribute is `localeTag` (Strapi reserves `locale`); the parser maps it to `locale`.
+    localeTag: locale,
     sortOrder,
     publishedAt: '2026-11-20T12:00:00.000Z',
   };

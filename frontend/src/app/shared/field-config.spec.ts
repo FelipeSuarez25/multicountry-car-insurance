@@ -36,7 +36,8 @@ function item(overrides: Record<string, unknown>, base?: FieldConfig): StrapiIte
 }
 
 function rule(overrides: Record<string, unknown>): StrapiItem {
-  return { id: 1, __component: 'form.validation-rule', value: null, years: null, maxYearsOld: null, maxYearsAhead: null, message: null, ...overrides };
+  // Wire shape of spec 7.5.1: every attribute present, the unused ones null.
+  return { id: 1, __component: 'form.validation-rule', value: null, pattern: null, years: null, maxYearsOld: null, maxYearsAhead: null, message: null, ...overrides };
 }
 
 describe('US-01-BR-01 / US-01-AC-01 sorting of the field configuration', () => {
@@ -121,7 +122,7 @@ describe('US-01-BR-01 / US-01-AC-01 sorting of the field configuration', () => {
   it('US-01-BR-01 keeps the rules in the configured order', () => {
     const [parsed] = parseFieldConfigs(
       strapiListResponse([
-        item({ rules: [rule({ kind: 'maxLength', value: 20 }), rule({ kind: 'minLength', value: 2 }), rule({ kind: 'pattern', value: '^[a-z]+$' })] }),
+        item({ rules: [rule({ kind: 'maxLength', value: 20 }), rule({ kind: 'minLength', value: 2 }), rule({ kind: 'pattern', pattern: '^[a-z]+$' })] }),
       ]),
     );
     expect(parsed.rules.map((r: ValidationRule) => r.kind)).toEqual(['maxLength', 'minLength', 'pattern']);
@@ -148,7 +149,7 @@ describe('US-01-AC-14 malformed field configuration is skipped', () => {
     {
       problem: 'its pattern "[A-Z" does not compile',
       key: 'brokenPattern',
-      extra: item({ key: 'brokenPattern', rules: [rule({ kind: 'pattern', value: '[A-Z' })] }),
+      extra: item({ key: 'brokenPattern', rules: [rule({ kind: 'pattern', pattern: '[A-Z' })] }),
     },
     { problem: 'its label is empty', key: 'noLabel', extra: item({ key: 'noLabel', label: '' }) },
     {
@@ -175,7 +176,7 @@ describe('US-01-AC-14 malformed field configuration is skipped', () => {
     {
       problem: 'a pattern rule is attached to a number field (rule does not apply to the type)',
       key: 'wrongApplicability',
-      extra: item({ key: 'wrongApplicability', type: 'number', rules: [rule({ kind: 'pattern', value: '^[0-9]+$' })] }),
+      extra: item({ key: 'wrongApplicability', type: 'number', rules: [rule({ kind: 'pattern', pattern: '^[0-9]+$' })] }),
     },
     {
       problem: 'a minAge rule is attached to a text field',
@@ -201,6 +202,17 @@ describe('US-01-AC-14 malformed field configuration is skipped', () => {
       problem: 'a yearRange rule lacks maxYearsAhead',
       key: 'noAhead',
       extra: item({ key: 'noAhead', type: 'number', rules: [rule({ kind: 'yearRange', maxYearsOld: 20, maxYearsAhead: null })] }),
+    },
+    // v0.4 (spec 7.5.1, US-01-R1-F04): each kind reads its parameter from its own typed attribute.
+    {
+      problem: 'its pattern rule has "pattern" null and its regex in "value"',
+      key: 'regexInValue',
+      extra: item({ key: 'regexInValue', rules: [rule({ kind: 'pattern', pattern: null, value: '^[0-9]+$' })] }),
+    },
+    {
+      problem: 'its minLength rule has "value" as the text "3" instead of a number',
+      key: 'textLength',
+      extra: item({ key: 'textLength', rules: [rule({ kind: 'minLength', value: '3' })] }),
     },
   ];
 
@@ -245,6 +257,73 @@ describe('US-01-AC-14 malformed field configuration is skipped', () => {
     expect(parsed.key).toBe('noMessage');
     expect(parsed.errorMessage).toBe('Revisa este campo.');
     expect(warnedText()).toContain('noMessage');
+  });
+});
+
+describe('US-01-AC-14 wire shape of a validation rule (spec 7.5.1)', () => {
+  let warn: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  const parseRules = (type: FieldConfig['type'], rules: StrapiItem[]): ValidationRule[] =>
+    parseFieldConfigs(strapiListResponse([item({ key: 'wireField', type, rules })]))[0]?.rules ?? [];
+
+  it('US-01-AC-14 reads a pattern rule from the "pattern" attribute and keeps the regex in the logical "value"', () => {
+    expect(parseRules('text', [rule({ kind: 'pattern', pattern: '^[A-Za-z]{3}[0-9]{3}$' })])).toEqual([
+      { kind: 'pattern', value: '^[A-Za-z]{3}[0-9]{3}$' },
+    ]);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('US-01-AC-14 maps each kind to the unchanged logical rule from its own attribute', () => {
+    expect(parseRules('text', [rule({ kind: 'minLength', value: 3 }), rule({ kind: 'maxLength', value: 80 }), rule({ kind: 'rutCheckDigit' })])).toEqual([
+      { kind: 'minLength', value: 3 }, { kind: 'maxLength', value: 80 }, { kind: 'rutCheckDigit' },
+    ]);
+    expect(parseRules('number', [rule({ kind: 'min', value: 1 }), rule({ kind: 'max', value: 9 }), rule({ kind: 'yearRange', maxYearsOld: 20, maxYearsAhead: 1 })])).toEqual([
+      { kind: 'min', value: 1 }, { kind: 'max', value: 9 }, { kind: 'yearRange', maxYearsOld: 20, maxYearsAhead: 1 },
+    ]);
+    expect(parseRules('date', [rule({ kind: 'minAge', years: 18 })])).toEqual([{ kind: 'minAge', years: 18 }]);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('US-01-AC-14 ignores the attributes a kind does not use, whatever their value (stale editor values)', () => {
+    expect(parseRules('text', [rule({ kind: 'pattern', pattern: '^[a-z]+$', value: 7, years: 3, maxYearsOld: 1, maxYearsAhead: 2 })])).toEqual([
+      { kind: 'pattern', value: '^[a-z]+$' },
+    ]);
+    expect(parseRules('text', [rule({ kind: 'minLength', value: 3, pattern: '[unused', years: 'x' })])).toEqual([{ kind: 'minLength', value: 3 }]);
+    expect(parseRules('text', [rule({ kind: 'rutCheckDigit', value: 'abc', pattern: '(' })])).toEqual([{ kind: 'rutCheckDigit' }]);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('US-01-AC-14 keeps a non-empty message as the override and treats null, empty and blank as no override', () => {
+    const rules = parseRules('text', [
+      rule({ kind: 'minLength', value: 3, message: 'Muy corto.' }),
+      rule({ kind: 'maxLength', value: 9, message: null }),
+      rule({ kind: 'maxLength', value: 8, message: '' }),
+      rule({ kind: 'maxLength', value: 7, message: '   ' }),
+    ]);
+    expect(rules).toEqual([
+      { kind: 'minLength', value: 3, message: 'Muy corto.' },
+      { kind: 'maxLength', value: 9 },
+      { kind: 'maxLength', value: 8 },
+      { kind: 'maxLength', value: 7 },
+    ]);
+  });
+
+  it.each([
+    ['a pattern rule with an empty "pattern"', 'text', { kind: 'pattern', pattern: '' }],
+    ['a pattern rule with a non-string "pattern"', 'text', { kind: 'pattern', pattern: 5 }],
+    ['a minLength rule with a non-integer value', 'text', { kind: 'minLength', value: 2.5 }],
+    ['a min rule with value as text', 'number', { kind: 'min', value: '1' }],
+    ['a minAge rule with years as text', 'date', { kind: 'minAge', years: '18' }],
+    ['a yearRange rule with maxYearsOld as text', 'number', { kind: 'yearRange', maxYearsOld: '20', maxYearsAhead: 1 }],
+    ['a yearRange rule with a negative maxYearsAhead', 'number', { kind: 'yearRange', maxYearsOld: 20, maxYearsAhead: -1 }],
+  ] as const)('US-01-AC-14 drops the field and warns with its key for %s', (_name, type, wire) => {
+    const body = strapiListResponse([item({ key: 'wireField', type, rules: [rule({ ...wire })] })]);
+    expect(parseFieldConfigs(body)).toEqual([]);
+    expect(warn.mock.calls.map((a: unknown[]) => a.map(String).join(' ')).join('\n')).toContain('wireField');
   });
 });
 
