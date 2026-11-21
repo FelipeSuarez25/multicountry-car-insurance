@@ -111,13 +111,19 @@ test.describe('US-01-AC-24 keyboard-only completion (Colombia, desktop)', () => 
     return page.evaluate(() => (document.activeElement?.tagName === 'BUTTON' ? (document.activeElement.textContent ?? '').trim() : null));
   }
 
-  /** Press Tab (or Shift+Tab) until the labelled control has focus, failing if another field gets it first. */
+  /**
+   * Press Tab (or Shift+Tab) until the labelled control has focus. Focus staying on the field being left is
+   * tolerated (a native date control has several tab stops: day, month, year, picker); focus landing on any
+   * other field before the target fails.
+   */
   async function tabTo(page: Page, label: string, options: { shift?: boolean; max?: number } = {}): Promise<void> {
     const key = options.shift ? 'Shift+Tab' : 'Tab';
-    for (let i = 0; i < (options.max ?? 4); i++) {
+    const leaving = await focusedLabel(page);
+    for (let i = 0; i < (options.max ?? 6); i++) {
       await page.keyboard.press(key);
       const current = await focusedLabel(page);
       if (current === label) return;
+      if (leaving !== null && current === leaving) continue;
       expect(CO_LABELS, `focus landed on "${current}" while moving to "${label}"`).not.toContain(current);
     }
     throw new Error(`"${label}" did not receive focus`);
@@ -165,10 +171,8 @@ test.describe('US-01-AC-24 keyboard-only completion (Colombia, desktop)', () => 
       },
       {
         label: 'Ciudad',
-        act: async () => {
-          await page.keyboard.press('ArrowDown');
-          await page.keyboard.press('ArrowDown');
-        },
+        // Type-ahead: on macOS Chromium ArrowDown opens the select popup instead of changing the value.
+        act: () => page.keyboard.type('Medell'),
         check: () => expect(field(page, 'Ciudad')).toHaveValue('MDE'),
       },
       {
@@ -178,11 +182,7 @@ test.describe('US-01-AC-24 keyboard-only completion (Colombia, desktop)', () => 
       },
       {
         label: 'Marca',
-        act: async () => {
-          await page.keyboard.press('ArrowDown');
-          await page.keyboard.press('ArrowDown');
-          await page.keyboard.press('ArrowDown');
-        },
+        act: () => page.keyboard.type('Mazd'),
         check: () => expect(field(page, 'Marca')).toHaveValue('mazda'),
       },
       {
