@@ -5,6 +5,8 @@ import {
   createField,
   createScopedToken,
   deleteField,
+  deleteStaleFields,
+  deleteStaleTokens,
   deleteToken,
   findCountryDocumentId,
   loginAdmin,
@@ -17,6 +19,9 @@ import {
  * deployment. The content is written from the Node test process following the ADR-0002 write flow;
  * the credentials never reach the browser context.
  */
+
+const TOKEN_NAME = 'us-01-ac-03-e2e';
+const FIELD_KEY = 'mobilePhone';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -55,18 +60,22 @@ test.describe('US-01-AC-03 configuration change without deployment', () => {
     const browserRequests: Request[] = [];
     page.on('request', (request) => browserRequests.push(request));
 
+    // Pre-test cleanup of leftovers of a crashed run, then the scoped token for this run.
+    const { email, password } = adminCredentials();
+    session = await loginAdmin(api, email, password);
+    await deleteStaleTokens(api, session, TOKEN_NAME);
+    token = await createScopedToken(api, session, TOKEN_NAME);
+    await deleteStaleFields(api, token, FIELD_KEY);
+
     // Before: the seeded form.
     await page.goto('/co/datos');
     await expect(field(page, 'Placa')).toBeVisible();
     expect(await visibleLabels(page)).toEqual(CO_LABELS);
 
     // The business team adds and publishes the field (key mobilePhone, sortOrder 35, not required).
-    const { email, password } = adminCredentials();
-    session = await loginAdmin(api, email, password);
-    token = await createScopedToken(api, session, 'us-01-ac-03-e2e');
     const countryDocumentId = await findCountryDocumentId(api, 'CO');
     createdDocumentId = await createField(api, token, countryDocumentId, {
-      key: 'mobilePhone',
+      key: FIELD_KEY,
       type: 'text',
       label: 'Teléfono celular',
       isRequired: false,

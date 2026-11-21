@@ -7,12 +7,18 @@ import type { APIRequestContext } from '@playwright/test';
  * storage of a browser context.
  *
  * Steps: log in to the admin API on Strapi's own port, create a custom API token scoped to
- * `form-field` create and delete (the shortest lifespan Strapi accepts, 7 days), create the field,
- * and in teardown delete the field and then the token, also when the test fails.
+ * `form-field` create and delete plus `country` find (ADR-0005, needed for the relation check), with
+ * the shortest lifespan Strapi 5.63 accepts (7 days: API_TOKEN_LIFESPANS in @strapi/admin is
+ * unlimited, 7, 30 or 90 days), create the field, and in teardown delete the field and then the
+ * token, also when the test fails. Leftovers of a crashed run are removed before the next run.
  */
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-const SCOPE = ['api::form-field.form-field.create', 'api::form-field.form-field.delete'];
+const SCOPE = [
+  'api::form-field.form-field.create',
+  'api::form-field.form-field.delete',
+  'api::country.country.find',
+];
 
 export interface AdminSession {
   jwt: string;
@@ -96,4 +102,24 @@ export async function deleteField(api: APIRequestContext, token: ScopedToken, do
 export async function deleteToken(api: APIRequestContext, session: AdminSession, tokenId: number): Promise<void> {
   const response = await api.delete(`/admin/api-tokens/${tokenId}`, { headers: { Authorization: `Bearer ${session.jwt}` } });
   await expectOk(response, 'Deleting the scoped API token');
+}
+
+/** Pre-test cleanup: deletes API tokens left by a crashed run (same name as the test token). */
+export async function deleteStaleTokens(api: APIRequestContext, session: AdminSession, name: string): Promise<void> {
+  const response = await api.get('/admin/api-tokens', { headers: { Authorization: `Bearer ${session.jwt}` } });
+  await expectOk(response, 'Listing API tokens');
+  const body = (await response.json()) as { data?: { id: number; name: string }[] };
+  for (const stale of (body.data ?? []).filter((t) => t.name === name)) {
+    await deleteToken(api, session, stale.id);
+  }
+}
+
+/** Pre-test cleanup: deletes published fields left with the test's key (read is public, ADR-0002). */
+export async function deleteStaleFields(api: APIRequestContext, token: ScopedToken, key: string): Promise<void> {
+  const response = await api.get('/api/form-fields', { params: { 'filters[key][$eq]': key, 'pagination[pageSize]': '100' } });
+  await expectOk(response, 'Reading leftover fields');
+  const body = (await response.json()) as { data?: { documentId?: string }[] };
+  for (const stale of body.data ?? []) {
+    if (stale.documentId) await deleteField(api, token, stale.documentId);
+  }
 }
