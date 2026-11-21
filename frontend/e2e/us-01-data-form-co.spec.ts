@@ -74,10 +74,19 @@ test.describe('US-01-AC-09 a number the browser cannot parse counts as empty', (
     await year.pressSequentially('1e');
     // The HTML sanitisation rule for <input type="number">: unparseable text reads back as ''.
     await expect(year).toHaveValue('');
+    // `value` reads '' both when "1e" is still on screen and when the text was wiped (US-01-R1-F03),
+    // so it cannot tell them apart. `validity.badInput` is true only while unparseable text is shown.
+    await expect.poll(() => year.evaluate((el: HTMLInputElement) => el.validity.badInput)).toBe(true);
+    // The model and the stored state hold '' (AC-09 note, AC-21), not the last parseable text "1".
+    await expect
+      .poll(() => page.evaluate(() => JSON.parse(sessionStorage.getItem('quote-wizard') ?? '{}').step1?.values?.vehicleYear))
+      .toBe('');
 
     await continuar(page).click();
     await expectDescribedBy(page, 'Modelo (año)', 'El modelo debe estar entre los últimos 20 años y el próximo año.');
     await expect(year).toHaveAttribute('aria-invalid', 'true');
+    // Still visible after the failed submit and the focus move.
+    expect(await year.evaluate((el: HTMLInputElement) => el.validity.badInput)).toBe(true);
     await expect(page).toHaveURL(/\/co\/datos$/);
   });
 
