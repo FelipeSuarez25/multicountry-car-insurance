@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type Request } from '@playwright/test';
-import { BASE_URL, STRAPI_URL } from './support/env';
+import { BASE_URL, STRAPI_URL, adminCredentials } from './support/env';
+import { createScopedToken, deleteStaleTokens, deleteToken, loginAdmin } from './support/strapi-admin';
 import { continuar, field, fillColombia } from './support/form';
 
 /**
@@ -145,5 +146,135 @@ test.describe('US-01-AC-28 anonymous callers cannot read drafts or write content
       headers: { Authorization: 'Bearer not-a-real-token-for-a-negative-test' }, // scan-secrets: allow (fictitious value, negative test for ADR-0002)
     });
     expect(withToken.status()).toBe(400);
+  });
+
+  // F02 of review R1: the published-only rule must not depend on how the caller spells the request.
+  // Fictitious header values: none of them is a credential.
+  const NON_BEARER_HEADERS: Record<string, string>[] = [
+    { Authorization: 'foo' }, // scan-secrets: allow (fictitious value, negative test for ADR-0002)
+    { Authorization: 'Basic Zm9vOmJhcg==' }, // scan-secrets: allow (fictitious value "foo:bar", negative test for ADR-0002)
+    { Authorization: 'Bearer' }, // scan-secrets: allow (scheme without a token, negative test for ADR-0002)
+    { authorization: 'x' }, // scan-secrets: allow (fictitious value, negative test for ADR-0002)
+  ];
+  const PATH_PREFIXES = ['/api', '/API', '/Api'];
+
+  type ApiResponse = Awaited<ReturnType<APIRequestContext['get']>>;
+
+  async function items(response: ApiResponse): Promise<{ key?: string; publishedAt?: string | null }[]> {
+    // The proxy answers an unknown (upper-case) path with the SPA's HTML page: no rows, no draft.
+    if (!response.ok() || !(response.headers()['content-type'] ?? '').includes('json')) return [];
+    const body = (await response.json()) as { data?: { key?: string; publishedAt?: string | null }[] };
+    return body.data ?? [];
+  }
+
+  /** The caller must never be served a draft: not as the email field, not as an unpublished row. */
+  async function expectNoDraft(response: ApiResponse, what: string): Promise<void> {
+    expect(response.status(), `${what}: the request must not crash the server`).toBeLessThan(500);
+    const rows = await items(response);
+    expect(rows.map((r) => r.key ?? ''), `${what}: draft email field`).not.toContain('email');
+    expect(rows.filter((r) => r.publishedAt === null).length, `${what}: rows with publishedAt null (drafts)`).toBe(0);
+    expect(await response.text(), `${what}: draft label`).not.toContain('Correo electrónico');
+  }
+
+  test('US-01-AC-28 on Strapi\'s own port a non-Bearer Authorization value does not reveal the draft "email" field', async ({ playwright }) => {
+    const strapi = await playwright.request.newContext({ baseURL: STRAPI_URL });
+    try {
+      for (const headers of NON_BEARER_HEADERS) {
+        const name = `Authorization "${Object.values(headers)[0]}"`;
+        await expectNoDraft(await strapi.get('/api/form-fields', { params: DRAFT_QUERY, headers }), name);
+      }
+    } finally {
+      await strapi.dispose();
+    }
+  });
+
+  test('US-01-AC-28 on Strapi\'s own port a non-lower-case path does not reveal the draft "email" field, with or without a header', async ({ playwright }) => {
+    const strapi = await playwright.request.newContext({ baseURL: STRAPI_URL });
+    try {
+      for (const prefix of PATH_PREFIXES) {
+        await expectNoDraft(await strapi.get(`${prefix}/form-fields`, { params: DRAFT_QUERY }), `${prefix} no header`);
+      }
+      for (const prefix of PATH_PREFIXES) {
+        for (const headers of NON_BEARER_HEADERS) {
+          await expectNoDraft(
+            await strapi.get(`${prefix}/form-fields`, { params: DRAFT_QUERY, headers }),
+            `${prefix} Authorization "${Object.values(headers)[0]}"`,
+          );
+        }
+      }
+    } finally {
+      await strapi.dispose();
+    }
+  });
+
+  test('US-01-AC-28 on Strapi\'s own port the other publication parameters stay closed for the header and path variants', async ({ playwright }) => {
+    const strapi = await playwright.request.newContext({ baseURL: STRAPI_URL });
+    try {
+      for (const extra of EXTRA_PUBLICATION_PARAMS) {
+        const params = { 'filters[key][$eq]': 'email', 'filters[country][code][$eq]': 'CO', ...extra };
+        await expectNoDraft(await strapi.get('/api/form-fields', { params, headers: NON_BEARER_HEADERS[0] }), `${JSON.stringify(extra)} header`);
+        await expectNoDraft(await strapi.get('/API/form-fields', { params }), `${JSON.stringify(extra)} upper-case path`);
+      }
+    } finally {
+      await strapi.dispose();
+    }
+  });
+
+  test('US-01-AC-28 on Strapi\'s own port status=draft on countries returns only published rows, for every header and path variant', async ({ playwright }) => {
+    const strapi = await playwright.request.newContext({ baseURL: STRAPI_URL });
+    try {
+      // Control: the published list is readable and non-empty, so "only published" is meaningful.
+      const published = await strapi.get('/api/countries');
+      expect(published.ok()).toBe(true);
+      expect((await items(published)).length).toBeGreaterThan(0);
+
+      await expectNoDraft(await strapi.get('/api/countries', { params: { status: 'draft' } }), 'plain');
+      for (const headers of NON_BEARER_HEADERS) {
+        await expectNoDraft(
+          await strapi.get('/api/countries', { params: { status: 'draft' }, headers }),
+          `Authorization "${Object.values(headers)[0]}"`,
+        );
+      }
+      for (const prefix of ['/API', '/Api']) {
+        await expectNoDraft(await strapi.get(`${prefix}/countries`, { params: { status: 'draft' } }), `${prefix} no header`);
+      }
+    } finally {
+      await strapi.dispose();
+    }
+  });
+
+  test('US-01-AC-28 through the proxy the upper-case path and the non-Bearer Authorization variants reveal no draft', async ({ request }) => {
+    for (const prefix of PATH_PREFIXES) {
+      await expectNoDraft(await request.get(`${prefix}/form-fields`, { params: DRAFT_QUERY }), `proxy ${prefix}`);
+      await expectNoDraft(await request.get(`${prefix}/countries`, { params: { status: 'draft' } }), `proxy ${prefix} countries`);
+    }
+    for (const headers of NON_BEARER_HEADERS) {
+      await expectNoDraft(await request.get('/api/form-fields', { params: DRAFT_QUERY, headers }), `proxy Authorization "${Object.values(headers)[0]}"`);
+    }
+  });
+
+  test('US-01-AC-28 a request with a valid scoped token is still allowed what ADR-0005 permits (country find), and an invalid Bearer is refused', async ({ playwright }) => {
+    // Guards against fixing F01 by refusing every Authorization header. Only the permitted read is
+    // asserted: what the token may see with status=draft is deliberately not constrained here.
+    const strapi = await playwright.request.newContext({ baseURL: STRAPI_URL });
+    const { email, password } = adminCredentials();
+    const tokenName = 'US-01-AC-28 e2e token';
+    const session = await loginAdmin(strapi, email, password);
+    await deleteStaleTokens(strapi, session, tokenName);
+    const token = await createScopedToken(strapi, session, tokenName);
+    try {
+      const allowed = await strapi.get('/api/countries', { headers: { Authorization: `Bearer ${token.accessKey}` } });
+      expect(allowed.status()).toBe(200);
+      expect((await items(allowed)).length).toBeGreaterThan(0);
+
+      const invalid = await strapi.get('/api/form-fields', {
+        params: DRAFT_QUERY,
+        headers: { Authorization: 'Bearer not-a-real-token-for-a-negative-test' }, // scan-secrets: allow (fictitious value, negative test for ADR-0002)
+      });
+      expect(invalid.status()).toBe(401);
+    } finally {
+      await deleteToken(strapi, session, token.id);
+      await strapi.dispose();
+    }
   });
 });
