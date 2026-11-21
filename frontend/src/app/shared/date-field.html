@@ -1,0 +1,19 @@
+<input
+  #box
+  type="text"
+  inputmode="numeric"
+  autocomplete="off"
+  class="input box"
+  placeholder="dd/mm/aaaa"
+  [class.input--icon]="hasIcon()"
+  [id]="controlId()"
+  [value]="text()"
+  [attr.aria-required]="ariaRequired()"
+  [attr.aria-invalid]="ariaInvalid() ? 'true' : null"
+  [attr.aria-describedby]="ariaDescribedby()"
+  (input)="onInput($event)"
+  (blur)="onBlur()"
+/>
+<button #opener type="button" class="secondary opener" [attr.aria-label]="'Elegir fecha: ' + config().label" (click)="open()">
+  <svg lucideCalendarDays></svg>
+</button>
