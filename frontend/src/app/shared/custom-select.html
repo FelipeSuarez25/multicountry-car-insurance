@@ -1,0 +1,115 @@
+@if (searchable()) {
+  <input
+    #control
+    ngCombobox
+    #combo="ngCombobox"
+    type="text"
+    autocomplete="off"
+    class="input combo"
+    [class.input--icon]="hasIcon()"
+    [id]="controlId()"
+    [(expanded)]="expanded"
+    [(value)]="text"
+    [attr.placeholder]="expanded() && text() === '' ? searchPlaceholder : prompt"
+    [attr.aria-required]="ariaRequired()"
+    [attr.aria-invalid]="ariaInvalid() ? 'true' : null"
+    [attr.aria-describedby]="ariaDescribedby()"
+    (input)="onInput($event)"
+    (click)="openOnClick()"
+    (keydown)="onKeydown($event)"
+    (focusout)="onFocusout()"
+  />
+  <svg lucideChevronDown class="chevron"></svg>
+  <ng-template ngComboboxPopup [combobox]="combo">
+    <ng-template [appPanelOverlay]="control" let-sheet="sheet" (dismissed)="expanded.set(false)">
+      <div class="panel" [class.panel--sheet]="sheet" (mousedown)="$event.preventDefault()">
+        <ul
+          ngComboboxWidget
+          ngListbox
+          #list="ngListbox"
+          class="list"
+          focusMode="activedescendant"
+          selectionMode="explicit"
+          [wrap]="false"
+          [activeDescendant]="list.activeDescendant()"
+          [attr.aria-labelledby]="labelId()"
+          [value]="selection()"
+          (valueChange)="pick($event)"
+        >
+          @for (option of shown(); track option.value) {
+            <li ngOption class="option" [id]="optionId(option)" [value]="option.value" [label]="option.label">
+              <span class="option__label">{{ option.label }}</span>
+              @if (option.value === value()) {
+                <svg lucideCheck class="option__check"></svg>
+              }
+            </li>
+          }
+        </ul>
+        @if (shown().length === 0) {
+          <p class="empty">{{ emptyText(filterText() ?? '') }}</p>
+        }
+        @if (sheet) {
+          <button type="button" class="secondary close" tabindex="-1" (click)="close()">
+            <svg lucideX></svg>
+            <span>Cerrar</span>
+          </button>
+        }
+      </div>
+    </ng-template>
+  </ng-template>
+} @else {
+  <button
+    #control
+    ngCombobox
+    #combo="ngCombobox"
+    type="button"
+    class="input combo combo--button"
+    [class.input--icon]="hasIcon()"
+    [id]="controlId()"
+    [(expanded)]="expanded"
+    [attr.aria-labelledby]="labelId()"
+    [attr.aria-required]="ariaRequired()"
+    [attr.aria-invalid]="ariaInvalid() ? 'true' : null"
+    [attr.aria-describedby]="ariaDescribedby()"
+    (click)="onButtonClick($event)"
+    (keydown)="onKeydown($event)"
+    (focusout)="onFocusout()"
+  >
+    <span class="combo__text" [class.combo__text--prompt]="selectedLabel() === ''">{{ selectedLabel() || prompt }}</span>
+  </button>
+  <svg lucideChevronDown class="chevron"></svg>
+  <ng-template ngComboboxPopup [combobox]="combo">
+    <ng-template [appPanelOverlay]="control" let-sheet="sheet" (dismissed)="expanded.set(false)">
+      <div class="panel" [class.panel--sheet]="sheet" (mousedown)="$event.preventDefault()">
+        <ul
+          ngComboboxWidget
+          ngListbox
+          #list="ngListbox"
+          class="list"
+          focusMode="activedescendant"
+          selectionMode="explicit"
+          [wrap]="false"
+          [activeDescendant]="list.activeDescendant()"
+          [attr.aria-labelledby]="labelId()"
+          [value]="selection()"
+          (valueChange)="pick($event)"
+        >
+          @for (option of shown(); track option.value) {
+            <li ngOption class="option" [id]="optionId(option)" [value]="option.value" [label]="option.label">
+              <span class="option__label">{{ option.label }}</span>
+              @if (option.value === value()) {
+                <svg lucideCheck class="option__check"></svg>
+              }
+            </li>
+          }
+        </ul>
+        @if (sheet) {
+          <button type="button" class="secondary close" tabindex="-1" (click)="close()">
+            <svg lucideX></svg>
+            <span>Cerrar</span>
+          </button>
+        }
+      </div>
+    </ng-template>
+  </ng-template>
+}
