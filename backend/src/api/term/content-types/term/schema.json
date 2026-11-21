@@ -1,0 +1,32 @@
+{
+  "kind": "collectionType",
+  "collectionName": "terms",
+  "info": {
+    "singularName": "term",
+    "pluralName": "terms",
+    "displayName": "Términos y condiciones",
+    "description": "Términos y condiciones del seguro mostrados en el resumen del cotizador, por país (US-03 spec 7.1, ADR-0009)."
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true,
+      "minLength": 1,
+      "maxLength": 150
+    },
+    "body": {
+      "type": "blocks",
+      "required": true
+    },
+    "country": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::country.country",
+      "required": true
+    }
+  }
+}

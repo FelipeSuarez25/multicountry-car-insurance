@@ -11,7 +11,8 @@ import { bootStrapi, type DocumentService, type TestStrapi } from './helpers/str
  *    one without a country is rejected.
  *  - The attribute contract of spec 7.1 (types, required, defaults, `min`, `maxLength`, repeatable
  *    components) holds when content is written through the Document Service.
- *  - The public role holds exactly `country.find`, `form-field.find` and `plan.find` (spec 7.5).
+ *  - The public role holds exactly `country.find`, `form-field.find`, `plan.find` (spec 7.5) and, since
+ *    US-03, `term.find` (spec US-03 7.4).
  *  - The seed creates the plans of `specs/US-02/seed-plans.md`, with the draft-only and the
  *    inactive plan of each country.
  *
@@ -308,12 +309,19 @@ describe('US-02-BR-01 ADR-0001 plan rules (key per country, required country, at
   describe('US-02-AC-19 the public role is minimal (spec 7.5, ADR-0002)', () => {
     type Db = { query(uid: string): { findOne(p: unknown): Promise<{ id: number } | null>; findMany(p: unknown): Promise<{ action: string }[]> } };
 
-    it('US-02-AC-19 the public role holds exactly country.find, form-field.find and plan.find (no findOne, no write)', async () => {
+    // US-03 supersedes the US-02 list: `api::term.term.find` joins the three (spec US-03 7.4, ADR-0002). The
+    // terms-specific assertions live in `terms-rules.test.ts`; this one keeps the whole list exact.
+    it('US-02-AC-19 / US-03-AC-19 the public role holds exactly country.find, form-field.find, plan.find and term.find (no findOne, no write)', async () => {
       const db = (strapi as unknown as { db: Db }).db;
       const role = await db.query('plugin::users-permissions.role').findOne({ where: { type: 'public' } });
       expect(role, 'the public role exists').not.toBeNull();
       const permissions = await db.query('plugin::users-permissions.permission').findMany({ where: { role: role?.id } });
-      expect(permissions.map((p) => p.action).sort()).toEqual(['api::country.country.find', 'api::form-field.form-field.find', 'api::plan.plan.find']);
+      expect(permissions.map((p) => p.action).sort()).toEqual([
+        'api::country.country.find',
+        'api::form-field.form-field.find',
+        'api::plan.plan.find',
+        'api::term.term.find',
+      ]);
     }, 60_000);
   });
 

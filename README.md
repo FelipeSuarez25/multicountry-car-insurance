@@ -106,6 +106,28 @@ would drop out of step 1. Run `docker compose down -v` once, then `docker compos
 For local development without Docker (`cd backend && npm run develop`), delete
 `backend/.tmp/data.db` once instead.
 
+## Editing the terms and conditions (for editors)
+
+In the Strapi admin, open **Content Manager → Términos y condiciones** and edit the `body` field. It is a rich-text (blocks) field.
+The summary page of the quote flow shows the following formatting ([ADR-0009](adr/0009-terms-rich-text-rendering.md)):
+
+| In the editor | On the site |
+|---|---|
+| Paragraphs | Shown as paragraphs |
+| Headings | Shown as headings, one level below the terms title |
+| Bulleted and numbered lists | Shown as lists, nested up to 6 levels (deeper lists are dropped) |
+| Bold, italic, underline, strikethrough | Shown |
+| Links | Only the link text is shown, with no link |
+| Quotes and code blocks | Shown as plain paragraphs |
+| Inline code | Shown as plain text |
+| Images | Not shown |
+
+Rules to keep in mind:
+
+- The site shows the **newest published** terms of each country. Publish to make a change visible. A draft is never shown.
+- The seed creates a country's example terms only when that country has no terms at all (neither draft nor published). It never creates, renames or republishes terms over your work, so a restart will not undo your edits.
+- Terms content is written in Spanish. It is the end-user text.
+
 ## Requirements not met
 
 *None so far.* Any requirement we decide not to meet is listed here, with the reason.

@@ -1,0 +1,94 @@
+<ng-template #textTpl let-span>{{ span.text }}</ng-template>
+
+<ng-template #strikeTpl let-span>
+  @if (span.strikethrough) {
+    <s><ng-container *ngTemplateOutlet="textTpl; context: { $implicit: span }" /></s>
+  } @else {
+    <ng-container *ngTemplateOutlet="textTpl; context: { $implicit: span }" />
+  }
+</ng-template>
+
+<ng-template #underlineTpl let-span>
+  @if (span.underline) {
+    <u><ng-container *ngTemplateOutlet="strikeTpl; context: { $implicit: span }" /></u>
+  } @else {
+    <ng-container *ngTemplateOutlet="strikeTpl; context: { $implicit: span }" />
+  }
+</ng-template>
+
+<ng-template #italicTpl let-span>
+  @if (span.italic) {
+    <em><ng-container *ngTemplateOutlet="underlineTpl; context: { $implicit: span }" /></em>
+  } @else {
+    <ng-container *ngTemplateOutlet="underlineTpl; context: { $implicit: span }" />
+  }
+</ng-template>
+
+<ng-template #spanTpl let-span>
+  @if (span.bold) {
+    <strong><ng-container *ngTemplateOutlet="italicTpl; context: { $implicit: span }" /></strong>
+  } @else {
+    <ng-container *ngTemplateOutlet="italicTpl; context: { $implicit: span }" />
+  }
+</ng-template>
+
+<ng-template #spansTpl let-spans>
+  @for (span of spans; track $index) {
+    <ng-container *ngTemplateOutlet="spanTpl; context: { $implicit: span }" />
+  }
+</ng-template>
+
+<ng-template #itemTpl let-item>
+  <li>
+    <ng-container *ngTemplateOutlet="spansTpl; context: { $implicit: item.spans }" />
+    @for (nested of item.lists; track $index) {
+      <ng-container *ngTemplateOutlet="listTpl; context: { $implicit: nested }" />
+    }
+  </li>
+</ng-template>
+
+<ng-template #listTpl let-list>
+  @if (list.ordered) {
+    <ol>
+      @for (item of list.items; track $index) {
+        <ng-container *ngTemplateOutlet="itemTpl; context: { $implicit: item }" />
+      }
+    </ol>
+  } @else {
+    <ul>
+      @for (item of list.items; track $index) {
+        <ng-container *ngTemplateOutlet="itemTpl; context: { $implicit: item }" />
+      }
+    </ul>
+  }
+</ng-template>
+
+@for (block of blocks(); track $index) {
+  @switch (block.kind) {
+    @case ('paragraph') {
+      <p><ng-container *ngTemplateOutlet="spansTpl; context: { $implicit: block.spans }" /></p>
+    }
+    @case ('heading') {
+      @switch (levelOf(block.depth)) {
+        @case (2) {
+          <h2><ng-container *ngTemplateOutlet="spansTpl; context: { $implicit: block.spans }" /></h2>
+        }
+        @case (3) {
+          <h3><ng-container *ngTemplateOutlet="spansTpl; context: { $implicit: block.spans }" /></h3>
+        }
+        @case (4) {
+          <h4><ng-container *ngTemplateOutlet="spansTpl; context: { $implicit: block.spans }" /></h4>
+        }
+        @case (5) {
+          <h5><ng-container *ngTemplateOutlet="spansTpl; context: { $implicit: block.spans }" /></h5>
+        }
+        @default {
+          <h6><ng-container *ngTemplateOutlet="spansTpl; context: { $implicit: block.spans }" /></h6>
+        }
+      }
+    }
+    @case ('list') {
+      <ng-container *ngTemplateOutlet="listTpl; context: { $implicit: block.list }" />
+    }
+  }
+}
