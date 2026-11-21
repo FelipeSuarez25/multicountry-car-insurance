@@ -69,13 +69,14 @@ export async function seed(strapi: Core.Strapi): Promise<void> {
       }
     }
 
-    // Terms (US-03-T-11): natural key country code + title; the "borrador" stays a draft.
-    for (const term of SEED_TERMS[country.code] ?? []) {
-      const found = await terms.findFirst({
-        filters: { title: term.title, country: { documentId: existing.documentId } },
-        status: 'draft',
-      });
-      if (!found) {
+    // Terms (US-03-T-11, US-03-R1-F01): seed a country's terms only when it has no terms document
+    // at all (neither draft nor published). Otherwise editors' renames, deletions and drafts stay.
+    const countryFilter = { country: { documentId: existing.documentId } };
+    const hasTerms =
+      (await terms.findFirst({ filters: countryFilter, status: 'draft' })) ||
+      (await terms.findFirst({ filters: countryFilter, status: 'published' }));
+    if (!hasTerms) {
+      for (const term of SEED_TERMS[country.code] ?? []) {
         await terms.create({
           data: { title: term.title, body: term.body, country: { connect: [existing.documentId] } } as never,
           status: term.draftOnly ? 'draft' : 'published',
