@@ -1,4 +1,4 @@
-import { Component, ElementRef, afterNextRender, computed, inject, signal, viewChild, viewChildren } from '@angular/core';
+import { Component, ElementRef, Injector, afterNextRender, computed, effect, inject, signal, viewChild, viewChildren } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CLOCK } from '../../core/clock';
 import { CountryStore } from '../../core/country-store';
@@ -33,6 +33,7 @@ interface PlanItem {
   styleUrl: './plan-list-page.css',
 })
 export class PlanListPage {
+  private readonly injector = inject(Injector);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly countries = inject(CountryStore);
@@ -52,10 +53,12 @@ export class PlanListPage {
 
   constructor() {
     void this.load();
-    // Arriving at the step puts focus on its heading, unless the load already failed
-    // (then focus goes to "Reintentar").
-    afterNextRender(() => {
-      if (this.status() !== 'error') this.heading().nativeElement.focus();
+    // Arriving at the step puts focus on its heading once the plans are there (or there are none),
+    // so the next Tab always reaches the plan options; if the load failed, focus goes to "Reintentar".
+    effect(() => {
+      const status = this.status();
+      if (status === 'loading' || status === 'error') return;
+      afterNextRender(() => this.heading().nativeElement.focus(), { injector: this.injector });
     });
   }
 
