@@ -13,12 +13,17 @@
   "private": true,
   "packageManager": "npm@11.19.1",
   "dependencies": {
+    "@angular/aria": "22.3.0",
+    "@angular/cdk": "22.3.0",
     "@angular/common": "22.3.0",
     "@angular/compiler": "22.3.0",
     "@angular/core": "22.3.0",
     "@angular/forms": "22.3.0",
     "@angular/platform-browser": "22.3.0",
     "@angular/router": "22.3.0",
+    "@fontsource-variable/archivo": "5.3.0",
+    "@fontsource-variable/atkinson-hyperlegible-next": "5.3.0",
+    "@lucide/angular": "1.77.0",
     "rxjs": "7.8.2",
     "tslib": "2.9.1"
   },

@@ -1,4 +1,5 @@
 import { Component, ElementRef, afterNextRender, input, output, viewChild } from '@angular/core';
+import { LucideCircleAlert } from '@lucide/angular';
 
 /**
  * Error state of a remote load: the message in a `role="alert"` region and a "Reintentar" button
@@ -6,19 +7,14 @@ import { Component, ElementRef, afterNextRender, input, output, viewChild } from
  */
 @Component({
   selector: 'app-load-error',
+  imports: [LucideCircleAlert],
+  styleUrl: './load-error.css',
   template: `
-    <p role="alert" class="load-error__message">{{ message() }}</p>
+    <p role="alert" class="message message--error load-error__message">
+      <svg lucideCircleAlert></svg>
+      <span>{{ message() }}</span>
+    </p>
     <button type="button" #retryButton (click)="retry.emit()">Reintentar</button>
-  `,
-  styles: `
-    :host {
-      display: block;
-    }
-    .load-error__message {
-      margin: 0 0 1rem;
-      color: var(--color-error);
-      font-weight: 600;
-    }
   `,
 })
 export class LoadError {

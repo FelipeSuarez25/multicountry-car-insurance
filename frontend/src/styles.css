@@ -1,16 +1,8 @@
-:root {
-  --color-text: #1b1f24;
-  --color-muted: #4a5460;
-  --color-surface: #ffffff;
-  --color-surface-hover: #eef3f8;
-  --color-border: #c4ccd6;
-  --color-border-strong: #6b7785;
-  --color-link: #0b4f9c;
-  --color-error: #b00020;
-  --color-focus: #0b5fff;
-  --color-button: #0b4f9c;
-  --color-button-text: #ffffff;
-}
+/*
+ * Global styles: reset, element defaults, focus, buttons, the input look shared by every control,
+ * skeletons, the page enter animation and the panels of the CDK overlays (ADR-0010, ADR-0013).
+ * Semantic and component tokens only; no primitive and no loose value (US-04-BR-01).
+ */
 
 *,
 *::before,
@@ -24,30 +16,402 @@ html {
 
 body {
   margin: 0;
-  background: var(--color-surface);
+  background-color: var(--color-bg);
+  background-image: var(--texture-dots);
+  background-size: var(--texture-dots-gap) var(--texture-dots-gap);
   color: var(--color-text);
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  font-size: 1rem;
-  line-height: 1.5;
+  font-family: var(--font-text);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
 }
+
+/* ---- Type ------------------------------------------------------------------------------- */
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+}
+
+/* The page heading: large, heavy, semi-expanded, with a soft gradient (ADR-0010 section 5). */
+h1 {
+  font-size: var(--text-display);
+  font-weight: var(--weight-heavy);
+  font-stretch: var(--text-display-stretch);
+  line-height: var(--leading-display);
+  letter-spacing: var(--tracking-display);
+  background-image: var(--gradient-display-text);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+h1:focus:not(:focus-visible) {
+  outline: none;
+}
+
+h2 {
+  font-size: var(--text-heading);
+  font-stretch: var(--text-heading-stretch);
+  line-height: var(--leading-heading);
+}
+
+h3 {
+  font-size: var(--text-subheading);
+  font-stretch: var(--text-subheading-stretch);
+  line-height: var(--leading-subheading);
+}
+
+p {
+  margin: 0;
+}
+
+strong {
+  font-weight: var(--weight-semibold);
+}
+
+/* Gradient text has a solid fallback when the system draws its own colours. */
+@media (forced-colors: active) {
+  h1 {
+    background-image: none;
+    color: CanvasText;
+    -webkit-text-fill-color: currentColor;
+  }
+}
+
+/* ---- Focus ------------------------------------------------------------------------------ */
 
 :focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
 }
 
-button {
-  min-height: 2.75rem;
-  padding: 0.5rem 1.25rem;
+/* ---- Utilities -------------------------------------------------------------------------- */
+
+.visually-hidden {
+  position: absolute;
+  width: var(--border-width-hairline);
+  height: var(--border-width-hairline);
+  margin: calc(-1 * var(--border-width-hairline));
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
   border: 0;
-  border-radius: 0.5rem;
-  background: var(--color-button);
-  color: var(--color-button-text);
+}
+
+/* Every icon is a decorative SVG sized by tokens (ADR-0010 section 7). */
+.lucide {
+  flex: none;
+  width: var(--size-icon);
+  height: var(--size-icon);
+}
+
+.lucide-small {
+  width: var(--size-icon-small);
+  height: var(--size-icon-small);
+}
+
+/* ---- Page frame ------------------------------------------------------------------------- */
+
+.page {
+  max-width: var(--size-form-max);
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-7);
+}
+
+.page > h1 {
+  margin-bottom: var(--space-5);
+}
+
+@media (min-width: 37.5em) {
+  .page {
+    padding: var(--space-6) var(--space-5) var(--space-8);
+  }
+}
+
+/* ---- Buttons ---------------------------------------------------------------------------- */
+
+button:not(.input) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-width: var(--size-target-min);
+  min-height: var(--size-target-min);
+  padding: var(--space-2) var(--space-5);
+  border: var(--border-width-hairline) solid var(--component-button-primary-edge);
+  border-radius: var(--radius-control);
+  background: var(--component-button-primary-bg);
+  color: var(--component-button-primary-text);
   font: inherit;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-small);
+  text-align: center;
   cursor: pointer;
 }
 
-button:hover {
-  filter: brightness(1.1);
+button:not(.input):active {
+  background: var(--component-button-primary-bg-active);
+}
+
+button.secondary:not(.input) {
+  border-color: var(--component-button-secondary-border);
+  background: transparent;
+  color: var(--color-text);
+}
+
+button.secondary:active {
+  background: var(--color-surface-hover);
+}
+
+button:not(.input)[aria-disabled='true'],
+button:not(.input):disabled {
+  border: var(--border-width-hairline) dashed var(--color-border-subtle);
+  background: var(--component-button-disabled-bg);
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  button:not(.input):hover:not([aria-disabled='true'], :disabled) {
+    box-shadow: var(--shadow-ring-hover);
+  }
+
+  button.secondary:not(.input):hover:not([aria-disabled='true'], :disabled) {
+    background: var(--color-surface-hover);
+    box-shadow: var(--shadow-none);
+  }
+}
+
+@media (forced-colors: active) {
+  button:not(.input) {
+    border-color: ButtonText;
+    background: ButtonFace;
+    color: ButtonText;
+  }
+
+  button:not(.input)[aria-disabled='true'],
+  button:not(.input):disabled {
+    color: GrayText;
+  }
+}
+
+/* ---- The input look shared by text boxes, numbers, comboboxes and the date box ---------- */
+
+.input {
+  display: block;
+  width: 100%;
+  min-height: var(--size-target-min);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width-hairline) solid var(--component-input-border);
+  border-radius: var(--radius-control);
+  background: var(--component-input-bg);
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+.input[aria-invalid='true'] {
+  border-color: var(--color-error);
+}
+
+.input--icon {
+  padding-inline-start: calc(var(--space-3) + var(--size-icon) + var(--space-2));
+}
+
+@media (hover: hover) {
+  .input:hover {
+    background: var(--color-surface-hover);
+  }
+}
+
+/* ---- Shared pieces of the pages ---------------------------------------------------------------- */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* A price: display type, heavy and semi-expanded; the caption says what the price covers. */
+.amount {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--text-price);
+  font-weight: var(--weight-heavy);
+  font-stretch: var(--text-price-stretch);
+  letter-spacing: var(--tracking-price);
+  line-height: var(--leading-price);
+  overflow-wrap: anywhere;
+}
+
+.caption {
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+}
+
+/* A native checkbox, sized by tokens; its label is at least a 44 px target. */
+.check {
+  flex: none;
+  width: var(--size-icon);
+  height: var(--size-icon);
+  margin: calc((var(--size-target-min) - var(--size-icon)) / 2) 0 0;
+  accent-color: var(--color-brand);
+}
+
+.check__label {
+  display: flex;
+  align-items: center;
+  min-height: var(--size-target-min);
+}
+
+/* ---- Messages --------------------------------------------------------------------------- */
+
+.message {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-small);
+  line-height: var(--leading-small);
+  letter-spacing: var(--tracking-small);
+}
+
+.message--error {
+  color: var(--color-error);
+  font-weight: var(--weight-semibold);
+}
+
+.message--help {
+  color: var(--color-text-muted);
+}
+
+.message .lucide {
+  width: var(--size-icon-small);
+  height: var(--size-icon-small);
+  margin-top: var(--space-1);
+}
+
+/* ---- Skeletons (US-04-AC-15) ------------------------------------------------------------- */
+
+.skeleton {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--radius-control);
+  background: var(--color-surface-raised);
+}
+
+.skeleton--field {
+  height: var(--size-skeleton-field);
+}
+
+.skeleton--line {
+  height: var(--size-skeleton-line);
+}
+
+.skeleton--plan {
+  height: var(--size-skeleton-plan);
+  border-radius: var(--radius-card);
+}
+
+/* ---- Motion: every animation and transition is declared here and only when motion is allowed ---- */
+
+@media (prefers-reduced-motion: no-preference) {
+  button:not(.input) {
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
+  }
+
+  .input {
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
+  }
+
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-skeleton);
+    animation: skeleton-shimmer var(--duration-shimmer) var(--ease-linear) infinite;
+  }
+
+  .page-enter {
+    animation: page-enter var(--duration-base) var(--ease-out) backwards;
+  }
+
+  .message-enter {
+    animation: message-enter var(--duration-fast) var(--ease-out) backwards;
+  }
+
+  .spin {
+    animation: spin var(--duration-spin) var(--ease-linear) infinite;
+  }
+
+  @keyframes skeleton-shimmer {
+    from {
+      transform: translateX(-100%);
+    }
+
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+      transform: translateY(var(--motion-rise));
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes message-enter {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}
+
+/* ---- Panels of the CDK overlays (the select list and the calendar; ADR-0012 sections 3 and 4) ---- */
+
+.app-backdrop {
+  background: var(--color-backdrop);
+}
+
+/* A bottom sheet below --breakpoint-sheet: the full width, at most 85% of the height. */
+.app-sheet {
+  width: 100%;
+  max-height: var(--size-sheet-max-height);
+}
+
+.app-popover {
+  min-width: var(--size-popover-min);
+  max-width: 100%;
 }

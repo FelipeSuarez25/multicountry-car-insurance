@@ -22,9 +22,20 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "archivo-latin-wdth-normal.woff2",
+                "input": "node_modules/@fontsource-variable/archivo/files",
+                "output": "/fonts"
+              },
+              {
+                "glob": "atkinson-hyperlegible-next-latin-wght-normal.woff2",
+                "input": "node_modules/@fontsource-variable/atkinson-hyperlegible-next/files",
+                "output": "/fonts"
               }
             ],
             "styles": [
+              "src/styles/tokens.css",
               "src/styles.css"
             ]
           },
