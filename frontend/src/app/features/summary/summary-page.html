@@ -1,0 +1,136 @@
+<main class="page">
+  <h1 #heading tabindex="-1">{{ headingText() }}</h1>
+
+  @if (confirmed()) {
+    <section class="confirmation">
+      <p class="confirmation__number">
+        Tu número de cotización es
+        <strong class="confirmation__code">{{ quoteNumber() }}</strong>
+      </p>
+      <p class="confirmation__notice">Este es un pago simulado; no se realizó ningún cobro real.</p>
+      <div class="actions">
+        <button type="button" (click)="newQuote()">Nueva cotización</button>
+      </div>
+    </section>
+  } @else {
+    @switch (dataStatus()) {
+      @case ('loading') {
+        <p role="status">Cargando resumen…</p>
+      }
+      @case ('error') {
+        <app-load-error message="No pudimos cargar el resumen. Intenta de nuevo." (retry)="load()" />
+      }
+      @case ('ready') {
+        <div class="summary" [attr.aria-busy]="processing() ? 'true' : null">
+          @if (rows().holder.length > 0) {
+            <section class="card" aria-labelledby="holder-heading">
+              <h2 id="holder-heading">Tus datos</h2>
+              <dl class="rows">
+                @for (row of rows().holder; track row.key) {
+                  <div class="row">
+                    <dt>{{ row.label }}</dt>
+                    @if (row.accessibleValue) {
+                      <dd>
+                        <span aria-hidden="true">{{ row.value }}</span>
+                        <span class="visually-hidden">{{ row.accessibleValue }}</span>
+                      </dd>
+                    } @else {
+                      <dd>{{ row.value }}</dd>
+                    }
+                  </div>
+                }
+              </dl>
+            </section>
+          }
+          @if (rows().vehicle.length > 0) {
+            <section class="card" aria-labelledby="vehicle-heading">
+              <h2 id="vehicle-heading">Tu vehículo</h2>
+              <dl class="rows">
+                @for (row of rows().vehicle; track row.key) {
+                  <div class="row">
+                    <dt>{{ row.label }}</dt>
+                    <dd>{{ row.value }}</dd>
+                  </div>
+                }
+              </dl>
+            </section>
+          }
+          <div class="actions">
+            <button type="button" class="secondary" [attr.aria-disabled]="processing() ? 'true' : null" (click)="editData()">Editar mis datos</button>
+          </div>
+
+          @if (chosen(); as item) {
+            <section class="card" aria-labelledby="plan-heading">
+              <h2 id="plan-heading">Plan elegido</h2>
+              <p class="plan__name">{{ item.plan.name }}</p>
+              <p class="plan__description">{{ item.plan.shortDescription }}</p>
+              <p class="plan__price">
+                <span class="plan__amount">{{ item.price }}</span>
+                <span class="plan__caption">Precio anual</span>
+              </p>
+              <div class="actions">
+                <button type="button" class="secondary" [attr.aria-disabled]="processing() ? 'true' : null" (click)="changePlan()">Cambiar plan</button>
+              </div>
+            </section>
+          }
+
+          <section class="card" aria-labelledby="terms-heading" [attr.aria-busy]="termsStatus() === 'loading' ? 'true' : null">
+            <h2 id="terms-heading">Términos y condiciones</h2>
+            @switch (termsStatus()) {
+              @case ('loading') {
+                <p role="status">Cargando términos y condiciones…</p>
+              }
+              @case ('error') {
+                <p role="alert" class="message--error">No pudimos cargar los términos y condiciones. Intenta de nuevo.</p>
+                <button type="button" (click)="loadTerms()">Reintentar</button>
+              }
+              @case ('none') {
+                <p role="status">Los términos y condiciones no están disponibles en este momento. No es posible pagar.</p>
+              }
+              @case ('shown') {
+                @if (terms(); as shown) {
+                  <div class="terms" role="region" tabindex="0" aria-labelledby="terms-title">
+                    <h3 id="terms-title">{{ shown.title }}</h3>
+                    <app-rich-text [blocks]="shown.blocks" [headingLevel]="4" />
+                  </div>
+                }
+              }
+            }
+          </section>
+        </div>
+
+        <div class="payment">
+          @if (termsStatus() === 'shown') {
+            <div class="accept">
+              <input id="accept-terms" type="checkbox" [checked]="accepted()" [disabled]="processing()" (change)="accept($event)" />
+              <label for="accept-terms">Acepto los términos y condiciones</label>
+            </div>
+          }
+          <fieldset class="simulation" [disabled]="processing()">
+            <legend>Simulación de pago (no se realiza ningún cobro)</legend>
+            <label class="choice">
+              <input type="radio" name="simulation" value="approved" [checked]="outcome() === 'approved'" (change)="chooseOutcome('approved')" />
+              Pago aprobado
+            </label>
+            <label class="choice">
+              <input type="radio" name="simulation" value="rejected" [checked]="outcome() === 'rejected'" (change)="chooseOutcome('rejected')" />
+              Pago rechazado
+            </label>
+          </fieldset>
+          @if (showHint()) {
+            <p id="pay-hint" class="hint">Acepta los términos y condiciones para pagar.</p>
+          }
+          <div class="actions">
+            <button type="button" class="pay" [attr.aria-disabled]="canPay() ? null : 'true'" [attr.aria-describedby]="showHint() ? 'pay-hint' : null" (click)="pay()">
+              {{ processing() ? 'Procesando pago…' : 'Pagar' }}
+            </button>
+          </div>
+          @if (paymentState() === 'rejected') {
+            <p role="alert" class="message--error">El pago fue rechazado y no se realizó ningún cobro. Puedes intentarlo de nuevo.</p>
+          }
+        </div>
+      }
+    }
+  }
+  <div role="status" class="visually-hidden">{{ processing() ? 'Procesando pago…' : '' }}</div>
+</main>
