@@ -108,4 +108,10 @@ For local development without Docker (`cd backend && npm run develop`), delete
 
 ## Requirements not met
 
-*None declared yet. Any requirement we decide not to meet will be listed here, with the reason.*
+*None so far.* Any requirement we decide not to meet is listed here, with the reason.
+
+## Known limitations (accepted and deferred)
+
+| ID | Limitation | Why it is accepted | Decided |
+|---|---|---|---|
+| US-01-R4-F01 | If a date field is edited into an unreadable state **less than ~25 ms** after it was completed, the screen and the wizard state can diverge. For a required date, "Continuar" then silently does nothing; for an optional date, the step completes with `null` while a date is shown. Chromium fires no `beforeinput` on date inputs, so the flush used for number inputs does not cover them. | The code reviewer reproduced it only with scripted input at 0–20 ms and never at 25 ms or more, so it is not reachable at human typing speed. Fixing it means more custom synchronisation around Signal Forms' deferred DOM writes, which is the pattern that caused two regressions in US-01. Revisit if Signal Forms adds a synchronous binding flush or if real users hit it. | Felipe Sabogal, 2026-11-21 (HC3 of US-01); see `reviews/US-01-review-R4.md` |
