@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QuoteStore } from '../core/quote-store';
 import { configureAppTest, createAppTest, type AppTest } from '../../testing/app-harness';
 import { day } from '../../testing/clock';
-import { control, describedText, fillForm, leave, normalise, press, settleUi, shownValue, typeInto } from '../../testing/dom';
+import { control, describedText, fillForm, leave, normalise, press, settleUi, shownValue, typeInto, typeKeys } from '../../testing/dom';
 import {
   buttonNamed,
   calendarDialog,
@@ -31,6 +31,8 @@ const TODAY = day(2026, 11, 21);
 const LABEL = 'Fecha de nacimiento';
 const REQUIRED = 'Ingresa tu fecha de nacimiento.';
 const UNDERAGE = 'Debes ser mayor de edad (18 años o más) para cotizar.';
+/** US-04-BR-18 (v0.3): the message of text that is not a complete, existing date. Code-owned copy (spec 8.1). */
+const UNREADABLE = 'Fecha no válida. Usa el formato dd/mm/aaaa.';
 
 /** The full date as the calendar names a day, from the locale tag (day numeric, month long, year): "15 de mayo de 1990". */
 const longDate = (tag: string, y: number, m: number, d: number): string => new Intl.DateTimeFormat(tag, { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(y, m - 1, d));
@@ -85,10 +87,10 @@ describe('US-04 date field and calendar (component tests through the real routes
       ['15.05.1990', '15/05/1990', '1990-05-15', null],
       ['15051990', '15/05/1990', '1990-05-15', null],
       ['29/02/2000', '29/02/2000', '2000-02-29', null],
-      ['29/02/2001', '29/02/2001', '', REQUIRED],
-      ['31/04/1990', '31/04/1990', '', REQUIRED],
-      ['15/05/199', '15/05/199', '', REQUIRED],
-      ['15/05/90', '15/05/90', '', REQUIRED],
+      ['29/02/2001', '29/02/2001', '', UNREADABLE],
+      ['31/04/1990', '31/04/1990', '', UNREADABLE],
+      ['15/05/199', '15/05/199', '', UNREADABLE],
+      ['15/05/90', '15/05/90', '', UNREADABLE],
       ['01/03/2010', '01/03/2010', '2010-03-01', UNDERAGE],
     ];
 
@@ -124,11 +126,13 @@ describe('US-04 date field and calendar (component tests through the real routes
       await leaveDate();
       expect(stored('birthDate')).toBe('');
       expect(date().value).toBe('15/05/199');
+      expect(describedText(date())).toContain(UNREADABLE);
       const form = app.root.querySelector('form') as HTMLFormElement;
       form.requestSubmit();
       await app.settle();
       expect(app.path()).toBe('/co/datos');
       expect(date().value).toBe('15/05/199');
+      expect(describedText(date())).toContain(UNREADABLE);
       expect(document.activeElement).toBe(date());
     });
 
@@ -146,13 +150,13 @@ describe('US-04 date field and calendar (component tests through the real routes
       expect(describedText(date())).toContain('Formato: dd/mm/aaaa');
     });
 
-    it('US-04-AC-08 no input mask: typing "15" leaves "15" (no "/" is inserted while typing)', async () => {
+    it('US-04-AC-08 typing "15" leaves "15" (a "/" is shown only once the next group has a digit; the mask itself is AC-25)', async () => {
       await start('/co/datos');
       await typeDate('15');
       expect(date().value).toBe('15');
     });
 
-    it('US-04-AC-08 an optional date "Fecha de revisión" typed "10/13/2026" blocks "Continuar" with its message "Ingresa una fecha válida.", stays on step 1 with the focus on it, and the state holds ""', async () => {
+    it('US-04-AC-08 an optional date "Fecha de revisión" typed "10/13/2026" blocks "Continuar" with the unreadable-date message (US-04-Q-24, not its own errorMessage), stays on step 1 with the focus on it, and the state holds ""', async () => {
       sessionStorage.setItem(WIZARD_STORAGE_KEY, wizardEntry('CO', { ...CO_VALID_RAW }));
       app = await createAppTest();
       app.server.fields['CO'] = [
@@ -164,9 +168,128 @@ describe('US-04 date field and calendar (component tests through the real routes
       (app.root.querySelector('form') as HTMLFormElement).requestSubmit();
       await app.settle();
       expect(app.path()).toBe('/co/datos');
-      expect(describedText(date('Fecha de revisión'))).toContain('Ingresa una fecha válida.');
+      expect(describedText(date('Fecha de revisión'))).toContain(UNREADABLE);
+      expect(describedText(date('Fecha de revisión'))).not.toContain('Ingresa una fecha válida.');
       expect(document.activeElement).toBe(date('Fecha de revisión'));
       expect(stored('inspectionDate')).toBe('');
+    });
+  });
+
+  // -------------------------------------------------------------------------------------------
+  describe('US-04-AC-25 typed date: the mask, key by key (Colombia)', () => {
+    const rows: [string, string][] = [
+      ['15051990', '15/05/1990'],
+      ['15/05/1990', '15/05/1990'],
+      ['15-05-1990', '15/05/1990'],
+      ['150', '15/0'],
+      ['5/5/1990', '05/05/1990'],
+      ['15a05b1990', '15/05/1990'],
+      ['150519901', '15/05/1990'],
+    ];
+
+    it.each(rows)('US-04-AC-25 typing the keys "%s" one at a time shows "%s"', async (keys, shown) => {
+      await start('/co/datos');
+      await typeKeys(date(), keys);
+      expect(date().value).toBe(shown);
+    });
+
+    it('US-04-AC-25 the text box has inputmode numeric, maxlength 10 and the placeholder "dd/mm/aaaa"', async () => {
+      await start('/co/datos');
+      expect(date().getAttribute('inputmode')).toBe('numeric');
+      expect(date().getAttribute('maxlength')).toBe('10');
+      expect(date().getAttribute('placeholder')).toBe('dd/mm/aaaa');
+    });
+
+    it('US-04-AC-25 Backspace over a separator: from "15/05/1990" at the end, 4 Backspaces show "15/05" and a fifth shows "15/0"', async () => {
+      await start('/co/datos');
+      await typeDate('15/05/1990');
+      const backspace = async (): Promise<void> => {
+        // the browser removes the last character, then the input event reaches the mask
+        typeInto(date(), date().value.slice(0, -1));
+        await settleUi();
+      };
+      for (let i = 0; i < 4; i++) await backspace();
+      expect(date().value).toBe('15/05');
+      await backspace();
+      expect(date().value).toBe('15/0');
+    });
+
+    it.each([
+      ['15/05/1990', '15/05/1990'],
+      ['15-05-1990', '15/05/1990'],
+      ['15.05.1990', '15/05/1990'],
+      ['15051990', '15/05/1990'],
+      ['5/5/1990', '05/05/1990'],
+    ])('US-04-AC-25 pasting "%s" (one input event with the whole text) shows "%s"', async (pasted, shown) => {
+      await start('/co/datos');
+      await typeDate(pasted);
+      expect(date().value).toBe(shown);
+    });
+
+    const messageRows: [string, string, string, string | null][] = [
+      ['15051990', '15/05/1990', '1990-05-15', null],
+      ['29202001', '29/20/2001', '', UNREADABLE],
+      ['31021990', '31/02/1990', '', UNREADABLE],
+      ['29022001', '29/02/2001', '', UNREADABLE],
+      ['1505199', '15/05/199', '', UNREADABLE],
+      ['1505', '15/05', '', UNREADABLE],
+      ['', '', '', REQUIRED],
+      ['01032010', '01/03/2010', '2010-03-01', UNDERAGE],
+    ];
+
+    it.each(messageRows)('US-04-AC-25 typing "%s" and leaving shows "%s", the state holds "%s", and the message is %s', async (typed, shown, storedIso, message) => {
+      await start('/co/datos');
+      await typeKeys(date(), typed);
+      await leaveDate();
+      expect(date().value).toBe(shown);
+      expect(stored('birthDate')).toBe(storedIso);
+      if (message === null) {
+        expect(date().getAttribute('aria-invalid')).not.toBe('true');
+        expect(describedText(date())).not.toContain(UNREADABLE);
+      } else {
+        expect(date().getAttribute('aria-invalid')).toBe('true');
+        expect(describedText(date())).toContain(message);
+      }
+      if (message !== UNREADABLE) expect(describedText(date())).not.toContain(UNREADABLE);
+    });
+
+    it('US-04-AC-25 an unreadable date never shows the required message (the old "Ingresa tu fecha de nacimiento." for "29/20/2001")', async () => {
+      await start('/co/datos');
+      await typeKeys(date(), '29202001');
+      await leaveDate();
+      expect(describedText(date())).not.toContain(REQUIRED);
+    });
+
+    it('US-04-AC-25 no message while typing: "150" without leaving the field shows no message and is not aria-invalid', async () => {
+      await start('/co/datos');
+      await typeKeys(date(), '150');
+      expect(date().value).toBe('15/0');
+      expect(date().getAttribute('aria-invalid')).not.toBe('true');
+      expect(describedText(date())).not.toContain(UNREADABLE);
+      expect(describedText(date())).not.toContain(REQUIRED);
+    });
+
+    it('US-04-AC-25 an invalid date blocks "Continuar": it stays on /co/datos, the focus is on the date box and it is described by the message', async () => {
+      await start('/co/datos');
+      await fillForm(app.root, { ...CO_VALID_INPUT, [LABEL]: null });
+      await typeKeys(date(), '29202001');
+      (app.root.querySelector('form') as HTMLFormElement).requestSubmit();
+      await app.settle();
+      expect(app.path()).toBe('/co/datos');
+      expect(document.activeElement).toBe(date());
+      expect(describedText(date())).toContain(UNREADABLE);
+      expect(stored('birthDate')).toBe('');
+    });
+
+    it('US-04-AC-25 a typed date completes step 1: "15/05/1990" typed key by key (no calendar) reaches /co/planes with birthDate 1990-05-15', async () => {
+      await start('/co/datos');
+      await fillForm(app.root, { ...CO_VALID_INPUT, [LABEL]: null });
+      await typeKeys(date(), '15/05/1990');
+      await leaveDate();
+      (app.root.querySelector('form') as HTMLFormElement).requestSubmit();
+      await app.settle();
+      expect(app.path()).toBe('/co/planes');
+      expect(stored('birthDate')).toBe('1990-05-15');
     });
   });
 

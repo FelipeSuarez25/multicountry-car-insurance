@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDateText, parseDateText } from './date-text';
+import { DATE_TEXT_ERROR, formatDateText, maskDateDigits, parseDateText } from './date-text';
 
 /**
  * US-04-AC-08 / US-04-BR-06 (US-04-Q-05): the typed date, as a pure function (ADR-0012 section 4).
@@ -103,5 +103,150 @@ describe('US-04-AC-08 formatDateText: the stored date is shown as dd/mm/aaaa', (
 
   it('US-04-AC-08 format and parse are inverse for a valid date', () => {
     for (const iso of ['1990-05-15', '2000-02-29', '1906-01-01', '2008-11-21']) expect(parseDateText(formatDateText(iso))).toBe(iso);
+  });
+});
+
+/**
+ * US-04-AC-25 / US-04-BR-18 (ADR-0014 section 2): the date mask, as a pure function.
+ *
+ * Contract expected from `shared/date-text.ts` (no Angular import):
+ *   maskDateDigits(raw: string, caret: number): { text: string; caret: number }
+ *     a left-to-right scan into day (2), month (2) and year (4) digits; a `/`, `-` or `.` closes a
+ *     non-empty day or month group and pads one digit to two; any other character is dropped; digits
+ *     beyond 8 are dropped; a `/` is shown only once the next group has a digit (so "15" stays "15",
+ *     "150" is "15/0"). The caret goes to the end when it was at the end of `raw`, otherwise right
+ *     after the same count of digits it followed.
+ *   DATE_TEXT_ERROR = 'Fecha no válida. Usa el formato dd/mm/aaaa.'
+ */
+
+/** What the person sees after typing the keys one at a time, each key appended at the caret (the end). */
+function typeKeys(keys: string): string {
+  let shown = '';
+  for (const key of keys) {
+    const raw = shown + key;
+    shown = maskDateDigits(raw, raw.length).text;
+  }
+  return shown;
+}
+
+/** What the person sees after pressing Backspace `times` times at the end of `start`. */
+function backspace(start: string, times: number): string {
+  let shown = start;
+  for (let i = 0; i < times; i++) {
+    const raw = shown.slice(0, -1);
+    shown = maskDateDigits(raw, raw.length).text;
+  }
+  return shown;
+}
+
+describe('US-04-AC-25 the date box formats as I type (every row of the AC table, key by key)', () => {
+  const rows: [string, string][] = [
+    ['15051990', '15/05/1990'],
+    ['15/05/1990', '15/05/1990'],
+    ['15-05-1990', '15/05/1990'],
+    ['150', '15/0'],
+    ['5/5/1990', '05/05/1990'],
+    ['15a05b1990', '15/05/1990'],
+    ['150519901', '15/05/1990'],
+  ];
+
+  it.each(rows)('US-04-AC-25 typing "%s" shows "%s"', (keys, shown) => {
+    expect(typeKeys(keys)).toBe(shown);
+  });
+
+  it('US-04-AC-25 a separator is not shown until the next group has a digit ("15" stays "15", "15/" is "15", "150" is "15/0")', () => {
+    expect(typeKeys('15')).toBe('15');
+    expect(typeKeys('15/')).toBe('15');
+    expect(typeKeys('1505')).toBe('15/05');
+    expect(typeKeys('1505/')).toBe('15/05');
+  });
+
+  it('US-04-AC-25 a separator pads a one-digit day or month to two digits, and an empty group ignores it', () => {
+    expect(typeKeys('5/')).toBe('05');
+    expect(typeKeys('5/5/')).toBe('05/05');
+    expect(typeKeys('/')).toBe('');
+    expect(typeKeys('//')).toBe('');
+  });
+
+  it('US-04-AC-25 an empty text stays empty and never gains a separator', () => {
+    expect(maskDateDigits('', 0)).toEqual({ text: '', caret: 0 });
+  });
+
+  it('US-04-AC-25 at most 8 digits are kept (the ninth is dropped), so the text is at most 10 characters (maxlength 10)', () => {
+    expect(maskDateDigits('1505199012', 10).text).toBe('15/05/1990');
+    expect(maskDateDigits('15/05/19901', 11).text).toBe('15/05/1990');
+  });
+});
+
+describe('US-04-AC-25 Backspace over a separator', () => {
+  it('US-04-AC-25 "15/05/1990", End, Backspace 4 times shows "15/05"; once more shows "15/0"', () => {
+    expect(backspace('15/05/1990', 4)).toBe('15/05');
+    expect(backspace('15/05/1990', 5)).toBe('15/0');
+  });
+
+  it('US-04-AC-25 each Backspace removes one digit or one separator at most (no digit is lost twice)', () => {
+    expect(backspace('15/05/1990', 1)).toBe('15/05/199');
+    expect(backspace('15/05/1990', 3)).toBe('15/05/1');
+    expect(backspace('15/05/1990', 6)).toBe('15');
+  });
+});
+
+describe('US-04-AC-25 pasting a date (the whole text arrives in one event, as with Playwright fill())', () => {
+  const rows: [string, string][] = [
+    ['15/05/1990', '15/05/1990'],
+    ['15-05-1990', '15/05/1990'],
+    ['15.05.1990', '15/05/1990'],
+    ['15051990', '15/05/1990'],
+    ['5/5/1990', '05/05/1990'],
+  ];
+
+  it.each(rows)('US-04-AC-25 pasting "%s" shows "%s" with the caret at the end', (pasted, shown) => {
+    expect(maskDateDigits(pasted, pasted.length)).toEqual({ text: shown, caret: shown.length });
+  });
+
+  it('US-04-AC-25 a masked text is a fixed point (masking it again changes nothing)', () => {
+    for (const text of ['', '15', '15/0', '15/05', '15/05/1', '15/05/1990', '05/05/1990']) {
+      expect(maskDateDigits(text, text.length).text).toBe(text);
+    }
+  });
+});
+
+describe('US-04-AC-25 the caret follows the digits', () => {
+  it('US-04-AC-25 at the end of the raw text the caret goes to the end of the masked text', () => {
+    expect(maskDateDigits('1505', 4)).toEqual({ text: '15/05', caret: 5 });
+    expect(maskDateDigits('15051990', 8)).toEqual({ text: '15/05/1990', caret: 10 });
+  });
+
+  it('US-04-AC-25 elsewhere the caret stays right after the same number of digits it followed', () => {
+    // "15/05/1990" with a 9 typed after "15/0": raw "15/095/1990", caret 5 (after the 9, 4 digits before it)
+    const out = maskDateDigits('15/095/1990', 5);
+    expect(out.text).toBe('15/09/5199');
+    expect(out.caret).toBe(5);
+    expect(maskDateDigits('1505', 1)).toEqual({ text: '15/05', caret: 1 });
+    expect(maskDateDigits('1505', 0)).toEqual({ text: '15/05', caret: 0 });
+  });
+});
+
+describe('US-04-AC-25 the message for an unreadable date is code-owned copy (spec 8.1)', () => {
+  it('US-04-AC-25 DATE_TEXT_ERROR is exactly "Fecha no válida. Usa el formato dd/mm/aaaa."', () => {
+    expect(DATE_TEXT_ERROR).toBe('Fecha no válida. Usa el formato dd/mm/aaaa.');
+  });
+
+  it('US-04-AC-25 every "message after leaving" row maps to the stored value the AC table states (parseDateText on the masked text)', () => {
+    const rows: [string, string, string | null][] = [
+      ['15051990', '15/05/1990', '1990-05-15'],
+      ['29202001', '29/20/2001', null],
+      ['31021990', '31/02/1990', null],
+      ['29022001', '29/02/2001', null],
+      ['1505199', '15/05/199', null],
+      ['1505', '15/05', null],
+      ['', '', ''],
+      ['01032010', '01/03/2010', '2010-03-01'],
+    ];
+    for (const [keys, shown, iso] of rows) {
+      const masked = typeKeys(keys);
+      expect(masked, keys).toBe(shown);
+      expect(parseDateText(masked), keys).toBe(iso);
+    }
   });
 });

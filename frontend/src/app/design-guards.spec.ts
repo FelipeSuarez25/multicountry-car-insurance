@@ -2,7 +2,8 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseCss } from '../testing/css';
+import { TokenFile, coloursOf, parseCss } from '../testing/css';
+import { relativeLuminance } from '../testing/contrast';
 import {
   STYLE_KINDS,
   ALLOWED_FAMILIES,
@@ -488,5 +489,55 @@ describe('US-04 ADR-0012 confirmation: where the new packages and the pure modul
     const routes = read(join(SRC, 'app', 'app.routes.ts'));
     expect(routes).toMatch(/path:\s*'datos'[^}]*loadComponent\s*:/);
     expect(routes).not.toMatch(/import\s*\{[^}]*QuoteFormPage[^}]*\}\s*from/);
+  });
+});
+
+describe('US-04-AC-27 / US-04-BR-20 the page gradient token (ADR-0014 section 4)', () => {
+  const file = (): TokenFile => new TokenFile(tokensCss());
+
+  it('US-04-AC-27 --gradient-page is declared in tokens.css as a semantic token (not a primitive) and is a gradient', () => {
+    const names = file().names();
+    expect(names, '--gradient-page').toContain('--gradient-page');
+    expect('--gradient-page'.startsWith('--primitive-')).toBe(false);
+    expect(file().rawValue('--gradient-page') ?? '').toMatch(/^\s*linear-gradient\(/);
+  });
+
+  it('US-04-AC-27 every colour stop of --gradient-page is a token (var(--...)), never a literal colour', () => {
+    const raw = file().rawValue('--gradient-page') ?? '';
+    expect(raw).not.toMatch(/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/);
+    expect((raw.match(/var\(--[a-z0-9-]+\)/g) ?? []).length, 'the number of token stops').toBeGreaterThanOrEqual(2);
+    // each referenced token resolves to a colour
+    expect(coloursOf(file(), '--gradient-page').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('US-04-AC-27 the lightest stop is lighter than --primitive-ink-950, and no stop is darker than it', () => {
+    const tokens = file();
+    const floor = relativeLuminance(coloursOf(tokens, '--primitive-ink-950')[0].rgb);
+    const stops = coloursOf(tokens, '--gradient-page').map((c) => relativeLuminance(c.rgb));
+    expect(Math.max(...stops), 'lightest stop').toBeGreaterThan(floor);
+    expect(Math.min(...stops), 'darkest stop').toBeGreaterThanOrEqual(floor);
+  });
+
+  it('US-04-AC-27 --color-bg is lighter than --primitive-ink-950 (the base the gradient fades into)', () => {
+    const tokens = file();
+    expect(relativeLuminance(coloursOf(tokens, '--color-bg')[0].rgb)).toBeGreaterThan(relativeLuminance(coloursOf(tokens, '--primitive-ink-950')[0].rgb));
+  });
+
+  it('US-04-AC-27 the body paints the gradient token, over the base colour (styles.css), with no literal gradient', () => {
+    const styles = read(join(SRC, 'styles.css'));
+    const { decls } = parseCss(styles);
+    const body = decls.filter((d) => d.stack.length > 0 && d.stack[d.stack.length - 1].trim() === 'body');
+    const paint = body.filter((d) => d.prop === 'background' || d.prop === 'background-image');
+    expect(paint.some((d) => /var\(--gradient-page\)/.test(d.value)), 'body background uses var(--gradient-page)').toBe(true);
+    expect(body.some((d) => /^background(-color)?$/.test(d.prop) && /var\(--color-bg\)/.test(d.value)), 'body background colour is var(--color-bg)').toBe(true);
+    expect(paint.some((d) => /var\(--texture-dots\)/.test(d.value)), 'the dot texture is still painted (on top of the gradient)').toBe(true);
+  });
+
+  it('US-04-AC-27 sensitivity self-test: a darker-than-floor stop and a literal stop are both detected by the same checks', () => {
+    const dark = new TokenFile(':root { --primitive-ink-950: #0B0B14; --primitive-x: #050508; --gradient-page: linear-gradient(180deg, var(--primitive-x) 0%, var(--primitive-ink-950) 100%); }');
+    const floor = relativeLuminance(coloursOf(dark, '--primitive-ink-950')[0].rgb);
+    expect(Math.min(...coloursOf(dark, '--gradient-page').map((c) => relativeLuminance(c.rgb)))).toBeLessThan(floor);
+    const literal = new TokenFile(':root { --gradient-page: linear-gradient(180deg, #231541 0%, #11101C 100%); }');
+    expect(literal.rawValue('--gradient-page')).toMatch(/#[0-9a-fA-F]{3,8}\b/);
   });
 });

@@ -29,6 +29,7 @@ import {
   settleUi,
   shownValue,
   typeInto,
+  typeKeys,
 } from '../../../testing/dom';
 import { maybeButtonNamed, selectedOptionTexts } from '../../../testing/custom-controls';
 import {
@@ -53,6 +54,9 @@ import {
 const HEADING = 'Tus datos y los de tu vehículo';
 const LOAD_ERROR = 'No pudimos cargar el formulario. Intenta de nuevo.';
 const COUNTRIES_ERROR = 'No pudimos cargar la lista de países. Intenta de nuevo.';
+
+/** US-04-BR-18 (v0.3): the message of a typed date that is not a complete, existing date (code-owned copy, spec 8.1). */
+const UNREADABLE_DATE = 'Fecha no válida. Usa el formato dd/mm/aaaa.';
 
 describe('US-01 step 1 page (component tests through the real routes)', () => {
   let app: AppTest;
@@ -117,11 +121,14 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
     });
 
     // US-04 spec 11.1: renamed from "renders its native control"; the select and the date are now custom controls.
-    it('US-01-AC-01 every field type renders its control: text (textbox), number (spinbutton), date (textbox plus "Elegir fecha"), select (combobox) and checkbox', async () => {
+    it('US-01-AC-01 every field type renders its control: text (textbox), number (text box, numeric), date (textbox plus "Elegir fecha"), select (combobox) and checkbox', async () => {
       await start();
       await app.open('/co/datos');
       expect(control(app.root, 'Número de documento')).toMatchObject({ tagName: 'INPUT', type: 'text' });
-      expect(control(app.root, 'Modelo (año)')).toMatchObject({ tagName: 'INPUT', type: 'number' });
+      // US-04 spec 11.1.1 (BR-19): a number field is a text box with a numeric keyboard, no spinbutton
+      expect(control(app.root, 'Modelo (año)')).toMatchObject({ tagName: 'INPUT', type: 'text' });
+      expect(control(app.root, 'Modelo (año)').getAttribute('inputmode')).toBe('numeric');
+      expect(app.root.querySelector('[role="spinbutton"], input[type="number"]')).toBeNull();
       expect(control(app.root, CONSENT_LABEL_CO)).toMatchObject({ tagName: 'INPUT', type: 'checkbox' });
 
       // date: a text box (not a native date input, not a combobox) and a button that opens the calendar
@@ -260,7 +267,7 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       ['Fecha de nacimiento', '01/03/2010', 'Debes ser mayor de edad (18 años o más) para cotizar.'],
       ['Modelo (año)', '2005', 'El modelo debe estar entre los últimos 20 años y el próximo año.'],
       [CONSENT_LABEL_CO, false, 'Debes autorizar el tratamiento de tus datos para continuar.'],
-      ['Nombre completo', 'Al', 'Ingresa tu nombre completo (entre 3 y 80 caracteres).'],
+      ['Nombre completo', 'Al', 'Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres).'],
     ];
 
     it.each(rows)('US-01-AC-02 "%s" holding %s shows its message next to the field and blocks the next step', async (label, input, message) => {
@@ -303,7 +310,7 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       name.focus();
       leave(name);
       await app.settle();
-      expect(describedText(name)).toContain('Ingresa tu nombre completo (entre 3 y 80 caracteres).');
+      expect(describedText(name)).toContain('Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres).');
 
       typeInto(name, 'Ana Prueba Ficticia');
       await app.settle();
@@ -626,61 +633,77 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       expect(invalidControls(app.root)).toEqual([]);
     });
 
-    it('US-01-AC-21 what is typed is written as it changes, so a reload at any moment restores it', async () => {
+    // US-04 spec 11.1.1 (BR-19): the "." of "2015.5" is not entered, so what is shown and stored is "2015".
+    it('US-01-AC-21 what is typed is written as it changes, so a reload at any moment restores it (typing "2015.5" in "Año" shows and stores "2015")', async () => {
       await start();
       await app.open('/cl/datos');
       typeInto(control(app.root, 'Nombre completo'), 'Ana');
       typeInto(control(app.root, 'Año'), '2015.5');
       await app.settle();
+      expect((control(app.root, 'Año') as HTMLInputElement).value).toBe('2015');
       const entry = JSON.parse(sessionStorage.getItem(WIZARD_STORAGE_KEY) ?? '{}');
       expect(entry.country).toBe('CL');
-      expect(entry.step1.values).toMatchObject({ fullName: 'Ana', vehicleYear: '2015.5' });
+      expect(entry.step1.values).toMatchObject({ fullName: 'Ana', vehicleYear: '2015' });
     });
   });
 
-  describe('US-01-AC-09 / US-01-AC-21 a number the browser cannot parse is invalid and the wizard state and sessionStorage hold an empty string (R2-F01)', () => {
+  describe('US-01-AC-09 / US-01-AC-21 a letter cannot be entered into a number field, and the wizard state and sessionStorage hold what is shown (R2-F01, US-04 BR-19)', () => {
     /**
-     * What Chromium reports for "1e" or "2015e" in a number input: the text is on screen
-     * (`validity.badInput` is true), the sanitised `value` reads back as ''. jsdom has no such
-     * state, so the control is made to report it. Then the input event a keystroke would fire.
+     * US-04 spec 11.1.1: a number field is a text box with the digits profile, so there is no native
+     * number control and no `validity.badInput` any more. The former "unparseable text" cases are
+     * typing: the letter is not entered, so the shown, stored and persisted text agree.
      */
-    function typeUnparseable(el: HTMLInputElement): void {
-      Object.defineProperty(el, 'validity', { configurable: true, get: () => ({ badInput: true, valid: false }) });
-      el.value = '';
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-    }
+    const typeAndSettle = async (el: HTMLInputElement, text: string): Promise<void> => {
+      typeInto(el, text);
+      await app.settle();
+    };
     const storedValues = (): Record<string, unknown> => JSON.parse(sessionStorage.getItem(WIZARD_STORAGE_KEY) ?? '{}').step1.values;
 
-    it('US-01-AC-09 after "2015" and then unparseable text, the store holds "" (not the last parseable "2015")', async () => {
+    it('US-01-AC-09 after "2015" and then "2015e", the text box shows "2015" and the store holds "2015" (the "e" is not entered)', async () => {
       await start();
       await app.open('/cl/datos');
       const year = control(app.root, 'Año') as HTMLInputElement;
-      typeInto(year, '2015');
-      await app.settle();
+      await typeAndSettle(year, '2015');
       expect(store().values()['vehicleYear']).toBe('2015');
-      typeUnparseable(year);
+      await typeAndSettle(year, '2015e');
       leave(year);
       await app.settle();
-      expect(store().values()['vehicleYear']).toBe('');
+      expect(year.value).toBe('2015');
+      expect(store().values()['vehicleYear']).toBe('2015');
     });
 
-    it('US-01-AC-21 the browser storage holds "" for the unparseable entry, so a reload does not restore a valid "2015"', async () => {
-      await start();
-      await app.open('/cl/datos');
-      const year = control(app.root, 'Año') as HTMLInputElement;
-      typeInto(year, '2015');
-      await app.settle();
-      typeUnparseable(year);
-      await app.settle();
-      expect(storedValues()['vehicleYear']).toBe('');
-    });
-
-    it('US-01-AC-09 a required number with unparseable text shows requiredMessage ?? errorMessage and "Continuar" stays on step 1', async () => {
+    it('US-01-AC-09 typing "1e" in "Año" shows "1" and stores "1"; "Continuar" then shows the yearRange message and stays on step 1', async () => {
       await start();
       await app.open('/cl/datos');
       await fillCl({ Año: null });
       const year = control(app.root, 'Año') as HTMLInputElement;
-      typeUnparseable(year);
+      await typeAndSettle(year, '1e');
+      leave(year);
+      await app.settle();
+      expect(year.value).toBe('1');
+      expect(store().values()['vehicleYear']).toBe('1');
+      await continuar();
+      expect(describedText(year)).toContain('El año debe estar entre los últimos 20 años y el próximo año.');
+      expect(year.getAttribute('aria-invalid')).toBe('true');
+      expect(app.path()).toBe('/cl/datos');
+      expect(store().step1Output()).toBeNull();
+    });
+
+    it('US-01-AC-21 the browser storage holds "2015" for "2015e" (what is shown), so a reload restores what the person saw', async () => {
+      await start();
+      await app.open('/cl/datos');
+      const year = control(app.root, 'Año') as HTMLInputElement;
+      await typeAndSettle(year, '2015e');
+      expect(storedValues()['vehicleYear']).toBe('2015');
+    });
+
+    it('US-01-AC-09 a required number left empty shows errorMessage and "Continuar" stays on step 1', async () => {
+      await start();
+      await app.open('/cl/datos');
+      await fillCl({ Año: null });
+      const year = control(app.root, 'Año') as HTMLInputElement;
+      await typeAndSettle(year, 'abc');
+      expect(year.value).toBe('');
       leave(year);
       await app.settle();
       await continuar();
@@ -690,7 +713,7 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       expect(store().step1Output()).toBeNull();
     });
 
-    it('US-01-AC-09 a required number with a requiredMessage shows that message for unparseable text', async () => {
+    it('US-01-AC-09 a required number with a requiredMessage shows that message when it is left empty', async () => {
       await start();
       app.server.fields['CL'] = seedStrapiItems('CL').map((i) =>
         i['key'] === 'vehicleYear' ? { ...i, requiredMessage: 'Indica el año de tu vehículo.' } : i,
@@ -698,7 +721,6 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       await app.open('/cl/datos');
       await fillCl({ Año: null });
       const year = control(app.root, 'Año') as HTMLInputElement;
-      typeUnparseable(year);
       leave(year);
       await app.settle();
       await continuar();
@@ -706,7 +728,7 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       expect(app.path()).toBe('/cl/datos');
     });
 
-    /** Spec v0.5 AC-09 fixture: an optional CO number "Kilometraje" (not seed content), added to this test's content-server response only. */
+    /** An optional CO number "Kilometraje" (not seed content), added to this test's content-server response only. */
     const MILEAGE_MESSAGE = 'Ingresa un kilometraje válido (solo números enteros).';
     const withOptional = (country: 'CO', config: FieldConfig): StrapiItem[] => [
       ...seedStrapiItems(country),
@@ -719,39 +741,54 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       isRequired: false,
       sortOrder: 95,
       errorMessage,
-      rules: [],
+      rules: [{ kind: 'max', value: 999999 }],
     });
 
-    for (const text of ['1e', '2015e']) {
-      it(`US-01-AC-09 an optional number with unparseable text "${text}" (Kilometraje, CO) is an error: errorMessage shown, "Continuar" blocked, store holds ""`, async () => {
+    for (const [typed, entered] of [
+      ['1e', '1'],
+      ['2015e', '2015'],
+    ] as const) {
+      it(`US-01-AC-09 an optional number typed "${typed}" (Kilometraje, CO) shows "${entered}" and stores "${entered}": the letter is not entered and "Continuar" is not blocked`, async () => {
         await start();
         app.server.fields['CO'] = withOptional('CO', mileageField(MILEAGE_MESSAGE));
         await app.open('/co/datos');
         await fillCo();
         const mileage = control(app.root, 'Kilometraje') as HTMLInputElement;
-        typeInto(mileage, '2015');
-        await app.settle();
-        typeUnparseable(mileage);
+        await typeAndSettle(mileage, typed);
         leave(mileage);
         await app.settle();
-        expect(store().values()['mileage']).toBe('');
+        expect(mileage.value).toBe(entered);
+        expect(store().values()['mileage']).toBe(entered);
+        expect(storedValues()['mileage']).toBe(entered);
+        expect(mileage.getAttribute('aria-invalid')).not.toBe('true');
         await continuar();
-        expect(describedText(mileage)).toContain(MILEAGE_MESSAGE);
-        expect(mileage.getAttribute('aria-invalid')).toBe('true');
-        expect(app.path()).toBe('/co/datos');
-        expect(store().step1Output()).toBeNull();
-        expect(store().values()['mileage']).toBe('');
-        expect(storedValues()['mileage']).toBe('');
+        expect(app.path()).toBe('/co/planes');
       });
     }
 
-    it('US-01-AC-09 an optional number with unparseable text and no errorMessage (Kilometraje, CO) shows "Revisa este campo." and blocks "Continuar"', async () => {
+    it('US-01-AC-09 an optional number out of its range (Kilometraje 1000000, max 999999) is an error: errorMessage shown, "Continuar" blocked', async () => {
+      await start();
+      app.server.fields['CO'] = withOptional('CO', mileageField(MILEAGE_MESSAGE));
+      await app.open('/co/datos');
+      await fillCo();
+      const mileage = control(app.root, 'Kilometraje') as HTMLInputElement;
+      await typeAndSettle(mileage, '1000000');
+      leave(mileage);
+      await app.settle();
+      await continuar();
+      expect(describedText(mileage)).toContain(MILEAGE_MESSAGE);
+      expect(mileage.getAttribute('aria-invalid')).toBe('true');
+      expect(app.path()).toBe('/co/datos');
+      expect(store().step1Output()).toBeNull();
+    });
+
+    it('US-01-AC-09 an optional number out of its range with no errorMessage shows "Revisa este campo." and blocks "Continuar"', async () => {
       await start();
       app.server.fields['CO'] = withOptional('CO', mileageField(''));
       await app.open('/co/datos');
       await fillCo();
       const mileage = control(app.root, 'Kilometraje') as HTMLInputElement;
-      typeUnparseable(mileage);
+      await typeAndSettle(mileage, '1000000');
       leave(mileage);
       await app.settle();
       await continuar();
@@ -759,16 +796,14 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       expect(mileage.getAttribute('aria-invalid')).toBe('true');
       expect(app.path()).toBe('/co/datos');
       expect(store().step1Output()).toBeNull();
-      expect(store().values()['mileage']).toBe('');
-      expect(storedValues()['mileage']).toBe('');
     });
 
-    // US-04 spec 11.1: the stubbed `validity.badInput` is replaced by typing unreadable text ("10/13/2026").
-    for (const [name, errorMessage, expected] of [
-      ['its errorMessage', 'Ingresa una fecha de revisión válida.', 'Ingresa una fecha de revisión válida.'],
-      ['"Revisa este campo." when errorMessage is empty', '', 'Revisa este campo.'],
+    // US-04 spec 11.1.1 (US-04-Q-24): an unreadable typed date shows the code-owned message, whatever the field's errorMessage.
+    for (const [name, errorMessage] of [
+      ['a field errorMessage', 'Ingresa una fecha de revisión válida.'],
+      ['an empty errorMessage', ''],
     ] as const) {
-      it(`US-01-AC-09 / US-01-AC-10 an optional date the person typed unreadably (10/13/2026) is an error showing ${name}: "Continuar" blocked, focus on the date, store holds "" and the text stays`, async () => {
+      it(`US-01-AC-09 / US-01-AC-10 an optional date the person typed unreadably (10/13/2026) with ${name} is an error showing "Fecha no válida. Usa el formato dd/mm/aaaa.": "Continuar" blocked, focus on the date, store holds "" and the text stays`, async () => {
         await start();
         app.server.fields['CO'] = withOptional('CO', {
           key: 'inspectionDate',
@@ -791,7 +826,8 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
         expect(store().values()['inspectionDate']).toBe('');
         expect(date.value).toBe('10/13/2026');
         await continuar();
-        expect(describedText(date)).toContain(expected);
+        expect(describedText(date)).toContain(UNREADABLE_DATE);
+        if (errorMessage) expect(describedText(date)).not.toContain(errorMessage);
         expect(date.getAttribute('aria-invalid')).toBe('true');
         expect(document.activeElement).toBe(date);
         expect(app.path()).toBe('/co/datos');
@@ -803,7 +839,6 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
   });
 
   describe('US-01-AC-02 / US-01-AC-10 / US-01-AC-18 a required date emptied after it was valid (US-01-R3-F01)', () => {
-    const MESSAGE = 'Ingresa tu fecha de nacimiento.';
     const submitWithEnter = async (): Promise<void> => {
       // Enter in a text field submits the form through the default button.
       const form = app.root.querySelector('form') as HTMLFormElement;
@@ -813,13 +848,14 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
 
     // US-04 spec 11.1: the stubbed badInput becomes real typing. "Partly cleared" is "15/05/199" (unreadable text that stays
     // on screen); "cleared" is an empty text box. Same assertions as before, plus the typed text stays visible.
-    for (const [how, text] of [
-      ['an unreadable (partly cleared) date', '15/05/199'],
-      ['a cleared date', ''],
+    // US-04 spec 11.1.1 (BR-18): unreadable text shows the code-owned message; the cleared (empty) box keeps the Strapi required message.
+    for (const [how, text, MESSAGE] of [
+      ['an unreadable (partly cleared) date', '15/05/199', UNREADABLE_DATE],
+      ['a cleared date', '', 'Ingresa tu fecha de nacimiento.'],
     ] as const) {
       const emptyDate = (el: HTMLInputElement): void => typeInto(el, text);
 
-      it(`US-01-AC-02 ${how}: shows the required message with aria-invalid after leaving the field`, async () => {
+      it(`US-01-AC-02 ${how}: shows its message (required, or unreadable date) with aria-invalid after leaving the field`, async () => {
         await start();
         await app.open('/co/datos');
         await fillCo();
@@ -1167,6 +1203,138 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       await app.open('/cl/datos');
       await openCombobox(control(app.root, 'Ciudad'));
       expect(Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6')).map((h) => h.tagName.toLowerCase())).toEqual(['h1']);
+    });
+  });
+
+  // ---------------------------------------------------------------------------------------------
+  // US-04 v0.3: input profiles and maximum lengths (BR-19, ADR-0014 section 3)
+  // ---------------------------------------------------------------------------------------------
+
+  describe('US-04-AC-26 input profiles and maximum lengths', () => {
+    const input = (label: string): HTMLInputElement => control(app.root, label) as HTMLInputElement;
+    const MESSAGE = 'Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres).';
+
+    const attributeRows: [string, string, string, string | null, string | null, string | null][] = [
+      // country, label, maxlength, inputmode, autocomplete, autocapitalize (null = absent)
+      ['CO', 'Nombre completo', '80', null, 'name', 'words'],
+      ['CO', 'Número de documento', '10', 'numeric', null, null],
+      ['CL', 'RUT', '12', 'text', null, null],
+      ['CO', 'Placa', '6', null, 'off', 'characters'],
+      ['CO', 'Línea', '40', null, null, null],
+      ['CO', 'Modelo (año)', '4', 'numeric', null, null],
+      ['CL', 'Año', '4', 'numeric', null, null],
+    ];
+
+    it.each(attributeRows)('US-04-AC-26 %s "%s" is a text box (type text) with maxlength %s, inputmode %s, autocomplete %s and autocapitalize %s', async (country, label, maxlength, inputmode, autocomplete, autocapitalize) => {
+      await start();
+      await app.open(`/${country.toLowerCase()}/datos`);
+      const el = input(label);
+      expect(el.tagName).toBe('INPUT');
+      expect(el.getAttribute('type')).toBe('text');
+      expect(el.getAttribute('maxlength')).toBe(maxlength);
+      expect(el.getAttribute('inputmode')).toBe(inputmode);
+      expect(el.getAttribute('autocomplete')).toBe(autocomplete);
+      expect(el.getAttribute('autocapitalize')).toBe(autocapitalize);
+    });
+
+    const typingRows: [string, string, string, string, string][] = [
+      // country, label, typed (key by key), shown (and stored), key
+      ['CO', 'Nombre completo', 'Ana 2', 'Ana ', 'fullName'],
+      ['CO', 'Nombre completo', "José Núñez-O'Neil Jr.", "José Núñez-O'Neil Jr.", 'fullName'],
+      ['CO', 'Número de documento', '1.012.345.678', '1012345678', 'documentNumber'],
+      ['CO', 'Número de documento', '123456789012', '1234567890', 'documentNumber'],
+      ['CL', 'RUT', '12.345.678-k', '12.345.678-K', 'documentNumber'],
+      ['CL', 'RUT', '12.345.678-5x9', '12.345.678-5', 'documentNumber'],
+      ['CO', 'Placa', 'abc-123x', 'ABC123', 'plate'],
+      ['CL', 'Patente', 'bcdf12', 'BCDF12', 'plate'],
+      ['CO', 'Línea', '3 Touring+', '3 Touring', 'model'],
+      ['CO', 'Modelo (año)', '20e2.5', '2025', 'vehicleYear'],
+      ['CO', 'Modelo (año)', '20225', '2022', 'vehicleYear'],
+      ['CL', 'Año', 'abc', '', 'vehicleYear'],
+    ];
+
+    it.each(typingRows)('US-04-AC-26 %s "%s": typing "%s" shows "%s" and the state holds the same for "%s"', async (country, label, typed, shown, key) => {
+      await start();
+      await app.open(`/${country.toLowerCase()}/datos`);
+      await typeKeys(input(label), typed);
+      await app.settle();
+      expect(input(label).value).toBe(shown);
+      expect(store().values()[key]).toBe(shown);
+    });
+
+    it('US-04-AC-26 pasting "Ana 2 Prueba" into "Nombre completo" shows "Ana  Prueba" with the caret at the end', async () => {
+      await start();
+      await app.open('/co/datos');
+      const name = input('Nombre completo');
+      typeInto(name, 'Ana 2 Prueba');
+      await app.settle();
+      expect(name.value).toBe('Ana  Prueba');
+      expect(name.selectionStart).toBe(name.value.length);
+      expect(name.selectionEnd).toBe(name.value.length);
+      expect(store().values()['fullName']).toBe('Ana  Prueba');
+    });
+
+    it('US-04-AC-26 the sanitised value is what is written to the browser storage (a reload restores "Ana ", not "Ana 2")', async () => {
+      await start();
+      await app.open('/co/datos');
+      typeInto(input('Nombre completo'), 'Ana 2');
+      await app.settle();
+      const entry = JSON.parse(sessionStorage.getItem(WIZARD_STORAGE_KEY) ?? '{}');
+      expect(entry.step1.values.fullName).toBe('Ana ');
+    });
+
+    it('US-04-AC-26 the maximum length comes from the Strapi maxLength rule when there is one (a rule of 50 on fullName gives maxlength 50, not the profile 80)', async () => {
+      await start();
+      app.server.fields['CO'] = seedStrapiItems('CO').map((i) =>
+        i['key'] === 'fullName'
+          ? toStrapiFieldItem({ ...(seedFieldConfigs('CO').find((c) => c.key === 'fullName') as FieldConfig), rules: [{ kind: 'maxLength', value: 50 }] }, 20)
+          : i,
+      );
+      await app.open('/co/datos');
+      expect(input('Nombre completo').getAttribute('maxlength')).toBe('50');
+      typeInto(input('Nombre completo'), 'a'.repeat(60));
+      await app.settle();
+      expect(input('Nombre completo').value).toBe('a'.repeat(50));
+    });
+
+    it('US-04-AC-26 fields the front end does not know: "Teléfono celular" (rule maxLength 15) has maxlength 15 and accepts "300 123-4567"; "Kilometraje" (optional number, no rules) is a numeric text box with no maxlength and "12e3.4" shows "1234"', async () => {
+      await start();
+      app.server.fields['CO'] = [
+        ...seedStrapiItems('CO'),
+        toStrapiFieldItem({ key: 'mobilePhone', type: 'text', label: 'Teléfono celular', isRequired: false, sortOrder: 35, errorMessage: 'Ingresa un número de celular válido.', rules: [{ kind: 'maxLength', value: 15 }] }, 90),
+        toStrapiFieldItem({ key: 'mileage', type: 'number', label: 'Kilometraje', isRequired: false, sortOrder: 95, errorMessage: '', rules: [] }, 91),
+      ];
+      await app.open('/co/datos');
+      const phone = input('Teléfono celular');
+      expect(phone.getAttribute('maxlength')).toBe('15');
+      await typeKeys(phone, '300 123-4567');
+      expect(phone.value).toBe('300 123-4567');
+      const mileage = input('Kilometraje');
+      expect(mileage.getAttribute('type')).toBe('text');
+      expect(mileage.getAttribute('inputmode')).toBe('numeric');
+      expect(mileage.hasAttribute('maxlength')).toBe(false);
+      await typeKeys(mileage, '12e3.4');
+      expect(mileage.value).toBe('1234');
+      expect(store().values()['mileage']).toBe('1234');
+    });
+
+    it('US-04-AC-26 the seed rules still validate what the filter cannot see: a stored "Ana 2" is shown as stored (not filtered) and "Continuar" shows the fullName message and stays on step 1', async () => {
+      await start(wizardEntry('CO', { ...CO_VALID_RAW, fullName: 'Ana 2' }));
+      await app.open('/co/datos');
+      expect(input('Nombre completo').value).toBe('Ana 2');
+      await continuar();
+      expect(describedText(input('Nombre completo'))).toContain(MESSAGE);
+      expect(input('Nombre completo').getAttribute('aria-invalid')).toBe('true');
+      expect(app.path()).toBe('/co/datos');
+    });
+
+    it('US-04-AC-26 a stored "2015.5" in a number field is shown as stored and is still invalid (the filter only acts on typing)', async () => {
+      await start(wizardEntry('CL', { ...CL_VALID_RAW, vehicleYear: '2015.5' }));
+      await app.open('/cl/datos');
+      expect(input('Año').value).toBe('2015.5');
+      await continuar();
+      expect(input('Año').getAttribute('aria-invalid')).toBe('true');
+      expect(app.path()).toBe('/cl/datos');
     });
   });
 });

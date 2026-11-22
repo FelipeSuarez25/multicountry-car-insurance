@@ -2,10 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { configureAppTest, createAppTest, type AppTest } from '../../testing/app-harness';
 import { day } from '../../testing/clock';
-import { normalise } from '../../testing/dom';
-import { FOCUSABLE_OR_HEADING, STEP_LABELS, indicatorItems, stepIndicator, wizardHeader } from '../../testing/custom-controls';
+import { control, normalise, shownValue } from '../../testing/dom';
+import { FOCUSABLE_OR_HEADING, STEP_LABELS, backLinksIn, indicatorItems, isBefore, linkNamed, nameOf, stepIndicator, tabStopNames, wizardHeader } from '../../testing/custom-controls';
 import { wizardEntryWithPlan, CL_SPEC_RAW } from '../../testing/plan-fixtures';
-import { CO_VALID_RAW, seedCountryItems, strapiCountryItem, toStrapiFieldItem } from '../../testing/seed-fixtures';
+import { chosenNames } from '../../testing/plan-dom';
+import { CO_VALID_INPUT, CO_VALID_RAW, WIZARD_STORAGE_KEY, seedCountryItems, strapiCountryItem, toStrapiFieldItem } from '../../testing/seed-fixtures';
 
 /**
  * US-04-AC-13 (step indicator and wizard header) and the header half of US-04-AC-03, as component
@@ -16,8 +17,8 @@ import { CO_VALID_RAW, seedCountryItems, strapiCountryItem, toStrapiFieldItem } 
  *  - the indicator is a list (`ol`) named "Progreso de la cotización", one `li` per step in the order
  *    "Tus datos", "Plan", "Resumen y pago"; the current step carries `aria-current="step"` (on the
  *    `li` or an element inside it) and the visually hidden text "Paso n de 3"; steps before it carry
- *    the hidden text "completado"; neither the indicator nor the header holds a focusable element or
- *    a heading;
+ *    the hidden text "completado"; the indicator holds no focusable element and no heading; the header
+ *    holds exactly one focusable element, the country chip link (v0.3, AC-28), and no heading;
  *  - the header is a `header` element with the text "Cotizador de seguro de auto" (not a heading, not
  *    a link) and the country chip: the flag (svg, `aria-hidden="true"`, `focusable="false"`, no text)
  *    next to the Strapi country name; the wizard shell sets `data-country-accent` ("co", "cl") on an
@@ -80,13 +81,18 @@ describe('US-04 wizard header and step indicator (component tests through the re
       });
     });
 
-    it.each(rows)('US-04-AC-13 at %s neither the indicator nor the header contains a focusable element or a heading, and the page keeps one h1', async (address) => {
+    // US-04 spec 11.1.1 (AC-13 v0.3, AC-28): the header now holds the chip link, its only focusable element.
+    it.each(rows)('US-04-AC-13 at %s the indicator contains no focusable element and no heading; the header contains exactly one focusable element (the country chip link) and no heading; the page keeps one h1', async (address) => {
       await start(co());
       await app.open(address);
       expect(indicator().querySelectorAll(FOCUSABLE_OR_HEADING)).toHaveLength(0);
       const header = wizardHeader(app.root);
       expect(header, 'the wizard header').not.toBeNull();
-      expect((header as HTMLElement).querySelectorAll(FOCUSABLE_OR_HEADING)).toHaveLength(0);
+      const focusable = Array.from((header as HTMLElement).querySelectorAll(FOCUSABLE_OR_HEADING));
+      expect(focusable).toHaveLength(1);
+      expect(focusable[0].tagName).toBe('A');
+      expect(nameOf(focusable[0])).toMatch(/^Cambiar país \(actual: Colombia\)$/);
+      expect((header as HTMLElement).querySelectorAll('h1, h2, h3, h4, h5, h6')).toHaveLength(0);
       expect(app.root.querySelectorAll('h1')).toHaveLength(1);
     });
 
@@ -97,13 +103,12 @@ describe('US-04 wizard header and step indicator (component tests through the re
       expect(app.path()).toBe('/co/resumen');
     });
 
-    it('US-04-AC-13 the Tab order of step 3 is unchanged: the header and the indicator add no tab stop (first stop is "Editar mis datos")', async () => {
+    // US-04 spec 11.1.1 (AC-28): the first stops of step 3 are the chip link and "Volver a planes".
+    it('US-04-AC-13 the Tab order of step 3: the first stops are the country chip link, "Volver a planes", then "Editar mis datos"; the indicator adds no stop', async () => {
       await start(co());
       await app.open('/co/resumen');
-      const stops = Array.from(app.root.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(
-        (e) => e.getAttribute('aria-hidden') !== 'true' && !(e as HTMLButtonElement).disabled,
-      );
-      expect(normalise(stops[0].textContent)).toBe('Editar mis datos');
+      const stops = tabStopNames(app.root);
+      expect(stops.slice(0, 3)).toEqual(['Cambiar país (actual: Colombia)', 'Volver a planes', 'Editar mis datos']);
     });
   });
 
@@ -121,7 +126,9 @@ describe('US-04 wizard header and step indicator (component tests through the re
       expect(normalise(header.textContent)).toContain(PRODUCT);
       expect(normalise(header.textContent)).toContain(country);
       expect(app.root.querySelectorAll('h1')).toHaveLength(1);
-      expect(header.querySelector('h1, h2, h3, h4, h5, h6, a[href]')).toBeNull();
+      // v0.3 (AC-28): the product name is not a link or heading; the only link of the header is the country chip
+      expect(header.querySelector('h1, h2, h3, h4, h5, h6')).toBeNull();
+      expect(Array.from(header.querySelectorAll('a[href]')).map(nameOf)).toEqual([`Cambiar país (actual: ${country})`]);
     });
 
     it.each(rows)('US-04-AC-03 at %s the header flag is an svg with aria-hidden="true", focusable="false", no text and no title', async (address) => {
@@ -181,6 +188,153 @@ describe('US-04 wizard header and step indicator (component tests through the re
       expect(wizardHeader(app.root)).toBeNull();
       expect(stepIndicator(app.root)).toBeNull();
       expect(document.querySelector('[data-country-accent]')).toBeNull();
+    });
+  });
+
+  // -------------------------------------------------------------------------------------------
+  describe('US-04-AC-28 back links, the country chip link and the change of country (US-04-BR-21)', () => {
+    const step1Only = (): string => wizardEntryWithPlan('CO', CO_VALID_RAW, null);
+    const h1 = (): HTMLElement => app.root.querySelector('h1') as HTMLElement;
+    const clickLink = async (name: string): Promise<void> => {
+      linkNamed(app.root, name).click();
+      await app.settle();
+    };
+
+    const rows: [string, string, string, () => string][] = [
+      ['/co/datos', 'Cambiar país', '/', step1Only],
+      ['/co/planes', 'Volver a tus datos', '/co/datos', step1Only],
+      ['/co/resumen', 'Volver a planes', '/co/planes', co],
+    ];
+
+    it.each(rows)('US-04-AC-28 at %s there is a link named exactly "%s" below the step indicator and above the h1, with a left arrow hidden from assistive technology', async (address, link, target, entry) => {
+      await start(entry());
+      await app.open(address);
+      const anchor = linkNamed(app.root, link);
+      expect(anchor.getAttribute('href')).toBe(target);
+      expect(normalise(anchor.textContent)).toBe(link);
+      const icon = anchor.querySelector('svg');
+      expect(icon, 'an arrow icon').not.toBeNull();
+      expect(icon?.getAttribute('aria-hidden')).toBe('true');
+      expect(normalise(icon?.textContent)).toBe('');
+      expect(isBefore(indicator(), anchor), 'after the step indicator').toBe(true);
+      expect(isBefore(anchor, h1()), 'before the h1').toBe(true);
+    });
+
+    it.each(rows)('US-04-AC-28 at %s only the back link of that step, "%s", is present (not the other two)', async (address, link, _target, entry) => {
+      await start(entry());
+      await app.open(address);
+      expect(backLinksIn(app.root)).toEqual([link]);
+    });
+
+    it('US-04-AC-28 "Cambiar país" on step 1 leads to the chooser, and opening "Colombia" again shows the same step 1 values', async () => {
+      await start(step1Only());
+      await app.open('/co/datos');
+      await clickLink('Cambiar país');
+      expect(app.path()).toBe('/');
+      expect(h1().textContent).toContain('Elige tu país');
+      await clickLink('Colombia');
+      expect(app.path()).toBe('/co/datos');
+      for (const label of ['Nombre completo', 'Número de documento', 'Placa', 'Línea']) {
+        expect(shownValue(control(app.root, label)), label).toBe(CO_VALID_INPUT[label]);
+      }
+      expect(shownValue(control(app.root, 'Fecha de nacimiento'))).toBe('15/05/1990');
+    });
+
+    it('US-04-AC-28 "Volver a tus datos" on step 2 leads to /co/datos with the entered values, and the focus is on its h1', async () => {
+      await start(step1Only());
+      await app.open('/co/planes');
+      await clickLink('Volver a tus datos');
+      expect(app.path()).toBe('/co/datos');
+      expect(shownValue(control(app.root, 'Nombre completo'))).toBe('Ana Prueba Ficticia');
+      expect(shownValue(control(app.root, 'Fecha de nacimiento'))).toBe('15/05/1990');
+      expect(document.activeElement).toBe(h1());
+    });
+
+    it('US-04-AC-28 "Volver a planes" on step 3 leads to /co/planes with "Plan Total" checked, and the focus is on its h1', async () => {
+      await start(co());
+      await app.open('/co/resumen');
+      await clickLink('Volver a planes');
+      expect(app.path()).toBe('/co/planes');
+      expect(chosenNames(app.root)).toEqual(['Plan Total']);
+      expect(document.activeElement).toBe(h1());
+    });
+
+    it('US-04-AC-28 the chooser, the unknown-country page and the country list that cannot be loaded have no back link and no chip link', async () => {
+      sessionStorage.clear();
+      app = await createAppTest();
+      await app.open('/');
+      expect(backLinksIn(app.root)).toEqual([]);
+      expect(Array.from(app.root.querySelectorAll('a')).map(nameOf).filter((n) => n.startsWith('Cambiar país'))).toEqual([]);
+
+      await app.open('/ar/datos');
+      expect(backLinksIn(app.root)).toEqual([]);
+      expect(Array.from(app.root.querySelectorAll('a')).map(nameOf).filter((n) => n.startsWith('Cambiar país'))).toEqual([]);
+
+      TestBed.resetTestingModule();
+      configureAppTest({ today: TODAY });
+      app = await createAppTest();
+      app.server.countries = 'error';
+      await app.open('/co/datos');
+      expect(backLinksIn(app.root)).toEqual([]);
+      expect(Array.from(app.root.querySelectorAll('a')).map(nameOf).filter((n) => n.startsWith('Cambiar país'))).toEqual([]);
+    });
+
+    const chipRows: [string, string, () => string][] = [
+      ['/co/datos', 'Colombia', co],
+      ['/cl/planes', 'Chile', cl],
+    ];
+
+    it.each(chipRows)('US-04-AC-28 at %s the header has exactly one link, named "Cambiar país (actual: %s)", with the address "/", the country name as text and the flag hidden from assistive technology', async (address, country, entry) => {
+      await start(entry());
+      await app.open(address);
+      const header = wizardHeader(app.root) as HTMLElement;
+      const links = Array.from(header.querySelectorAll('a'));
+      expect(links).toHaveLength(1);
+      const chip = links[0];
+      expect(nameOf(chip)).toBe(`Cambiar país (actual: ${country})`);
+      expect(chip.getAttribute('href')).toBe('/');
+      expect(normalise(chip.textContent)).toContain(country);
+      const flag = chip.querySelector('svg');
+      expect(flag, 'the flag').not.toBeNull();
+      expect(flag?.getAttribute('aria-hidden')).toBe('true');
+    });
+
+    it('US-04-AC-28 Colombia to Chile: after completing step 1 in Colombia, the chip then "Chile" leads to /cl/datos with every field empty and no Colombian value stored', async () => {
+      await start(step1Only());
+      await app.open('/co/planes');
+      await clickLink('Cambiar país (actual: Colombia)');
+      expect(app.path()).toBe('/');
+      await clickLink('Chile');
+      expect(app.path()).toBe('/cl/datos');
+      for (const label of ['RUT', 'Nombre completo', 'Año']) expect(shownValue(control(app.root, label)), label).toBe('');
+      const raw = sessionStorage.getItem(WIZARD_STORAGE_KEY);
+      const entry = raw === null ? null : JSON.parse(raw);
+      expect(entry?.country ?? 'CL').not.toBe('CO');
+      for (const colombian of ['Ana Prueba Ficticia', '1012345678', 'ABC123', '3 Touring']) expect(raw ?? '').not.toContain(colombian);
+    });
+
+    it('US-04-AC-28 back to the same country: the chip then "Colombia" leads to /co/datos and step 1 shows the entered values', async () => {
+      await start(step1Only());
+      await app.open('/co/planes');
+      await clickLink('Cambiar país (actual: Colombia)');
+      await clickLink('Colombia');
+      expect(app.path()).toBe('/co/datos');
+      expect(shownValue(control(app.root, 'Nombre completo'))).toBe('Ana Prueba Ficticia');
+      expect(shownValue(control(app.root, 'Placa'))).toBe('ABC123');
+    });
+
+    const tabRows: [string, string, () => string][] = [
+      ['/co/datos', 'Cambiar país', step1Only],
+      ['/co/planes', 'Volver a tus datos', step1Only],
+      ['/co/resumen', 'Volver a planes', co],
+    ];
+
+    it.each(tabRows)('US-04-AC-28 at %s the first Tab stop is the country chip link and the second is "%s"', async (address, link, entry) => {
+      await start(entry());
+      await app.open(address);
+      const stops = tabStopNames(app.root);
+      expect(stops[0]).toBe('Cambiar país (actual: Colombia)');
+      expect(stops[1]).toBe(link);
     });
   });
 });

@@ -158,3 +158,38 @@ export function indicatorItems(indicator: ParentNode): HTMLElement[] {
 export function wizardHeader(root: ParentNode): HTMLElement | null {
   return root.querySelector<HTMLElement>('header, [role="banner"]');
 }
+
+// ---------------------------------------------------------------------------------------------
+// Back links, country chip link and chooser (US-04-AC-28, AC-29)
+// ---------------------------------------------------------------------------------------------
+
+/** A link found by its accessible name, exactly (the chip "Cambiar país (actual: Colombia)" is not the back link "Cambiar país"). */
+export function maybeLinkNamed(root: ParentNode, name: string): HTMLAnchorElement | null {
+  return Array.from(root.querySelectorAll<HTMLAnchorElement>('a[href]')).find((a) => nameOf(a) === name) ?? null;
+}
+
+export function linkNamed(root: ParentNode, name: string): HTMLAnchorElement {
+  const found = maybeLinkNamed(root, name);
+  if (!found) throw new Error(`No link is named "${name}"`);
+  return found;
+}
+
+/** The names the three back links may have (AC-28); the confirmation, the chooser and the error pages have none of them. */
+export const BACK_LINK_NAMES = ['Cambiar país', 'Volver a tus datos', 'Volver a planes'];
+
+/** The back links present in a page area, by exact accessible name. */
+export function backLinksIn(root: ParentNode): string[] {
+  return BACK_LINK_NAMES.filter((name) => maybeLinkNamed(root, name) !== null);
+}
+
+/** True when `a` comes before `b` in document order. */
+export function isBefore(a: Node, b: Node): boolean {
+  return (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+}
+
+/** Everything Tab reaches, in document order, as accessible names (links by name, controls by label or text). */
+export function tabStopNames(root: ParentNode): string[] {
+  return Array.from(root.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [tabindex]'))
+    .filter((e) => e.getAttribute('tabindex') !== '-1' && e.getAttribute('aria-hidden') !== 'true' && !(e as HTMLButtonElement).disabled)
+    .map((e) => nameOf(e));
+}

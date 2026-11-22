@@ -43,7 +43,7 @@ test.describe('US-01-AC-02 field validation (today pinned to 2026-11-20)', () =>
     ['Fecha de nacimiento', '01/03/2010', 'Debes ser mayor de edad (18 años o más) para cotizar.'],
     ['Modelo (año)', '2005', 'El modelo debe estar entre los últimos 20 años y el próximo año.'],
     [CO_CONSENT, false, 'Debes autorizar el tratamiento de tus datos para continuar.'],
-    ['Nombre completo', 'Al', 'Ingresa tu nombre completo (entre 3 y 80 caracteres).'],
+    ['Nombre completo', 'Al', 'Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres).'],
   ];
 
   for (const [label, input, message] of rows) {
@@ -61,13 +61,14 @@ test.describe('US-01-AC-02 field validation (today pinned to 2026-11-20)', () =>
 });
 
 test.describe('US-01-AC-02 / US-01-AC-10 / US-01-AC-18 a required date partly cleared after it was valid (US-01-R3-F01)', () => {
-  // US-04 spec 11.1: no locale override. The date is typed as dd/mm/aaaa whatever the browser locale, and the
-  // text box has no segments: the last digit is deleted ("15/05/199") and Tab leaves the date field.
+  // US-04 spec 11.1 and 11.1.1: no locale override. The date is typed as dd/mm/aaaa whatever the browser locale, and the
+  // text box has no segments: the last digit is deleted ("15/05/199") and Tab leaves the date field. Since v0.3 the
+  // unreadable text shows the code-owned message of BR-18, not the Strapi required message.
   test.beforeEach(async ({ page }) => {
     await page.clock.setFixedTime(TODAY);
   });
 
-  const MESSAGE = 'Ingresa tu fecha de nacimiento.';
+  const MESSAGE = 'Fecha no válida. Usa el formato dd/mm/aaaa.';
 
   /** Press Tab until the focus has left the whole date field (its text box and its "Elegir fecha" button). */
   async function tabOutOfDate(page: Page): Promise<void> {
@@ -119,36 +120,33 @@ test.describe('US-01-AC-02 / US-01-AC-10 / US-01-AC-18 a required date partly cl
   });
 });
 
-test.describe('US-01-AC-09 a number the browser cannot parse is invalid and the wizard state holds an empty string', () => {
+test.describe('US-01-AC-09 a letter cannot be entered into the number field, and what is shown is what the wizard state holds (US-04 BR-19)', () => {
   test.beforeEach(async ({ page }) => {
     await page.clock.setFixedTime(TODAY);
   });
 
-  test('US-01-AC-09 "1e" typed key by key in "Modelo (año)" shows the field message and I stay on step 1', async ({ page }) => {
+  test('US-01-AC-09 "1e" typed key by key in "Modelo (año)" shows and stores "1" (the letter is not entered); "Continuar" shows the field message and I stay on step 1', async ({ page }) => {
     await page.goto('/co/datos');
     await fillColombia(page, { 'Modelo (año)': null });
 
     const year = field(page, 'Modelo (año)');
     await year.focus();
     await year.pressSequentially('1e');
-    // The HTML sanitisation rule for <input type="number">: unparseable text reads back as ''.
-    await expect(year).toHaveValue('');
-    // `value` reads '' both when "1e" is still on screen and when the text was wiped (US-01-R1-F03),
-    // so it cannot tell them apart. `validity.badInput` is true only while unparseable text is shown.
-    await expect.poll(() => year.evaluate((el: HTMLInputElement) => el.validity.badInput)).toBe(true);
-    // The wizard state and sessionStorage hold '' (AC-09 note, AC-21), not the last parseable text "1"; the typed text stays visible.
+    // US-04 spec 11.1.1: a text box with the digits profile; no native number control, so no `validity.badInput`.
+    await expect(year).toHaveValue('1');
     await expect
       .poll(() => page.evaluate(() => JSON.parse(sessionStorage.getItem('quote-wizard') ?? '{}').step1?.values?.vehicleYear))
-      .toBe('');
+      .toBe('1');
 
     await continuar(page).click();
     await expectDescribedBy(page, 'Modelo (año)', 'El modelo debe estar entre los últimos 20 años y el próximo año.');
     await expect(year).toHaveAttribute('aria-invalid', 'true');
-    // Still visible after the failed submit and the focus move.
-    expect(await year.evaluate((el: HTMLInputElement) => el.validity.badInput)).toBe(true);
+    await expect(year).toHaveValue('1');
     await expect(page).toHaveURL(/\/co\/datos$/);
   });
 
+  // US-04 spec 11.1.1: assertions unchanged; only the comment about the native number control is updated: the digits
+  // profile of the text box drops letters.
   test('US-01-AC-09 "abc" cannot even be typed into the number field, and the form still reports the year as missing', async ({ page }) => {
     await page.goto('/co/datos');
     await fillColombia(page, { 'Modelo (año)': null });

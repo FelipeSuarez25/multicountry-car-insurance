@@ -16,6 +16,9 @@ export type StrapiItem = Record<string, unknown>;
 const REQUIRED_CONSENT_CO = 'Autorizo el tratamiento de mis datos personales.';
 const REQUIRED_CONSENT_CL = 'Acepto el tratamiento de mis datos personales.';
 
+/** US-04-BR-19 / spec 7.1 (US-04-Q-27): the seed `fullName` pattern, an explicit class because seed patterns compile without the `u` flag. */
+export const FULL_NAME_PATTERN = "^[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ '.-]*$";
+
 function options(...pairs: [string, string][]): FieldConfig['options'] {
   return pairs.map(([value, label], i) => ({ value, label, sortOrder: (i + 1) * 10 }));
 }
@@ -41,7 +44,10 @@ function seedCo(): FieldConfig[] {
       helpText: 'Sin puntos ni espacios.',
       errorMessage: 'Ingresa un número de documento válido (solo números, de 6 a 10 dígitos).',
       requiredMessage: 'Ingresa tu número de documento.',
-      rules: [{ kind: 'pattern', value: '^[0-9]{6,10}$' }],
+      rules: [
+        { kind: 'pattern', value: '^[0-9]{6,10}$' },
+        { kind: 'maxLength', value: 10 },
+      ],
     },
     {
       key: 'fullName',
@@ -49,10 +55,11 @@ function seedCo(): FieldConfig[] {
       label: 'Nombre completo',
       isRequired: true,
       sortOrder: 30,
-      errorMessage: 'Ingresa tu nombre completo (entre 3 y 80 caracteres).',
+      errorMessage: 'Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres).',
       rules: [
         { kind: 'minLength', value: 3 },
         { kind: 'maxLength', value: 80 },
+        { kind: 'pattern', value: FULL_NAME_PATTERN },
       ],
     },
     {
@@ -83,7 +90,10 @@ function seedCo(): FieldConfig[] {
       sortOrder: 60,
       helpText: 'Ejemplo: ABC123.',
       errorMessage: 'Ingresa una placa válida: 3 letras y 3 números (por ejemplo, ABC123).',
-      rules: [{ kind: 'pattern', value: '^[A-Za-z]{3}[0-9]{3}$' }],
+      rules: [
+        { kind: 'pattern', value: '^[A-Za-z]{3}[0-9]{3}$' },
+        { kind: 'maxLength', value: 6 },
+      ],
     },
     {
       key: 'make',
@@ -147,6 +157,7 @@ function seedCl(): FieldConfig[] {
       rules: [
         { kind: 'pattern', value: '^[0-9]{1,2}\\.?[0-9]{3}\\.?[0-9]{3}-?[0-9kK]$' },
         { kind: 'rutCheckDigit' },
+        { kind: 'maxLength', value: 12 },
       ],
     },
     {
@@ -155,10 +166,11 @@ function seedCl(): FieldConfig[] {
       label: 'Nombre completo',
       isRequired: true,
       sortOrder: 20,
-      errorMessage: 'Ingresa tu nombre completo (entre 3 y 80 caracteres).',
+      errorMessage: 'Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres).',
       rules: [
         { kind: 'minLength', value: 3 },
         { kind: 'maxLength', value: 80 },
+        { kind: 'pattern', value: FULL_NAME_PATTERN },
       ],
     },
     {
@@ -194,7 +206,10 @@ function seedCl(): FieldConfig[] {
       sortOrder: 50,
       helpText: 'Ejemplo: BCDF12 o AB1234.',
       errorMessage: 'Ingresa una patente válida (por ejemplo, BCDF12 o AB1234).',
-      rules: [{ kind: 'pattern', value: '^([A-Za-z]{2}[0-9]{4}|[A-Za-z]{4}[0-9]{2})$' }],
+      rules: [
+        { kind: 'pattern', value: '^([A-Za-z]{2}[0-9]{4}|[A-Za-z]{4}[0-9]{2})$' },
+        { kind: 'maxLength', value: 6 },
+      ],
     },
     {
       key: 'make',

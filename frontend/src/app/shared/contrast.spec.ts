@@ -30,9 +30,20 @@ interface Pair {
 const tokens = (): TokenFile => new TokenFile(readFileSync(join(STYLES, 'tokens.css'), 'utf8'));
 const pairs = (): Pair[] => JSON.parse(readFileSync(join(STYLES, 'contrast-pairs.json'), 'utf8')) as Pair[];
 
+/**
+ * US-04-AC-27 / ADR-0014 section 4: the texture is painted over the page gradient, so its worst case is composited over the
+ * LIGHTEST stop of `--gradient-page` (when the file declares it), not over `--color-bg`.
+ */
+function textureBase(file: TokenFile): RGB {
+  const page = coloursOf(file, '--color-bg')[0].rgb;
+  if (!file.names().includes('--gradient-page')) return page;
+  const stops = coloursOf(file, '--gradient-page').map((c) => composite(c, page));
+  return stops.reduce((lightest, rgb) => (relativeLuminance(rgb) > relativeLuminance(lightest) ? rgb : lightest));
+}
+
 function bgColours(file: TokenFile, name: string): { label: string; rgb: RGB }[] {
   const page = coloursOf(file, '--color-bg')[0].rgb;
-  if (name === 'texture-worst') return [{ label: 'texture-worst', rgb: composite(textureDot(file), page) }];
+  if (name === 'texture-worst') return [{ label: 'texture-worst', rgb: composite(textureDot(file), textureBase(file)) }];
   return coloursOf(file, name).map((c, i, all) => ({ label: all.length > 1 ? `${name}[stop ${i + 1}]` : name, rgb: composite(c, page) }));
 }
 
@@ -231,8 +242,8 @@ describe('US-04-AC-02 every pair of contrast-pairs.json meets its minimum at eve
     const dot = textureDot(file);
     expect(dot.alpha).toBeGreaterThan(0);
     expect(dot.alpha).toBeLessThan(0.2);
-    const worst = composite(dot, coloursOf(file, '--color-bg')[0].rgb);
-    expect(worst).not.toEqual(coloursOf(file, '--color-bg')[0].rgb);
+    const worst = composite(dot, textureBase(file));
+    expect(worst).not.toEqual(textureBase(file));
   });
 
   it('US-04-AC-02 sensitivity self-test: a pair below its minimum is reported', () => {
@@ -244,5 +255,47 @@ describe('US-04-AC-02 every pair of contrast-pairs.json meets its minimum at eve
     const dark = new TokenFile(':root { --color-bg: #000000; --color-text: #FFFFFF; --texture-dots: radial-gradient(circle, color-mix(in srgb, #FFFFFF 7%, transparent) 1px, transparent 1.5px); }');
     const ok = evaluate(dark, [{ id: 'ok', fg: '--color-text', bg: ['--color-bg', 'texture-worst'], min: 4.5, ac: 'US-04-AC-02' }]);
     expect(ok.map((r) => r.ratio >= 4.5)).toEqual([true, true]);
+  });
+});
+
+describe('US-04-AC-27 the page gradient is part of the contrast proof (ADR-0014 section 4)', () => {
+  const TEXTURE = '--texture-dots: radial-gradient(circle, color-mix(in srgb, #FFFFFF 7%, transparent) 1px, transparent 1.5px);';
+
+  it('US-04-AC-27 every "page background" pair (a row whose background list has --color-bg) also lists --gradient-page, so every stop of the gradient is checked', () => {
+    const rows = pairs().filter((r) => r.bg.includes('--color-bg'));
+    expect(rows.length, 'rows over the page background').toBeGreaterThan(0);
+    const missing = rows.filter((r) => !r.bg.includes('--gradient-page')).map((r) => r.id);
+    expect(missing, 'rows that list --color-bg but not --gradient-page').toEqual([]);
+  });
+
+  it('US-04-AC-27 the evaluation of the production file reports one result per stop of --gradient-page for the body text row, and each passes its minimum', () => {
+    const file = tokens();
+    const stops = coloursOf(file, '--gradient-page').length;
+    expect(stops, 'a gradient with at least two stops').toBeGreaterThanOrEqual(2);
+    const body = evaluate(file, pairs().filter((r) => r.id === 'body-text'));
+    const onGradient = body.filter((r) => r.bg.startsWith('--gradient-page'));
+    expect(onGradient).toHaveLength(stops);
+    for (const r of onGradient) expect(r.ratio, `${r.bg}`).toBeGreaterThanOrEqual(r.min);
+  });
+
+  it('US-04-AC-27 the texture worst case is composited over the lightest stop of --gradient-page: a pair that passes over --color-bg but fails over a lighter gradient stop is reported', () => {
+    const file = new TokenFile(
+      `:root { --color-bg: #000000; --gradient-page: linear-gradient(180deg, #888888 0%, #000000 100%); --color-text: #BBBBBB; ${TEXTURE} }`,
+    );
+    const results = evaluate(file, [{ id: 'texture', fg: '--color-text', bg: ['--color-bg', 'texture-worst'], min: 4.5, ac: 'US-04-AC-02' }]);
+    const overBg = results.find((r) => r.bg === '--color-bg');
+    const overTexture = results.find((r) => r.bg === 'texture-worst');
+    expect(overBg?.ratio).toBeGreaterThanOrEqual(4.5);
+    expect(overTexture?.ratio, 'texture over the lightest stop #888888').toBeLessThan(4.5);
+  });
+
+  it('US-04-AC-27 a gradient listed as a background expands into one result per stop (a failing stop is reported)', () => {
+    const file = new TokenFile(
+      `:root { --color-bg: #000000; --gradient-page: linear-gradient(180deg, #888888 0%, #000000 100%); --color-text: #BBBBBB; ${TEXTURE} }`,
+    );
+    const results = evaluate(file, [{ id: 'g', fg: '--color-text', bg: ['--gradient-page'], min: 4.5, ac: 'US-04-AC-02' }]);
+    expect(results.map((r) => r.bg)).toEqual(['--gradient-page[stop 1]', '--gradient-page[stop 2]']);
+    expect(results[0].ratio).toBeLessThan(4.5);
+    expect(results[1].ratio).toBeGreaterThanOrEqual(4.5);
   });
 });

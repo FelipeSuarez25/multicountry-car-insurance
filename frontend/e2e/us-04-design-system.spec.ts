@@ -262,7 +262,7 @@ test.describe('US-04-AC-08 the typed date, in three browser locales (US-04-Q-05)
         await expect(date).not.toHaveAttribute('aria-invalid', 'true');
       });
 
-      test(`US-04-AC-08 with the browser in ${locale}, "5/5/1990" is shown as "05/05/1990" after leaving, and "29/02/2001" stays as typed, stores nothing and shows the required message`, async ({ page }) => {
+      test(`US-04-AC-08 with the browser in ${locale}, "5/5/1990" is shown as "05/05/1990" after leaving, and "29/02/2001" stays as typed, stores nothing and shows the unreadable-date message ("Fecha no válida. Usa el formato dd/mm/aaaa.", BR-18)`, async ({ page }) => {
         await openCo(page);
         const date = field(page, BIRTH);
         await date.fill('5/5/1990');
@@ -275,7 +275,7 @@ test.describe('US-04-AC-08 the typed date, in three browser locales (US-04-Q-05)
         await expect(date).toHaveValue('29/02/2001');
         expect(await storedValue(page, 'birthDate')).toBe('');
         await expect(date).toHaveAttribute('aria-invalid', 'true');
-        await expect(date).toHaveAccessibleDescription(/Ingresa tu fecha de nacimiento\./);
+        await expect(date).toHaveAccessibleDescription(/Fecha no válida\. Usa el formato dd\/mm\/aaaa\./);
       });
     });
   }
@@ -503,7 +503,8 @@ test.describe('US-04-AC-12 panels on narrow and wide screens (the phone keyboard
     const box = await panelBox(page, 'calendar');
     expect(box.width).toBeLessThan(VIEWPORTS.desktop.width);
     expect(box.left < anchor.x + anchor.width + 80 && box.right > anchor.x - 80, 'the popover is next to the date field horizontally').toBe(true);
-    expect(Math.abs(box.top - (anchor.y + anchor.height)) <= 40 || Math.abs(box.bottom - anchor.y) <= 40, 'the popover sits against the date field').toBe(true);
+    // v0.3 (AC-24, spec 11.1.1): below the date field only, never above it (the stricter tests are in us-04-hc3-round1.spec.ts)
+    expect(box.top >= anchor.y + anchor.height - 1 && box.top - (anchor.y + anchor.height) <= 40, 'the popover sits below the date field').toBe(true);
     for (const cell of await dialog.getByRole('gridcell').all()) {
       const b = await cell.boundingBox();
       expect(b?.width ?? 0).toBeGreaterThanOrEqual(43.5);

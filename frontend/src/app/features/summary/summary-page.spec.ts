@@ -11,7 +11,7 @@ import { alertTexts, button, control, fillForm, maybeButton, maybeControl, norma
 import { controlledGateway, type ControlledGateway, type PaymentOutcome } from '../../../testing/payment-fakes';
 import { accessibleDescription, accessibleName, chosenNames, choosePlanOption, compact, groupName, groupOf, isPoliteLiveRegion, planRadios } from '../../../testing/plan-dom';
 import { CL_SPEC_RAW, wizardEntryWithPlan } from '../../../testing/plan-fixtures';
-import { STEP_LABELS, indicatorItems, stepIndicator } from '../../../testing/custom-controls';
+import { STEP_LABELS, backLinksIn, indicatorItems, nameOf, stepIndicator, wizardHeader } from '../../../testing/custom-controls';
 import { CO_VALID_RAW, WIZARD_STORAGE_KEY, seedStrapiItems, toStrapiFieldItem } from '../../../testing/seed-fixtures';
 import {
   accessibleText,
@@ -1416,6 +1416,36 @@ describe('US-03 step 3 page: the summary and the payment (component tests throug
         expect(normalise(item.textContent), STEP_LABELS[i]).toContain('completado');
       });
       expect(indicator.querySelectorAll('[aria-current]')).toHaveLength(0);
+    });
+  });
+
+  describe('US-04-AC-28 the confirmation has no back link, and the header chip links to the chooser', () => {
+    const approve = async (): Promise<void> => {
+      await accept();
+      await clickPay();
+      gateway.settle({ status: 'approved' });
+      await flush();
+    };
+
+    it('US-04-AC-28 the payment confirmation in Colombia has no link named "Cambiar país", "Volver a tus datos" or "Volver a planes" (nothing to go back to once the quote is closed)', async () => {
+      await openCo();
+      expect(backLinksIn(app.root), 'control: step 3 has its back link').toEqual(['Volver a planes']);
+      await approve();
+      expect(normalise(h1().textContent)).toBe(CONFIRMED);
+      expect(backLinksIn(app.root)).toEqual([]);
+    });
+
+    it('US-04-AC-28 the payment confirmation in Chile has a header with exactly one link, named "Cambiar país (actual: Chile)", with the address "/", the text "Chile" and the flag hidden from assistive technology', async () => {
+      await openCl();
+      await approve();
+      expect(normalise(h1().textContent)).toBe(CONFIRMED);
+      const links = Array.from((wizardHeader(app.root) as HTMLElement).querySelectorAll('a'));
+      expect(links).toHaveLength(1);
+      expect(nameOf(links[0])).toBe('Cambiar país (actual: Chile)');
+      expect(links[0].getAttribute('href')).toBe('/');
+      expect(normalise(links[0].textContent)).toContain('Chile');
+      expect(links[0].querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+      expect(backLinksIn(app.root)).toEqual([]);
     });
   });
 });

@@ -113,9 +113,11 @@ test.describe('US-01-AC-22 data does not cross countries', () => {
    * placeholder of a searchable input) and the wizard state holds no non-empty value for it. Text boxes
    * (the date box included), number boxes and checkboxes are checked as before.
    */
-  async function expectEmptyStep1(page: Page): Promise<void> {
+  async function expectEmptyStep1(page: Page, yearLabel: 'Modelo (año)' | 'Año'): Promise<void> {
     for (const box of await page.getByRole('textbox').all()) await expect(box).toHaveValue('');
-    for (const spin of await page.getByRole('spinbutton').all()) await expect(spin).toHaveValue('');
+    // US-04 spec 11.1.1: the year is a text box now (the textbox loop covers it); name it so the check cannot become vacuous.
+    await expect(field(page, yearLabel)).toHaveValue('');
+    expect(await page.getByRole('spinbutton').count(), 'no spinbutton is left in step 1').toBe(0);
     for (const box of await page.getByRole('checkbox').all()) await expect(box).not.toBeChecked();
     const combos = await page.getByRole('combobox').all();
     expect(combos.length, 'the step 1 selects are comboboxes').toBeGreaterThan(0);
@@ -139,11 +141,11 @@ test.describe('US-01-AC-22 data does not cross countries', () => {
 
     await page.goto('/cl/datos');
     await expect(field(page, 'Patente')).toBeVisible();
-    await expectEmptyStep1(page);
+    await expectEmptyStep1(page, 'Año');
 
     await page.goto('/co/datos');
     await expect(field(page, 'Placa')).toBeVisible();
-    await expectEmptyStep1(page);
+    await expectEmptyStep1(page, 'Modelo (año)');
     await expect(field(page, 'Nombre completo')).toHaveValue('');
   });
 
@@ -155,6 +157,6 @@ test.describe('US-01-AC-22 data does not cross countries', () => {
 
     await page.goto('/co/datos');
     await expect(field(page, 'Placa')).toBeVisible();
-    await expectEmptyStep1(page);
+    await expectEmptyStep1(page, 'Modelo (año)');
   });
 });
