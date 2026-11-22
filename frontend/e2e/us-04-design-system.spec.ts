@@ -236,7 +236,7 @@ test.describe('US-04-AC-05 / AC-06 the custom select with a real keyboard (Colom
     await ciudad.click();
     await page.getByRole('option', { name: 'Cali', exact: true }).click();
     await ciudad.click();
-    await page.keyboard.press('Control+A');
+    await page.keyboard.press('ControlOrMeta+A');
     await page.keyboard.type('xyz');
     await expect(page.getByRole('option')).toHaveCount(0);
     await expect(page.getByText('No encontramos opciones para «xyz».')).toBeVisible();
@@ -781,6 +781,8 @@ test.describe('US-04-R1-F01 the field icons are painted, not just present (US-04
             found.push(`${name}: no icon`);
             continue;
           }
+          // elementFromPoint answers null outside the viewport: bring the field into view first.
+          icon.scrollIntoView({ block: 'center' });
           const r = icon.getBoundingClientRect();
           const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
           checked++;
