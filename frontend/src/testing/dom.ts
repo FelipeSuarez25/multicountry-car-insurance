@@ -127,11 +127,17 @@ export async function typeKeys(el: Control, text: string): Promise<void> {
   }
 }
 
-/** Activate a combobox with the pointer (focus, then click), as a person does. Fails if no listbox opens. */
+/**
+ * Activate a combobox with the pointer (focus, then click), as a person does. Fails if no listbox opens.
+ * A list that is already open is returned as it is: a click on an open select-only list closes it (US-04-R1-F06),
+ * so a helper must never click twice to "make sure".
+ */
 export async function openCombobox(combo: Control): Promise<HTMLElement> {
-  combo.focus();
-  combo.click();
-  await settleUi();
+  if (combo.getAttribute('aria-expanded') !== 'true') {
+    combo.focus();
+    combo.click();
+    await settleUi();
+  }
   const listbox = listboxOf(combo) ?? combo.ownerDocument.querySelector<HTMLElement>('[role="listbox"]');
   if (!listbox) throw new Error('Activating the combobox did not open a listbox');
   return listbox;

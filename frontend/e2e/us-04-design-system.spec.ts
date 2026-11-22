@@ -759,3 +759,155 @@ test.describe('US-04-AC-20 visible focus on the new controls', () => {
     await expectActiveOptionIndicator(ciudad, 'a select option row');
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+test.describe('US-04-R1-F01 the field icons are painted, not just present (US-04-AC-04)', () => {
+  for (const country of ['co', 'cl'] as const) {
+    test(`US-04-R1-F01 ${country === 'co' ? 'Colombia' : 'Chile'}: the icon of every text, number, select and date field is the topmost element at its own centre`, async ({ page }) => {
+      await (country === 'co' ? openCo(page) : openCl(page));
+      // Icons ignore the pointer, so hit-testing skips them; make them hit-testable (this changes no stacking) and ask the browser what is on top.
+      await page.addStyleTag({ content: 'svg[aria-hidden="true"] { pointer-events: auto !important; }' });
+      const problems = await page.evaluate(() => {
+        const found: string[] = [];
+        let checked = 0;
+        for (const label of Array.from(document.querySelectorAll('label'))) {
+          const control = label.control as HTMLInputElement | null;
+          if (!control || control.type === 'checkbox') continue;
+          let box: HTMLElement | null = control.parentElement;
+          while (box && !box.contains(label)) box = box.parentElement;
+          const icon = box?.querySelector('svg') ?? null;
+          const name = (label.textContent ?? '').replace(/\*/g, '').trim();
+          if (!icon) {
+            found.push(`${name}: no icon`);
+            continue;
+          }
+          const r = icon.getBoundingClientRect();
+          const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          checked++;
+          if (r.width < 8 || r.height < 8) found.push(`${name}: icon box ${r.width}x${r.height}`);
+          else if (top?.closest('svg') !== icon) found.push(`${name}: covered by <${top?.tagName.toLowerCase()}${top?.getAttribute('role') ? ` role=${top.getAttribute('role')}` : ''}>`);
+        }
+        if (checked < 8) found.push(`only ${checked} fields checked`);
+        return found;
+      });
+      expect(problems).toEqual([]);
+    });
+  }
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe('US-04-R1-F02 the plan radio is drawn from tokens (3:1 on every plan surface)', () => {
+  test('US-04-R1-F02 the plan radios are not drawn by the browser: appearance none, a visible border, and the checked one looks different', async ({ page }) => {
+    await page.clock.setFixedTime(TODAY);
+    await page.goto('/cl/datos');
+    await expect(field(page, 'Patente')).toBeVisible();
+    await fillChile(page);
+    await continuar(page).click();
+    await expect(plans(page)).toHaveCount(3);
+    const look = (name: string): Promise<{ appearance: string; width: number; colour: string; fill: string; shadow: string }> =>
+      plan(page, name).evaluate((el) => {
+        const s = getComputedStyle(el);
+        return { appearance: s.appearance, width: parseFloat(s.borderTopWidth), colour: s.borderTopColor, fill: s.backgroundColor, shadow: s.boxShadow };
+      });
+    for (const name of ['Plan Esencial', 'Plan Protegido']) {
+      const unchecked = await look(name);
+      expect(unchecked.appearance, `${name} appearance`).toBe('none');
+      expect(unchecked.width, `${name} border width`).toBeGreaterThanOrEqual(1);
+      expect(unchecked.colour, `${name} border is not the browser's grey`).not.toMatch(/^rgb\((133, 133, 133|118, 118, 118)\)$/);
+    }
+    const before = await look('Plan Esencial');
+    await plan(page, 'Plan Esencial').check();
+    const after = await look('Plan Esencial');
+    expect(JSON.stringify(after), 'the checked radio looks different').not.toBe(JSON.stringify(before));
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe('US-04-R1-F03 the bottom sheet slides and is measured at rest (ADR-0013 section 2)', () => {
+  test('US-04-R1-F03 360 x 740 with motion: once the sheet\'s animations have finished it is full width with its bottom edge at the viewport bottom (the slide is allowed)', async ({ page }) => {
+    await page.setViewportSize(VIEWPORTS.narrow);
+    await openCo(page);
+    await field(page, CITY).click();
+    await expect(page.getByRole('listbox')).toBeVisible();
+    const box = await panelBox(page, 'select'); // waits for getAnimations() to settle first
+    expect(Math.abs(box.width - VIEWPORTS.narrow.width)).toBeLessThanOrEqual(1);
+    expect(Math.abs(box.bottom - VIEWPORTS.narrow.height)).toBeLessThanOrEqual(1);
+    await page.keyboard.press('Escape');
+    await dateButton(page).click();
+    await expect(calendarDialog(page)).toBeVisible();
+    const cal = await panelBox(page, 'calendar');
+    expect(Math.abs(cal.width - VIEWPORTS.narrow.width)).toBeLessThanOrEqual(1);
+    expect(Math.abs(cal.bottom - VIEWPORTS.narrow.height)).toBeLessThanOrEqual(1);
+  });
+
+  test.describe('with prefers-reduced-motion: reduce', () => {
+    test.use({ reducedMotion: 'reduce' });
+
+    test('US-04-R1-F03 the sheets are at rest immediately: no animation at all, full width, bottom edge at the viewport bottom', async ({ page }) => {
+      await page.setViewportSize(VIEWPORTS.narrow);
+      await openCo(page);
+      await field(page, CITY).click();
+      await expect(page.getByRole('listbox')).toBeVisible();
+      expect(await page.evaluate(() => document.getAnimations().length), 'no animation right after opening').toBe(0);
+      const box = await panelBox(page, 'select');
+      expect(Math.abs(box.width - VIEWPORTS.narrow.width)).toBeLessThanOrEqual(1);
+      expect(Math.abs(box.bottom - VIEWPORTS.narrow.height)).toBeLessThanOrEqual(1);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe('US-04-R1-F06 the select toggles on a click, whatever carries the click', () => {
+  test('US-04-R1-F06 a click on an open select-only list closes it, with a real mouse click and with a script click (detail 0)', async ({ page }) => {
+    await openCo(page);
+    const tipo = field(page, 'Tipo de documento');
+    await tipo.click();
+    await expect(tipo).toHaveAttribute('aria-expanded', 'true');
+    await tipo.click();
+    await expect(tipo).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.getByRole('listbox')).toHaveCount(0);
+
+    await tipo.click();
+    await expect(tipo).toHaveAttribute('aria-expanded', 'true');
+    await tipo.evaluate((el) => (el as HTMLElement).click());
+    await expect(tipo).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('US-04-R1-F06 Ctrl+A in the search box keeps the platform default: the text is selected where the platform selects it, and the key is not swallowed', async ({ page }) => {
+    await openCo(page);
+    const ciudad = field(page, CITY);
+    await ciudad.click();
+    await page.getByRole('option', { name: 'Cali', exact: true }).click();
+    await ciudad.focus();
+    const prevented = await ciudad.evaluate((el) => {
+      const event = new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true, cancelable: true });
+      el.dispatchEvent(event);
+      return event.defaultPrevented;
+    });
+    expect(prevented).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+test.describe('US-04-R1-F08 Escape in the year list returns to the day grid', () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test('US-04-R1-F08 the first Escape leaves the year list for the grid (the dialog stays, the focus is on the focused day); the second closes the dialog and returns to "Elegir fecha"', async ({ page }) => {
+    await openCl(page);
+    await field(page, BIRTH).fill('15/05/1990');
+    await dateButton(page).click();
+    const dialog = calendarDialog(page);
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: 'Elegir año' }).click();
+    await expect(dialog.getByRole('listbox')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('listbox')).toHaveCount(0);
+    await expect(dialog.getByRole('grid')).toBeVisible();
+    await expect.poll(() => focusedName(page)).toBe('15 de mayo de 1990');
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await expect(dateButton(page)).toBeFocused();
+  });
+});
+

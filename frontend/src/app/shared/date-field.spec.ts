@@ -483,4 +483,29 @@ describe('US-04 date field and calendar (component tests through the real routes
       expect(years[years.length - 1]).toBe('2036');
     });
   });
+
+  // -------------------------------------------------------------------------------------------
+  describe('US-04-R1-F08 Escape in the year list returns to the day grid', () => {
+    it('US-04-R1-F08 the first Escape closes the year list and shows the grid again with the focus on the focused day; the dialog stays open; a second Escape closes the dialog and returns the focus to "Elegir fecha"', async () => {
+      await start('/cl/datos', wizardEntry('CL', { birthDate: '1990-05-15' }));
+      await openCalendar(app.root, LABEL);
+      expect(focusedDay()).toBe('15 de mayo de 1990');
+      await clickIn('Elegir año');
+      expect(dialog().querySelector('[role="grid"]')).toBeNull();
+      expect(yearTexts(dialog()).length).toBeGreaterThan(0);
+
+      await press(document.activeElement as Element, 'Escape');
+      expect(calendarDialog(), 'the dialog stays open').not.toBeNull();
+      expect(yearTexts(dialog())).toEqual([]);
+      expect(dialog().querySelector('[role="grid"]')).not.toBeNull();
+      expect(calendarTitle(dialog())).toBe('mayo de 1990');
+      expect(focusedDay()).toBe('15 de mayo de 1990');
+      expect(stored('birthDate')).toBe('1990-05-15');
+
+      await press(document.activeElement as Element, 'Escape');
+      expect(calendarDialog()).toBeNull();
+      expect(document.activeElement).toBe(calendarButton());
+      expect(date().value).toBe('15/05/1990');
+    });
+  });
 });

@@ -241,7 +241,33 @@ export interface CdkUse {
   disabled: number;
 }
 
-export function cdkAnimationUse(source: string): CdkUse {
+/** The source without `//` and `/* *\/` comments; string literals are kept (and skipped over) so a URL is not read as a comment. */
+export function stripComments(source: string): string {
+  let out = '';
+  for (let i = 0; i < source.length; i++) {
+    const ch = source[i];
+    const next = source[i + 1];
+    if (ch === '"' || ch === "'" || ch === '`') {
+      let j = i + 1;
+      while (j < source.length && source[j] !== ch) j += source[j] === '\\' ? 2 : 1;
+      out += source.slice(i, j + 1);
+      i = j;
+    } else if (ch === '/' && next === '/') {
+      while (i < source.length && source[i] !== '\n') i++;
+      out += '\n';
+    } else if (ch === '/' && next === '*') {
+      const end = source.indexOf('*/', i + 2);
+      i = end < 0 ? source.length : end + 1;
+      out += ' ';
+    } else {
+      out += ch;
+    }
+  }
+  return out.replace(/<!--[\s\S]*?-->/g, ' ');
+}
+
+export function cdkAnimationUse(rawSource: string): CdkUse {
+  const source = stripComments(rawSource);
   const calls = (source.match(/\bcreateOverlayRef\s*\(|\boverlay\w*\s*\.\s*create\s*\(|\bdialog\w*\s*\.\s*open\s*\(|\bcdkConnectedOverlay\b/gi) ?? []).length;
   const disabled = (source.match(/disableAnimations\s*:\s*true|DisableAnimations\]?\s*=\s*"true"/gi) ?? []).length;
   return { calls, disabled };

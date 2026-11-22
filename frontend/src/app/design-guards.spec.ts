@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { parseCss } from '../testing/css';
 import {
   STYLE_KINDS,
   ALLOWED_FAMILIES,
@@ -280,6 +281,18 @@ describe('US-04-AC-04 / US-04-BR-04 icons are imported one by one from @lucide/a
   });
 });
 
+describe('US-04-R1-F02 the plan radio is drawn from tokens, not by the browser', () => {
+  it('US-04-R1-F02 plan-list-page.css gives the radio appearance none and a border and a checked colour from --*radio* tokens', () => {
+    const file = cssFiles.find((p) => p.endsWith(join('plan-list', 'plan-list-page.css')));
+    expect(file, 'plan-list-page.css').toBeDefined();
+    const { decls } = parseCss(read(file as string));
+    const radio = decls.filter((d) => d.stack.some((s) => /radio/.test(s)));
+    expect(radio.some((d) => d.prop === 'appearance' && d.value.trim() === 'none'), 'appearance: none on the radio').toBe(true);
+    expect(radio.some((d) => /^border/.test(d.prop) && /var\(--[a-z-]*radio/.test(d.value)), 'a border drawn from a radio token').toBe(true);
+    expect(radio.filter((d) => /var\(--[a-z-]*radio/.test(d.value)).length, 'the checked state also uses radio tokens').toBeGreaterThanOrEqual(2);
+  });
+});
+
 describe('US-04-AC-17 / US-04-BR-10 reduced motion by construction (ADR-0013 section 4)', () => {
   it('US-04-AC-17 outside tokens.css every animation and transition declaration is inside @media (prefers-reduced-motion: no-preference), and uses only duration, delay and ease tokens', () => {
     const offenders = nonTokenCss.flatMap((file) => motionViolations(read(file)).map((v) => `${rel(file)}: ${v.kind} ${v.detail}`));
@@ -322,6 +335,20 @@ describe('US-04-AC-17 / US-04-BR-10 reduced motion by construction (ADR-0013 sec
       expect(cdkAnimationUse('this.dialog.open(Calendar, { disableAnimations: true });')).toEqual({ calls: 1, disabled: 1 });
       expect(cdkAnimationUse('<ng-template cdkConnectedOverlay [cdkConnectedOverlayOpen]="open()">')).toEqual({ calls: 1, disabled: 0 });
       expect(cdkAnimationUse('const ref = createOverlayRef(inj, { disableAnimations: true });')).toEqual({ calls: 1, disabled: 1 });
+    });
+
+    it('US-04-R1-F05 ignores comments: a "disableAnimations: true" only in a comment next to a call with "disableAnimations: false" is reported', () => {
+      const source = [
+        '/** Every overlay is created with `disableAnimations: true` (ADR-0013). */',
+        'const ref = createOverlayRef(inj, {',
+        '  // disableAnimations: true',
+        '  disableAnimations: false,',
+        '});',
+      ].join('\n');
+      const use = cdkAnimationUse(source);
+      expect(use.calls).toBe(1);
+      expect(use.disabled).toBe(0);
+      expect(cdkAnimationUse('const url = "https://x.example/a//b"; this.dialog.open(C, { disableAnimations: true }); // done')).toEqual({ calls: 1, disabled: 1 });
     });
   });
 });

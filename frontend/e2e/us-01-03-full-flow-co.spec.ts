@@ -261,6 +261,8 @@ test.describe('US-02-AC-16 / US-01-AC-24 keyboard-only plan choice (Colombia, de
 
     // Arrival: the keyboard focus is on the step heading, and the document title (also US-01-AC-24).
     await expect(HEADING_LOCATOR(page)).toBeFocused();
+    // The heading has the focus on arrival, before the plans load; Tab is pressed once the plans are shown (US-04-R1-F04).
+    await expect(plans(page)).toHaveCount(3);
     await expect(page).toHaveTitle(TITLE);
 
     // Tab: the plan group, on its first plan.
@@ -301,6 +303,8 @@ test.describe('US-02-AC-16 / US-01-AC-24 keyboard-only plan choice (Colombia, de
     await page.keyboard.press('Tab');
     await page.keyboard.press('Enter');
     await expect(HEADING_LOCATOR(page)).toBeFocused();
+    // The heading has the focus on arrival, before the plans load; Tab is pressed once the plans are shown (US-04-R1-F04).
+    await expect(plans(page)).toHaveCount(3);
 
     // Tab to "Continuar" without choosing: the group, "Atrás", "Continuar".
     for (let i = 0; i < 6 && (await focused(page)) !== 'Continuar'; i++) await page.keyboard.press('Tab');
@@ -640,6 +644,8 @@ test.describe('US-03-AC-16 keyboard-only: the whole flow of Colombia to the conf
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/co\/planes$/);
     await expect(HEADING_LOCATOR(page)).toBeFocused();
+    // The heading has the focus on arrival, before the plans load; Tab is pressed once the plans are shown (US-04-R1-F04).
+    await expect(plans(page)).toHaveCount(3);
 
     // Step 2: the plan group, the arrow keys choose "Plan Total", Tab to "Continuar", Enter.
     await page.keyboard.press('Tab');

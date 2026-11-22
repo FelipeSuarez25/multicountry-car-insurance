@@ -943,4 +943,31 @@ describe('US-02 step 2 page: the plan list (component tests through the real rou
       expect(app.root.querySelectorAll('main')).toHaveLength(1);
     });
   });
+
+  describe('US-04-R1-F04 the plan heading has the focus on arrival, before the plans load (US-02 section 8 "Arrival")', () => {
+    it('US-04-R1-F04 while "Cargando planes…" is shown the h1 "Elige tu plan" already has the focus, and it keeps it when the plans arrive', async () => {
+      vi.useFakeTimers();
+      await start(wizardEntryWithPlan('CL', CL_SPEC_RAW, null));
+      app.server.plans['CL'] = 'hang';
+      const navigation = app.begin('/cl/planes');
+      await app.settle();
+      expect(text()).toContain(LOADING);
+      expect(planRadios(app.root)).toEqual([]);
+      expect(document.activeElement).toBe(heading());
+
+      await vi.advanceTimersByTimeAsync(10_000);
+      await vi.advanceTimersByTimeAsync(50);
+      TestBed.tick();
+      await navigation;
+      app.server.plans['CL'] = seedPlanItems('CL');
+      button(app.root, 'Reintentar').click();
+      await app.settle();
+      expect(names()).toEqual(CL_NAMES);
+    });
+
+    it('US-04-R1-F04 with the plans answered at once the focus is on the h1 as well (the focus never waits for the content)', async () => {
+      await openCl();
+      expect(document.activeElement).toBe(heading());
+    });
+  });
 });

@@ -484,4 +484,34 @@ describe('US-04 custom select (component tests through the real routes)', () => 
       expect(stored('documentType')).toBe('CE');
     });
   });
+
+  // -------------------------------------------------------------------------------------------
+  describe('US-04-R1-F06 platform behaviour the select must not override', () => {
+    it('US-04-R1-F06 a click on an open select-only list closes it (the control toggles, as in the browser), and a click on the closed one opens it again', async () => {
+      await start('/co/datos');
+      const tipo = control(app.root, 'Tipo de documento');
+      await openCombobox(tipo);
+      expect(tipo.getAttribute('aria-expanded')).toBe('true');
+      tipo.click();
+      await settleUi();
+      expect(tipo.getAttribute('aria-expanded')).toBe('false');
+      expect(listbox()).toBeNull();
+      tipo.click();
+      await settleUi();
+      expect(tipo.getAttribute('aria-expanded')).toBe('true');
+    });
+
+    it('US-04-R1-F06 Ctrl+A and Cmd+A in a search box keep the platform default (the key is not default-prevented), open or closed', async () => {
+      await start('/co/datos');
+      const ciudad = control(app.root, 'Ciudad');
+      ciudad.focus();
+      expect(await press(ciudad, 'a', { ctrl: true }), 'Ctrl+A closed').toBe(false);
+      await openCombobox(ciudad);
+      expect(await press(ciudad, 'a', { ctrl: true }), 'Ctrl+A open').toBe(false);
+      ciudad.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', metaKey: true, bubbles: true, cancelable: true }));
+      const meta = new KeyboardEvent('keydown', { key: 'a', metaKey: true, bubbles: true, cancelable: true });
+      ciudad.dispatchEvent(meta);
+      expect(meta.defaultPrevented, 'Cmd+A').toBe(false);
+    });
+  });
 });

@@ -26,6 +26,7 @@ export async function expectNoHorizontalScroll(page: Page, where = ''): Promise<
  * Returns what failed, as readable text.
  */
 export async function targetProblems(page: Page): Promise<string[]> {
+  await settleAnimations(page);
   return page.evaluate(() => {
     const MIN = 44;
     const EPS = 0.5;
@@ -128,7 +129,23 @@ export async function chooseBirthDateWithCalendar(page: Page): Promise<void> {
  * The box of the open panel of a select or of the calendar. On narrow screens the panel of a select is the
  * ancestor of its listbox that also holds the "Cerrar" button (the bottom sheet); otherwise the listbox itself.
  */
+/**
+ * Wait until every finite animation of the document has finished (a sheet that slides in, a panel that fades), so a box is
+ * measured at rest (ADR-0013: the sheet slides with translateY, US-04-R1-F03). Infinite ones (skeleton, spinner) are ignored.
+ * With reduced motion there is none, so this returns at once.
+ */
+export async function settleAnimations(page: Page): Promise<void> {
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        document.getAnimations().filter((a) => a.playState !== 'finished' && Number.isFinite(a.effect?.getComputedTiming().iterations ?? Infinity)).length,
+      ),
+    )
+    .toBe(0);
+}
+
 export async function panelBox(page: Page, kind: 'select' | 'calendar'): Promise<{ left: number; right: number; top: number; bottom: number; width: number; height: number }> {
+  await settleAnimations(page);
   return page.evaluate((k) => {
     let panel: Element | null;
     if (k === 'calendar') {

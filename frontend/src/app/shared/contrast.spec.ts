@@ -184,6 +184,29 @@ describe('US-04-AC-02 the list of pairs is complete and the thresholds are the W
     for (const row of gradientText) expect(row.min).toBeGreaterThanOrEqual(3);
   });
 
+  it('US-04-R1-F07 lists the pairs that are really used: text on the brand colour (the "Seleccionado" badge, the current step marker) at 4.5, and the focus ring over the hover surface (the active option) at 3', () => {
+    const rows = pairs();
+    const onBrand = rows.filter((r) => r.fg === '--color-text-on-brand' && r.bg.includes('--color-brand'));
+    expect(onBrand.length, 'a row --color-text-on-brand on --color-brand').toBeGreaterThan(0);
+    for (const row of onBrand) expect(row.min).toBeGreaterThanOrEqual(4.5);
+    const focusOnHover = rows.filter((r) => r.fg === '--color-focus' && r.bg.includes('--color-surface-hover'));
+    expect(focusOnHover.length, 'a row --color-focus on --color-surface-hover').toBeGreaterThan(0);
+    for (const row of focusOnHover) expect(row.min).toBeGreaterThanOrEqual(3);
+  });
+
+  it('US-04-R1-F02 the plan radio is drawn from tokens and covered: a ring row and a checked-indicator row (fg names contain "radio") over the plain card surface and over every stop of --gradient-plan-recommended, minimum 3', () => {
+    const rows = pairs().filter((r) => /radio/.test(r.fg));
+    expect(rows.length, 'rows for the plan radio tokens').toBeGreaterThanOrEqual(2);
+    for (const row of rows) expect(row.min, `${row.id} is a UI component boundary`).toBeGreaterThanOrEqual(3);
+    const surfaces = rows.flatMap((r) => r.bg);
+    expect(surfaces).toContain('--color-surface');
+    expect(surfaces).toContain('--gradient-plan-recommended');
+    expect(rows.some((r) => !/dot|checked|indicator|mark|fill/.test(r.fg)), 'a ring (unchecked boundary) row').toBe(true);
+    expect(rows.some((r) => /dot|checked|indicator|mark|fill/.test(r.fg)), 'a checked indicator row').toBe(true);
+    const file = tokens();
+    for (const row of rows) expect(() => coloursOf(file, row.fg), row.fg).not.toThrow();
+  });
+
   it('US-04-AC-02 the token file defines a country accent for co and cl, and each is evaluated', () => {
     const file = tokens();
     expect(file.accentKeys().sort()).toEqual(['cl', 'co']);
