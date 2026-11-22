@@ -2,8 +2,8 @@ import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { Combobox, ComboboxPopup, ComboboxWidget } from '@angular/aria/combobox';
 import { Listbox, Option } from '@angular/aria/listbox';
 import {
-  ApplicationRef,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   Injector,
@@ -74,7 +74,7 @@ export class CustomSelect implements FormValueControl<string> {
   private readonly listbox = viewChild(Listbox);
   private readonly announcer = inject(LiveAnnouncer);
   private readonly injector = inject(Injector);
-  private readonly appRef = inject(ApplicationRef);
+  private readonly cdr = inject(ChangeDetectorRef);
   private typed = '';
   private typedAt = 0;
   private pendingActive: string | null = null;
@@ -136,31 +136,26 @@ export class CustomSelect implements FormValueControl<string> {
   }
 
   protected openOnClick(): void {
-    if (!this.expanded()) this.expanded.set(true);
-    this.render();
+    this.open();
+  }
+
+  /** Opens the list and renders it now (see `renderOpenList`). */
+  private open(): void {
+    if (this.expanded()) return;
+    this.expanded.set(true);
+    this.renderOpenList();
   }
 
   /**
-   * Renders now, at the end of the current event, so the list exists and has its first option active
-   * before the next key arrives (a key sent right after "open" would otherwise be consumed by the
-   * list setting up its default state).
+   * Renders this component's own view at the end of the current event, so the list exists and has
+   * its first option active before the next key arrives. Without it a key sent right after "open"
+   * (Enter then ArrowDown, as the e2e does) reaches the list while it sets up its default state and
+   * is consumed by it. Scoped to this view and only on the open transition.
    */
-  private render(): void {
-    queueMicrotask(() => this.appRef.tick());
-  }
-
-  /**
-   * The combobox toggles on a click. A click that carries no pointer (`detail` 0: a script, or
-   * assistive technology activating the control) only ever opens the list, so activating an open
-   * select leaves it open; a mouse or touch press on an open one still closes it.
-   */
-  protected onButtonClick(event: MouseEvent): void {
-    if (event.detail !== 0) return;
-    // After the combobox's own toggle, whatever the order of the two listeners.
+  protected renderOpenList(): void {
     queueMicrotask(() => {
-      if (!this.expanded()) this.expanded.set(true);
+      if (this.expanded()) this.cdr.detectChanges();
     });
-    this.render();
   }
 
   protected onInput(event: Event): void {
@@ -168,13 +163,8 @@ export class CustomSelect implements FormValueControl<string> {
   }
 
   protected onKeydown(event: KeyboardEvent): void {
-    this.render();
-    if (this.searchable() && event.ctrlKey && !event.metaKey && !event.altKey && event.key.toLowerCase() === 'a') {
-      // Ctrl+A selects the text on every platform (on macOS it would move to the line start).
-      event.preventDefault();
-      (event.target as HTMLInputElement).select();
-      return;
-    }
+    const wasOpen = this.expanded();
+    if (!wasOpen && event.key !== 'Tab') this.renderOpenList();
     if (this.expanded()) {
       if (event.key === 'Tab') {
         this.commit(this.activeValue());
