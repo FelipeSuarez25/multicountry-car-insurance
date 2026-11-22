@@ -154,6 +154,7 @@
   --size-glow-offset: 1.5rem;
   --size-backdrop-blur: 0.25rem;
   --z-base: 0;
+  --z-icon: 1;
   --z-header: 10;
   --z-overlay: 1000;
   --breakpoint-sheet: 37.5em;
