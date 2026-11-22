@@ -20,6 +20,7 @@ Accepted ADRs are binding (`CLAUDE.md` §1, level 2) and are never rewritten; th
 | [0011](0011-country-visuals-amends-adr-0001.md) | Country visuals (flag and accent) as a presentation-only front-end map (amends ADR-0001) | Accepted | 2026-11-21 | US-04 |
 | [0012](0012-accessible-select-and-date-picker.md) | Accessible custom select and date picker on `@angular/aria` and `@angular/cdk`, bound to Signal Forms (amends ADR-0004) | Accepted | 2026-11-21 | US-04 |
 | [0013](0013-motion-and-reduced-motion.md) | Motion with native `animate.enter` and CSS on duration tokens, enter-only step transition, reduced motion by construction | Accepted | 2026-11-21 | US-04 |
+| [0014](0014-input-profiles-typed-date-and-anchored-calendar.md) | Input profiles, typed-date mask and an anchored compact calendar; lighter page gradient (amends ADR-0010 and ADR-0012) | Proposed (HC3 direction of the human, 2026-11-22; acceptance to be recorded by the main session) | 2026-11-22 | US-04 |
 
 ### Implementation notes on accepted ADRs (no decision change)
 
@@ -42,6 +43,13 @@ Numbers are assigned when an ADR is written; this order is only provisional.
 | Topic | Why it needs an ADR | Input |
 |---|---|---|
 | — | No pending ADR for US-01, US-02 or US-03 | — |
+
+Proposed on 2026-11-22 for US-04 HC3 round 1: ADR-0014 (brief D1–D6; US-04-AC-24..AC-29). It
+amends ADR-0010 (§4 palette and page gradient, §6 scales, §7 icons and the input-profile map),
+ADR-0012 (§4 calendar placement, size, typed-date mask and message; §6 `syncNative` removed) and
+the ADR-0004 implementation note. When it is accepted, the rows of ADR-0010 and ADR-0012 read
+"Accepted (amended by ADR-0014)" and the ADR-0004 note gets a pointer row (the accepted files are
+not edited, as for ADR-0006, ADR-0011 and ADR-0012).
 
 Proposed on 2026-11-21 for US-04 (written in parallel with HC1 at the human's request; awaiting
 HC2): ADR-0010 (US-04-Q-01, Q-03, Q-08, Q-09, Q-10), ADR-0011 (US-04-Q-02; amends ADR-0001 if
