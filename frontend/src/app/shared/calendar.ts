@@ -87,10 +87,19 @@ export class Calendar {
     this.focused.set(nextFocusDate(this.focused(), direction === -1 ? 'PageUp' : 'PageDown', false, this.data.localeTag));
   }
 
-  /** Escape closes the dialog and keeps the value (the CDK also listens, by key code). */
+  /**
+   * Escape in the year list returns to the day grid; Escape in the grid closes the dialog and keeps
+   * the value (the CDK also listens, by key code, so the event stops here when it is already handled).
+   */
   protected onKeydown(event: KeyboardEvent): void {
     if (event.key !== 'Escape') return;
     event.preventDefault();
+    if (this.choosingYear()) {
+      event.stopPropagation();
+      this.choosingYear.set(false);
+      afterNextRender(() => this.focusDay(), { injector: this.injector });
+      return;
+    }
     this.close();
   }
 
