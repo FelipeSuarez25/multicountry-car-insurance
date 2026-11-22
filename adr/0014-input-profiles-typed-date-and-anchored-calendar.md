@@ -1,19 +1,18 @@
 ---
-status: Proposed
+status: Accepted
 date: 2026-11-22
-decision-makers: Felipe Sabogal (direction given at HC3, 2026-11-22; acceptance pending, see note), architect subagent (proposal)
+decision-makers: Felipe Sabogal (direction given at HC3 and acceptance, 2026-11-22), architect subagent (proposal)
 consulted: the human's verbatim HC3 feedback and decisions D1–D6 of 2026-11-22 (orchestrator brief), specs/US-04/spec.md v0.2 and the v0.3 IDs in progress (BR-17..BR-21, AC-24..AC-29), specs/US-01/spec.md (BR-01, AC-09), ADR-0004, ADR-0010, ADR-0011, ADR-0012, frontend code at 4c12499 (panel-position.ts, date-field.ts/.html, date-text.ts, calendar.html/.css, field-validators.ts, quote-form.ts/.html, field-icons.ts, tokens.css, contrast-pairs.json, contrast.spec.ts, testing/css.ts), backend/src/seed/form-fields.ts, installed @angular/cdk 22.3.0, @angular/forms 22.3.0 and @lucide/angular 1.77.0, DOM Standard (dispatch), CSS Scroll Snap 1 (scroll-padding), MDN (beforeinput, maxlength, input type=number)
 informed: all agents via CLAUDE.md precedence; spec-writer (US-01 BR-01/AC-09 and US-04-Q-05 impact); test-engineer (contrast guard change, US-01-AC-09 number tests); frontend-developer; strapi-developer (seed rules)
 ---
 
 # ADR-0014: Input profiles, typed-date mask and an anchored compact calendar; lighter page gradient (amends ADR-0010 and ADR-0012)
 
-> **Acceptance note.** The human gave an explicit direction at HC3 (2026-11-22) for every change
-> in this ADR (CLAUDE.md §1). The concrete values are the main session's recommendation and are
-> reviewed in the HC3 QA of this round. The architect does not set `Accepted` (adr-madr
-> lifecycle); the main session records the human's acceptance by changing `status` to
-> `Accepted` with the line: "Accepted by the human's explicit direction at HC3 (2026-11-22);
-> concrete values are the main session's recommendation, reviewed in the HC3 QA of this round."
+> **Acceptance note.** Accepted by the human's explicit direction at HC3 (2026-11-22);
+> concrete values are the main session's recommendation, reviewed in the HC3 QA of this round.
+> The human accepted it in the session on 2026-11-22 (option "Aceptar ADR-0014"), including the two
+> departures from the brief: no per-country tint in the page gradient, and the reversal of the HC1
+> answer to US-04-Q-05 ("no input mask").
 
 ## Context and Problem Statement
 
