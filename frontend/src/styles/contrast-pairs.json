@@ -221,5 +221,25 @@
     ],
     "min": 3,
     "ac": "US-04-AC-02"
+  },
+  {
+    "id": "plan-radio-ring",
+    "fg": "--component-plan-radio-border",
+    "bg": [
+      "--color-surface",
+      "--gradient-plan-recommended"
+    ],
+    "min": 3,
+    "ac": "US-04-AC-02"
+  },
+  {
+    "id": "plan-radio-dot",
+    "fg": "--component-plan-radio-dot",
+    "bg": [
+      "--color-surface",
+      "--gradient-plan-recommended"
+    ],
+    "min": 3,
+    "ac": "US-04-AC-02"
   }
 ]

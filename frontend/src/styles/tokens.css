@@ -210,6 +210,8 @@
   --component-plan-recommended-muted: var(--primitive-violet-200);
   --component-plan-recommended-check: var(--primitive-green-300);
   --component-plan-recommended-border: var(--color-brand);
+  --component-plan-radio-border: var(--primitive-violet-200);
+  --component-plan-radio-dot: var(--primitive-white);
   --component-badge-bg: var(--primitive-violet-300);
   --component-badge-text: var(--primitive-ink-950);
   --component-option-active-bg: var(--color-surface-hover);
