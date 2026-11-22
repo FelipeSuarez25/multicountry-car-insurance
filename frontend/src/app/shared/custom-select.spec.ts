@@ -508,7 +508,6 @@ describe('US-04 custom select (component tests through the real routes)', () => 
       expect(await press(ciudad, 'a', { ctrl: true }), 'Ctrl+A closed').toBe(false);
       await openCombobox(ciudad);
       expect(await press(ciudad, 'a', { ctrl: true }), 'Ctrl+A open').toBe(false);
-      ciudad.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', metaKey: true, bubbles: true, cancelable: true }));
       const meta = new KeyboardEvent('keydown', { key: 'a', metaKey: true, bubbles: true, cancelable: true });
       ciudad.dispatchEvent(meta);
       expect(meta.defaultPrevented, 'Cmd+A').toBe(false);
