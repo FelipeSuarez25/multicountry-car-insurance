@@ -1256,7 +1256,8 @@ describe('US-03 step 3 page: the summary and the payment (component tests throug
 
     it('US-03-AC-16 the keyboard order is "Editar mis datos", "Cambiar plan", the terms region, "Acepto los términos y condiciones", the simulation group, "Pagar"', async () => {
       await openCo();
-      expect(tabStops(app.root)).toEqual(['Editar mis datos', 'Cambiar plan', 'terms region', 'checkbox', 'simulation group', 'Pagar']);
+      // US-04-AC-28: two links now lead the page, the country chip and the back link
+      expect(tabStops(app.root)).toEqual(['Cambiar país (actual: Colombia)', 'Volver a planes', 'Editar mis datos', 'Cambiar plan', 'terms region', 'checkbox', 'simulation group', 'Pagar']);
     });
 
     it('US-03-AC-17 "Tus datos", "Tu vehículo", "Plan elegido" and "Términos y condiciones" are headings of level 2, and the title of the page is the only level 1', async () => {

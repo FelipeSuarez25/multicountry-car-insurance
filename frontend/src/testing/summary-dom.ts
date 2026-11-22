@@ -102,6 +102,7 @@ export function tabStops(root: ParentNode): string[] {
     else if (el instanceof HTMLInputElement && el.type === 'checkbox') name = 'checkbox';
     else if (el.getAttribute('role') === 'region') name = 'terms region';
     else if (el.tagName === 'BUTTON') name = normalise(el.textContent);
+    else if (el.tagName === 'A') name = normalise(el.getAttribute('aria-label') ?? el.textContent); // a link is named, never collapsed to 'a' (US-04-AC-28)
     else name = el.tagName.toLowerCase();
     if (stops[stops.length - 1] !== name) stops.push(name);
   }
