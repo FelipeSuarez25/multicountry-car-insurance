@@ -4,10 +4,10 @@
 |---|---|
 | Story | [story.md](story.md) (English translation of the human's request, not edited; the human confirms the translation at HC1) |
 | Status | Approved |
-| Version | 0.2 |
+| Version | 0.3 |
 | Author | spec-writer subagent (Claude Opus 5.5) |
-| Approved by | v0.1: Felipe Sabogal, 2026-11-21 (HC1 round 1). v0.2: applies the ADR-driven adjustments 1–14 and the week-start decision that the human approved at that same HC1 (§13); the further alignments with the accepted ADR-0010..0013 listed in the v0.2 row of §13 are for the human to confirm. |
-| Related ADRs | [ADR-0001](../../adr/0001-multi-country-content-strategy.md) (amended by ADR-0006 and [ADR-0011](../../adr/0011-country-visuals-amends-adr-0001.md)), [ADR-0003](../../adr/0003-wizard-state-persistence.md) (stored values unchanged), [ADR-0004](../../adr/0004-forms-library.md) (amended by [ADR-0012](../../adr/0012-accessible-select-and-date-picker.md)), [ADR-0009](../../adr/0009-terms-rich-text-rendering.md) (heading hierarchy), [ADR-0010](../../adr/0010-design-tokens-and-visual-language.md) (tokens and visual language), ADR-0011 (country visuals), ADR-0012 (select and date picker, lazy step 1), [ADR-0013](../../adr/0013-motion-and-reduced-motion.md) (motion and reduced motion). All Accepted; none needed (§10). |
+| Approved by | v0.1: Felipe Sabogal, 2026-11-21 (HC1 round 1). v0.2: applies the ADR-driven adjustments 1–14 and the week-start decision that the human approved at that same HC1 (§13); the further alignments with the accepted ADR-0010..0013 listed in the v0.2 row of §13 are for the human to confirm. v0.3: changes **directed by the human at HC3 round 1** (2026-11-22, CLAUDE.md §1): BR-17..BR-21, AC-24..AC-29 and the amendments in the v0.3 row of §13. The concrete values (sizes, profiles, max lengths, copy) are the main session's recommendation ("como lo recomiendes"); the human reviews them in the HC3 QA of this round. Status stays `Approved`. |
+| Related ADRs | [ADR-0001](../../adr/0001-multi-country-content-strategy.md) (amended by ADR-0006 and [ADR-0011](../../adr/0011-country-visuals-amends-adr-0001.md)), [ADR-0003](../../adr/0003-wizard-state-persistence.md) (stored values unchanged), [ADR-0004](../../adr/0004-forms-library.md) (amended by [ADR-0012](../../adr/0012-accessible-select-and-date-picker.md)), [ADR-0009](../../adr/0009-terms-rich-text-rendering.md) (heading hierarchy), [ADR-0010](../../adr/0010-design-tokens-and-visual-language.md) (tokens and visual language), ADR-0011 (country visuals), ADR-0012 (select and date picker, lazy step 1), [ADR-0013](../../adr/0013-motion-and-reduced-motion.md) (motion and reduced motion). All Accepted. **v0.3:** ADR-0014 "Input profiles, typed-date mask and anchored calendar; page background" (amends ADR-0012 and ADR-0010) is needed, written by the architect in parallel (§10). |
 
 Sources cited in this spec:
 
@@ -32,6 +32,14 @@ transitions, skeletons and micro-animations that all honour `prefers-reduced-mot
 mobile-first responsive layout with 44 × 44 px targets, and self-hosted typography. Behaviour,
 validation, stored values, routes and the Strapi contracts do not change; the existing tests keep
 passing with the same strength, adapted only where a native element is replaced (§11.1).
+
+**v0.3 (HC3 round 1, directed by the human):** the calendar opens compact and directly below the
+date field on wide screens; the date box formats as typed (dd/mm/aaaa) and shows a clear message for
+a date that is not valid; every text and number field filters the characters it accepts and has a
+maximum length (with three Strapi seed content changes); the page background is lighter with a
+gradient on every page; every wizard step has a back link and the header country chip links to the
+country chooser; the chooser gets the app header, a lead text and a "Cómo funciona" list. These
+change some behaviour on purpose; BR-07 lists the exceptions.
 
 ## 2. Scope
 
@@ -60,17 +68,29 @@ passing with the same strength, adapted only where a native element is replaced 
 - `prefers-reduced-motion`, responsive layout at 360 × 740, 768 × 1024 and 1280 × 800.
 - Adapting existing tests where a native element is replaced, as listed in §11.1, and new tests.
 - After screenshots in `docs/qa/US-04/after/` (US-04-Q-19).
+- **v0.3 (HC3 round 1):** compact calendar anchored below the date field on wide screens (BR-17);
+  typed-date mask and the code-owned invalid-date message (BR-18); input profiles by field key
+  (allowed characters, `maxlength`, keyboard hints) and three Strapi **seed content** changes, no
+  schema change (BR-19, §7.1); lighter gradient page background on every page and a richer country
+  chooser with the app header (BR-20); back links on the wizard steps and the header country chip as
+  a link to the chooser (BR-21); refreshed after screenshots (BR-15).
 
 **Out of scope**
 
-- Any change to route addresses (step 1 only becomes lazy-loaded, above), guards, the wizard state, validation rules or messages, prices, masking,
+- ~~Any change to route addresses (step 1 only becomes lazy-loaded, above), guards, the wizard state, validation rules or messages, prices, masking,
   payment simulation, or the Strapi schema, seed, permissions and proxy (story: "Logic, the
-  contracts with Strapi and the texts that come from Strapi do not change").
+  contracts with Strapi and the texts that come from Strapi do not change").~~ **v0.3:** any change
+  to route addresses (step 1 only becomes lazy-loaded, above), guards, the wizard state shape,
+  prices, masking, payment simulation, or the Strapi schema, permissions and proxy. Validation rules,
+  messages and the seed change only as BR-18 and BR-19 say (human decision at HC3 round 1).
 - Rewriting help texts, placeholders or error messages that come from Strapi (US-04-Q-07).
 - A light theme or a theme switch (US-04-Q-01; ADR-0010: dark only).
-- An in-wizard country switcher (US-01-Q-02 stands).
+- An in-wizard country switcher (US-01-Q-02 stands). **v0.3:** changing country goes through the
+  country chooser (`/`), reached by the "Cambiar país" back link and the header chip link (BR-21);
+  no switcher widget inside the wizard.
 - Changing the native `number`, `text`, `checkbox` and `radio` controls into custom widgets; they
-  are restyled only.
+  are restyled only. **v0.3:** `number` fields render as `<input type="text" inputmode="numeric">`
+  (BR-19); still a native text box, not a custom widget.
 - Logos, names, slogans or texts of any real insurer or company; a brand name for the product.
 - Adoption of the third-party design skills `ui-ux-pro-max`, `impeccable`, `frontend-design`: they
   are evaluated separately (task US-04-T-01; per `tasks.md` *Gate history*, the first two were
@@ -96,6 +116,10 @@ Terms of the US-01..US-03 glossaries keep their meaning.
 | Panel | The popup of a custom select or the calendar: an anchored popover on wide screens, a bottom sheet below `--breakpoint-sheet` (37.5em, 600 CSS px; US-04-Q-13, ADR-0010 §6). |
 | Wizard header | New top bar on the wizard pages with the product name and the country chip (flag + country name). |
 | Step indicator | New progress display of the three wizard steps (US-04-Q-17). |
+| Input profile | (v0.3) The front-end presentation and behaviour entry for a field, chosen by field `key` (by type for an unmapped `number` field): allowed characters, letter case, fallback maximum length and keyboard hints (`inputmode`, `autocomplete`, `autocapitalize`). It filters what can be typed or pasted; it never replaces the Strapi validation rules (BR-19, §7.2). |
+| Date mask | (v0.3) The typing behaviour of the date text box: digits only, `/` inserted after the day and the month (BR-18). |
+| Back link | (v0.3) The "Volver…"/"Cambiar país" link above the `h1` of a wizard step (BR-21). |
+| Country chip link | (v0.3) The header country chip (flag + country name) as a link to the country chooser (BR-21). |
 
 ## 4. Business rules
 
@@ -106,17 +130,22 @@ Terms of the US-01..US-03 glossaries keep their meaning.
 | US-04-BR-03 | "Flags of Colombia and Chile in SVG (a licensed library or our own optimized SVGs), visible in the country selector/context and in the wizard header. A per-country accent color through tokens. The flag is decorative next to the country name (`aria-hidden`), never the only indicator." | The country chooser links and the wizard header show the flag SVG of the country next to its Strapi `name`. The flag is `aria-hidden="true"`, has no text content and is not focusable; the link's accessible name stays the country name ("Colombia", "Chile"). The country accent token takes the current country's value on the wizard pages; a published country with no flag or accent in the front end shows a neutral globe icon and the brand accent (US-04-Q-02). Mechanism: the presentation-only map `frontend/src/app/shared/country-visuals.ts` keyed by ISO code, returning a flag component and an accent key, never a colour (ADR-0011, which amends ADR-0001). Quoted country codes appear in production `.ts`/`.html` only in that file, and `data-country-accent` selectors only in `tokens.css`; a static guard enforces it, replacing ADR-0001's review grep (ADR-0011 *Confirmation*). No behaviour, validation, routing, guard, price, copy or request reads the map. | US-04-AC-03 |
 | US-04-BR-04 | "Icons: a single library with SVG icons imported individually … inside the inputs (document, name, date, city, plate, make, model, year), in the wizard steps, in the plans, in help, error and success messages. The input icon comes from a front-end mapping by field key, with a generic default icon for new fields … Decorative icons `aria-hidden`; icons that carry meaning have a label." | One icon library, icons imported one by one (no full-set import, no icon font, no runtime fetch): `@lucide/angular` 1.77.0, ISC (US-04-Q-09, ADR-0010 §7). Step 1: every `text`, `number`, `select` and `date` field shows the icon mapped from its `key` (§7.2), or the default icon for any other key; `checkbox` fields show none. Icons in steps, plan lists (check-circle), help, error and success messages. Every icon that sits next to text saying the same thing is decorative: `aria-hidden="true"`, not focusable, no `<title>` and no text content, so no accessible name or `textContent` of a control changes. An icon without adjacent text (an icon-only button) has an accessible name from §8.1. | US-04-AC-04, US-04-AC-20 |
 | US-04-BR-05 | "Select: our own dropdown in the design system's style, with an icon, search when the list is long (e.g. cities, makes), and the selected option marked." "Built on accessible primitives, not from scratch … Full accessibility per the WAI-ARIA patterns (combobox/listbox …): arrows, Enter, Escape, Home/End … screen-reader announcements." | Every `select` field renders a custom select following the WAI-ARIA combobox pattern with a listbox popup (select-only below the search threshold, editable with list filtering at or above it, US-04-Q-11). The element that takes focus is the element the field's `<label for>` points at (a `<button>` for a select-only, an `<input type="text">` for a searchable select, ADR-0012 §3, so `label.control`, `getByLabel` and `labels[0]` keep working) and carries `role="combobox"`, `aria-expanded`, `aria-required`, `aria-invalid` and `aria-describedby` as the native control did, plus `aria-controls` referring to the listbox **while the list is rendered** (`@angular/aria` omits it while collapsed, at least before the first open; ADR-0012 *Consequences*; checked with a screen reader at HC3). Empty, the prompt "Selecciona una opción" is its shown value: the button's text for a select-only, the placeholder for a searchable select (whose input value is then `''`). The prompt is not an option (supersedes the "first entry is a non-selectable prompt" wording of US-01-BR-02, US-04-Q-04). The listbox contains exactly the configured options in `sortOrder`; the selected option is marked visually (check icon + style) and with `aria-selected="true"`. Choosing an option stores its `value` (unchanged). Keyboard per US-04-AC-06; built on `@angular/aria` 22.3.0 and `@angular/cdk` 22.3.0 (US-04-Q-04, ADR-0012). | US-04-AC-05, US-04-AC-06, US-04-AC-07, US-04-AC-12 |
-| US-04-BR-06 | "Calendar (birth date): our own date picker with month navigation and fast year navigation (a year selector …), days disabled according to the rules (minAge), and the date can also be typed by hand." Same accessibility clause as BR-05: "date picker dialog … focus trapped and returned on close". | Every `date` field renders a text box (the labelled control) and an "Elegir fecha" button that opens the calendar (WAI-ARIA date picker dialog). Typed entry: format dd/mm/aaaa for every country, independent of the browser locale, parsed and stored as ISO `YYYY-MM-DD` (US-04-Q-05). Text that is not a complete, existing date is treated exactly like the former `validity.badInput` (US-01-BR-01, US-01-AC-09 note): stored `''`, text kept visible, field invalid whether required or optional, same message resolution. Calendar: month navigation, year selector, keyboard per US-04-AC-09, a CDK modal dialog (ADR-0012 §4) with focus trapped while open, a backdrop, the page behind hidden from assistive technology (`aria-hidden="true"`), and focus returned to "Elegir fecha" on close. The first day of the week (grid column order and the week bounds of Home/End) follows the country's locale (`localeTag`) from CLDR week data: Sunday for es-CO, Monday for es-CL. It is derived from the locale at runtime, with no country code or per-country table in the date picker (human decision at HC1, 2026-11-21). A day is disabled if and only if the shared validator of the field (the same pure function used for validation, no second implementation) rejects that date for a reason other than "required" (with the seed's `minAge` 18: every day after the 18th anniversary limit and every future day). Disabled days can still be typed; typing one shows the configured message (validation unchanged). | US-04-AC-08, US-04-AC-09, US-04-AC-10, US-04-AC-12 |
-| US-04-BR-07 | "Validations and the stored value do not change." "Logic, the contracts with Strapi and the texts that come from Strapi do not change; it is a visual change. The existing e2e tests must keep passing without being loosened; if a selector changes, it is adjusted using accessible roles/labels, not CSS classes." | For the same user input, the editing model, the `quote-wizard` entry, the typed step 1 output, the error shown, the focus target on a failed "Continuar", the routes, the prices, the summary and the payment behave exactly as before US-04. No file under `backend/` changes. Every existing unit, component and e2e test passes; a test changes only as listed in §11.1, where each change keeps or raises the assertion's strength and finds elements by role, label or visible text (never by class or id). | US-04-AC-11 |
+| US-04-BR-06 | "Calendar (birth date): our own date picker with month navigation and fast year navigation (a year selector …), days disabled according to the rules (minAge), and the date can also be typed by hand." Same accessibility clause as BR-05: "date picker dialog … focus trapped and returned on close". | Every `date` field renders a text box (the labelled control) and an "Elegir fecha" button that opens the calendar (WAI-ARIA date picker dialog). Typed entry: format dd/mm/aaaa for every country, independent of the browser locale, parsed and stored as ISO `YYYY-MM-DD` (US-04-Q-05). Text that is not a complete, existing date is treated exactly like the former `validity.badInput` (US-01-BR-01, US-01-AC-09 note): stored `''`, text kept visible, field invalid whether required or optional, same message resolution. Calendar: month navigation, year selector, keyboard per US-04-AC-09, a CDK modal dialog (ADR-0012 §4) with focus trapped while open, a backdrop, the page behind hidden from assistive technology (`aria-hidden="true"`), and focus returned to "Elegir fecha" on close. The first day of the week (grid column order and the week bounds of Home/End) follows the country's locale (`localeTag`) from CLDR week data: Sunday for es-CO, Monday for es-CL. It is derived from the locale at runtime, with no country code or per-country table in the date picker (human decision at HC1, 2026-11-21). A day is disabled if and only if the shared validator of the field (the same pure function used for validation, no second implementation) rejects that date for a reason other than "required" (with the seed's `minAge` 18: every day after the 18th anniversary limit and every future day). Disabled days can still be typed; typing one shows the configured message (validation unchanged). **v0.3 (HC3):** the typed entry gets a mask and text that is not a complete, existing date shows the code-owned message "Fecha no válida. Usa el formato dd/mm/aaaa." instead of the former `badInput` message resolution (BR-18 supersedes the "same message resolution" clause above; stored `''` unchanged). On wide screens the calendar is a compact popover directly below the date text box (BR-17). | US-04-AC-08, US-04-AC-09, US-04-AC-10, US-04-AC-12, US-04-AC-24, US-04-AC-25 |
+| US-04-BR-07 | "Validations and the stored value do not change." "Logic, the contracts with Strapi and the texts that come from Strapi do not change; it is a visual change. The existing e2e tests must keep passing without being loosened; if a selector changes, it is adjusted using accessible roles/labels, not CSS classes." | For the same user input, the editing model, the `quote-wizard` entry, the typed step 1 output, the error shown, the focus target on a failed "Continuar", the routes, the prices, the summary and the payment behave exactly as before US-04. No file under `backend/` changes. Every existing unit, component and e2e test passes; a test changes only as listed in §11.1, where each change keeps or raises the assertion's strength and finds elements by role, label or visible text (never by class or id). **v0.3 HC3 exception (human decision at HC3 round 1, 2026-11-22; CLAUDE.md §1):** "behaviour unchanged" does not apply to exactly these points, and to nothing else: (a) the date mask and the invalid-date message (BR-18); (b) characters outside a field's input profile are not entered, text fields get `maxlength`, `number` fields become `type="text"` text boxes (BR-19); (c) the Strapi seed content changes of §7.1 (fullName `pattern` rule and `errorMessage`, `maxLength` rules), so `backend/src/seed/form-fields.ts` is the only `backend/` file that changes (plus any backend test of it); (d) the back links and the country chip link, two new Tab stops at the top of each wizard step (BR-21); (e) the chooser header and copy (BR-20). For the same accepted input, the stored values, routes, prices, summary and payment stay as before (AC-11 first scenario unchanged). | US-04-AC-11 |
 | US-04-BR-08 | "Supporting text: clear microcopy in help texts, placeholders, empty states and errors … Business content keeps coming from Strapi; only interface texts live in the front end." | Front-end copy added by US-04 is exactly §8.1 (Spanish, same for both countries). Existing code-owned strings (US-01..US-03 §8.1) and every Strapi text stay unchanged (US-04-Q-07). Day and month names come from `Intl` with the country's `localeTag`, not from literals. | US-04-AC-07, US-04-AC-09, US-04-AC-11, US-04-AC-13 |
 | US-04-BR-09 | "Interactions and animation: an animated wizard step indicator, transition between steps, hover/focus/active/disabled states, validation with soft feedback, skeletons while Strapi loads, plan selection with interactive cards, and a summary with micro-animations." | Step indicator per US-04-Q-17 (not focusable, current step exposed with `aria-current="step"`). Step change: enter-only transition of the arriving page (no two pages in the DOM at once), focus on the arriving `h1` as today (US-04-Q-14). Every interactive control has distinct hover, focus-visible, active and disabled (including `aria-disabled`) styles. Soft feedback: an error appears with a short fade and its icon, no shaking, no colour-only signal. Skeletons replace the loading text visually on step 1, step 2, the terms region and the country list, while the existing loading text stays in its live region (US-04-Q-15). Plan cards: a pointer click anywhere on a card chooses its plan; the native radio stays the keyboard and accessibility control. Summary and confirmation micro-animations per US-04-Q-16. Mechanism: Angular native `animate.enter` and CSS on the duration and easing tokens, no animation library, no `animate.leave` on pages (ADR-0013). Movement uses `transform` and `opacity` only; state changes may transition paint-only properties (colours, border colour, shadow); the 2 px card lift on hover applies only under `(hover: hover)`. | US-04-AC-13, US-04-AC-14, US-04-AC-15, US-04-AC-16, US-04-AC-23 |
 | US-04-BR-10 | "Everything honors `prefers-reduced-motion`: no movement if the user asks for it." | With `prefers-reduced-motion: reduce`, every CSS animation and transition and every Angular enter/leave animation has a computed duration of 0 s (or none), `document.getAnimations()` is empty, and no element changes position, size or rotation over time (skeleton shimmer, step transition, panel slide, indicator fill, spinner, micro-animations all off). States still change instantly. By construction (ADR-0013 §3): outside `tokens.css` every `animation*`/`transition*` declaration sits inside `@media (prefers-reduced-motion: no-preference)`; `tokens.css` sets every `--duration-*` and `--delay-*` to `0ms` under `reduce`; every CDK overlay and dialog is created with `disableAnimations: true`. A static guard checks the three. | US-04-AC-17 |
 | US-04-BR-11 | "Responsive, mobile-first: … at least 360×740, 768×1024 and 1280×800, with no horizontal scroll, touch targets of at least 44×44 px, and a layout that reorganizes (for example, plans in a column on mobile and in a grid on desktop)." | At each of the three viewports, on every page and with a select panel or the calendar open: `document.documentElement.scrollWidth ≤ window.innerWidth`; every interactive element (link, button, combobox, text box, option, calendar day, and for a native checkbox or radio the box of the input together with its `<label>`) has a hit box of at least 44 × 44 CSS px. Styles are written mobile-first (base styles for the narrowest width, `min-width` queries upward). Plans: one column at 360 px, at least two columns at 1280 px. This raises the 24 × 24 px of US-01-AC-26, US-02-AC-18 and US-03-AC-18 to 44 × 44 (US-04-Q-18). On a phone, a searchable select's bottom sheet fits above the on-screen keyboard: the search input, the active option and at least one option row stay visible while the keyboard is up (manual HC3 phone check, AC-12 note; ADR-0012 *Spec impact* 5). | US-04-AC-12, US-04-AC-18 |
 | US-04-BR-12 | "Typography: at most 2 families, loaded efficiently." | At most two `@font-face` families (Archivo and Atkinson Hyperlegible Next, ADR-0010 §5, US-04-Q-08). Each family is **one variable WOFF2 file** (latin subset), self-hosted on the app origin (`/fonts/…`), `font-display: swap`; "at most the weights the type scale uses" means each `@font-face` `font-weight` descriptor is limited to the range the scale uses (Archivo `700 800`, Atkinson Hyperlegible Next `400 700`), not one file per weight. `font-family` declarations name at most those two families plus a system fallback stack (`system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif`) of **local** fonts that are never downloaded; the fallback names are not counted as families. No request to a third-party origin at runtime for fonts, icons, flags or styles. | US-04-AC-19 |
-| US-04-BR-13 | "Accessibility: visible focus everywhere, tab order intact, AA contrast, heading hierarchy per ADR-0009." | Every focusable element shows a focus indicator drawn on the focused element itself (outline or box-shadow, ≥ 3:1 against adjacent colours). The Tab order of every page is the one of US-01-AC-24, US-02-AC-16 and US-03-AC-16, plus only the "Elegir fecha" button after each date text box; the wizard header and the step indicator add no Tab stop. Each page keeps exactly one `h1` (the step heading), the existing `h2`/`h3` levels and the ADR-0009 terms levels; visual size comes from tokens and never changes a heading level; header, indicator, panels and calendar add no heading element. | US-04-AC-06, US-04-AC-09, US-04-AC-20 |
+| US-04-BR-13 | "Accessibility: visible focus everywhere, tab order intact, AA contrast, heading hierarchy per ADR-0009." | Every focusable element shows a focus indicator drawn on the focused element itself (outline or box-shadow, ≥ 3:1 against adjacent colours). The Tab order of every page is the one of US-01-AC-24, US-02-AC-16 and US-03-AC-16, plus only the "Elegir fecha" button after each date text box; ~~the wizard header and the step indicator add no Tab stop~~ **v0.3:** the step indicator adds no Tab stop; on each wizard step the country chip link (header) and then the back link (BR-21) are the first two Tab stops, before the content; the order after the `h1` is unchanged. Each page keeps exactly one `h1` (the step heading), the existing `h2`/`h3` levels and the ADR-0009 terms levels; visual size comes from tokens and never changes a heading level; header, indicator, panels and calendar add no heading element. | US-04-AC-06, US-04-AC-09, US-04-AC-20, US-04-AC-28 |
 | US-04-BR-14 | "Exact versions of any new dependency, license reviewed." | Every new dependency is added with `npm install -E`, has an exact version in `frontend/package.json`, is listed in the relevant ADR with its version, license and justification, and its license is permissive (MIT, ISC, Apache-2.0, BSD, OFL-1.1 for fonts) unless the human accepts another. Accepted additions: `@lucide/angular` 1.77.0 (ISC), `@fontsource-variable/archivo` 5.3.0 (OFL-1.1), `@fontsource-variable/atkinson-hyperlegible-next` 5.3.0 (OFL-1.1) (ADR-0010); `@angular/cdk` 22.3.0 (MIT), `@angular/aria` 22.3.0 (MIT) (ADR-0012). No animation library (ADR-0013). | US-04-AC-21 |
 | US-04-BR-15 | "Evidence in `docs/qa/US-04/`: before/after screenshots of CO and CL at the three sizes, for every wizard step, including the select and the calendar open." | `docs/qa/US-04/after/` holds the same file set as `before/` (same names) plus the country chooser, the select panel open and the calendar open, for CO and CL at the three sizes (US-04-Q-19). | US-04-AC-22 |
 | US-04-BR-16 | "Do not copy brands, logos, names or texts of any real insurer." | No logo, brand name, slogan, illustration or text of any real company appears in the code, assets or screenshots; the reference screenshots are not stored. The header shows only the existing generic product name "Cotizador de seguro de auto". | US-04-AC-23 |
+| US-04-BR-17 | (HC3 round 1, human, 2026-11-22) "mira como se ve el calendario, deberia desplegarlo ahi abajo" (screenshot: on a wide screen the calendar opens above the field, covers the header, day cells ~80 px). | From `--breakpoint-sheet` (600 CSS px) up, the calendar dialog is a popover **directly below the date text box**: its top edge is 0–16 CSS px below the text box's bottom edge and its left edge within 8 CSS px of the text box's left edge (shifted left only as far as needed to stay inside the viewport). Before it opens, if the space between the text box's bottom and the viewport bottom is smaller than the popover's height, the page scrolls so that the date field sits just below the sticky wizard header, and the popover then opens below it. It opens **above** only as the last fallback, when the viewport height minus the header height is smaller than the text box height plus the popover height. The popover never overlaps the sticky wizard header and lies entirely inside the viewport. **Compact:** width ≤ 22rem (352 CSS px); day cells 44–48 CSS px wide and tall (the 44 × 44 minimum of BR-11, not larger); month/year header, "Elegir año", "Mes anterior", "Mes siguiente" and "Cerrar" sized to match (each ≥ 44 × 44); total height target ≤ 26rem (416 CSS px), limit 28rem (448 CSS px), with six week rows shown. Below `--breakpoint-sheet` the bottom sheet of AC-12 is unchanged. Modal dialog, keyboard, focus trap, focus return and ARIA are unchanged (AC-09). Mechanism per ADR-0014. | US-04-AC-24 |
+| US-04-BR-18 | (HC3 round 1) "si escribo la fecha mira que no me deja" (screenshot: "29/20/2001" typed, message "Ingresa tu fecha de nacimiento."). | **Mask.** The date text box accepts digits as typed; any other typed character is dropped, except a separator (`/`, `-`, `.`): typed after a one-digit day or month it pads that group with a leading zero and shows `/` ("5/" → "05/"); typed right after a complete two-digit day or month it shows `/` once; anywhere else it is dropped. A `/` is inserted automatically between the day and the month and between the month and the year as soon as the next digit is typed ("150" → "15/0"; `15051990` → "15/05/1990"). At most 8 digits (`maxlength` 10). Backspace removes the character before the caret; a separator left with no digit after it goes with the digit before it ("15/05/1990" + End + 4 × Backspace → "15/05"). `inputmode="numeric"`; placeholder "dd/mm/aaaa" and hint kept. **Paste:** text that the existing typed-date parser accepts (US-04-Q-05: `d/m/yyyy` with `/`, `-` or `.`, or `ddmmyyyy`) is shown as dd/mm/aaaa ("15.05.1990" → "15/05/1990", "5/5/1990" → "05/05/1990"); other pasted text goes through the mask digit by digit. **Stored value** unchanged: ISO `YYYY-MM-DD` for a complete, existing date, else `''` (ADR-0003, ADR-0004). A complete valid date typed by hand is accepted and stored exactly as the same date chosen in the calendar. **Message.** On a field whose text is not empty but is not a complete, existing date (incomplete, such as "15/05/199" or "15/05"; impossible, such as "29/20/2001", "31/02/1990", "29/02/2001"), the error is the code-owned "Fecha no válida. Usa el formato dd/mm/aaaa.", for required **and** optional date fields (US-04-Q-24), replacing the former `badInput` message resolution (US-01-AC-09 note) for dates. An empty required field keeps `requiredMessage` ?? `errorMessage` ("Ingresa tu fecha de nacimiento."); a real date that fails a rule keeps the rule's message ("Debes ser mayor de edad (18 años o más) para cotizar."). Error timing (after leaving the field or a submit attempt) and focus on a failed "Continuar" unchanged. | US-04-AC-25, US-04-AC-08 |
+| US-04-BR-19 | (HC3 round 1) "valida los inputs si son de type text, number, etcc, porque en nombre me deja escribir numero y con un maximo de caractes en cada input como lo recomiendes". | Each `text` and `number` field of step 1 takes an **input profile** from the front-end map of §7.2, by field `key`; an unmapped `number` field takes the "digits" profile; any other unmapped field has no character filter. Characters outside the profile are dropped as they are typed or pasted; the rest of the text is kept and the caret stays after the last kept character of the edit. Letter case is applied as typed where the profile says so (plate: upper case, shown and stored). The `maxlength` attribute of every `text` field is the value of its Strapi `maxLength` rule when present (so it works for new Strapi fields), else the profile's maximum, else none. `number` fields render as `<input type="text" inputmode="numeric">` (role textbox, no longer spinbutton) so the filter and `maxlength` work; the model keeps the string (ADR-0004). The filter applies to what the person types or pastes, not to values hydrated from the wizard state, which are shown as stored and validated as before (US-04-Q-26). Validation stays in the shared core with the Strapi rules as the source of truth; the filter adds no validation message. **Strapi seed content** (no schema change, contract v1 unchanged, §7.1): `fullName` (CO, CL) gains a `pattern` rule for letters, space, `'`, `.`, `-` (US-04-Q-27) and its `errorMessage` becomes "Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres)."; `documentNumber` gains `maxLength` 10 (CO) and 12 (CL, RUT); `plate` gains `maxLength` 6 (CO, CL). Mechanism per ADR-0014. | US-04-AC-26 |
+| US-04-BR-20 | (HC3 round 1) "El fondo si puedes hacerlo un poco mas claro y con degradado quedaria bien." "[the country chooser] esta muy simple visualmente, puedes agregarle como un texto de más un header, y lo mismo del bg para todas." | **Background.** The page background is one semantic gradient token `--gradient-page` with `--color-bg` as the solid fallback, applied to `body` on every page (country chooser, wizard steps, confirmation, unknown country). Its lightest stop is lighter (higher relative luminance) than the v0.2 background `--primitive-ink-950`, and no stop is darker than it; a violet tint near the top fades into the dark base (the country accent may tint it lightly on wizard pages). Every text and UI pair of AC-02 holds at **every** stop of `--gradient-page`, the lightest included, in `contrast-pairs.json`; input and interactive card borders keep ≥ 3:1 against every stop (surface tokens adjusted if needed, through tokens only, BR-01). The dotted texture may stay if those ratios hold with it composited. **Chooser.** The country chooser shows the app header (product name "Cotizador de seguro de auto", no country chip, no step indicator, no focusable element); then the `h1` "Elige tu país" (unchanged), the lead paragraph, the country links, and an `h2` "Cómo funciona" with an ordered list of the three steps, each with the step indicator's icon for that step (`aria-hidden`), the step name and a one-line description (§8.1; order on the page per US-04-Q-25). Country links are larger cards with the flag, the country name and a chevron (both icons `aria-hidden`), the country accent on hover and focus; their accessible names stay exactly the country names (AC-03). All new text is code-owned (§8.1); no Strapi content changes for this. CLAUDE.md §5 ("no extra sections the spec does not ask for") is satisfied because this spec now asks for exactly these. | US-04-AC-27, US-04-AC-29, US-04-AC-02 |
+| US-04-BR-21 | (HC3 round 1) "tambien agregarle flechas para regresar a un modulo anterior o si quiere cambiar quizas de colombia a chile." | **Back links.** Each wizard step shows, below the step indicator and above the `h1`, a link (`<a routerLink>`, not a button) with a left-arrow icon (Lucide `ArrowLeft`, `aria-hidden`), a 44 × 44 CSS px hit box and a visible focus indicator: step 1 "Cambiar país" → `/`; step 2 "Volver a tus datos" → `/<cc>/datos` (entered values kept, as with "Atrás" today); step 3 "Volver a planes" → `/<cc>/planes` (chosen plan kept). No back link on the payment confirmation, on the unknown-country page, on the chooser, or while the country list cannot be loaded. The existing "Atrás", "Editar mis datos" and "Cambiar plan" buttons stay. Arrival focus and title follow the existing rules of the target page. **Country chip link.** The header country chip becomes a link to `/` with the accessible name "Cambiar país (actual: {country name from Strapi})", for example "Cambiar país (actual: Colombia)"; the visible country name stays (a visible "Cambiar país" hint on wide screens is optional); the flag stays decorative. It is shown wherever the wizard header is shown for a resolved country (the three steps and the confirmation). **Change of country.** Choosing a different country on the chooser discards the other country's stored data (the existing US-01 `enterCountry` rule); choosing the same country keeps it; no confirmation dialog. **Header layout.** At every viewport the header content (product name and chip) lies inside `--size-content-max` and its padding; the chip is never clipped (its box lies inside the viewport). | US-04-AC-28, US-04-AC-13 |
 
 ## 5. Acceptance criteria
 
@@ -168,6 +197,8 @@ from `tokens.css`, so the test reads it rather than guessing. Display headings m
 they are large text (BR-02); with ADR-0010's values every stop also passes 4.5:1. "Interactive
 card" means a plan card (a pointer target); the decorative hairline of non-interactive panels
 (summary sections, `--color-border-subtle`) has no row, as WCAG 1.4.11 allows (BR-02).
+**v0.3:** "page background" means every stop of `--gradient-page`, the lightest included (BR-20,
+AC-27); the pair list is regenerated from the new tokens.
 
 ### US-04-AC-03 — Flags and country context (derived from US-04-BR-03 / Q-02, Q-10)
 
@@ -333,10 +364,10 @@ Scenario Outline: Typed date
     | es-CO  | 15.05.1990   | 15/05/1990   | 1990-05-15 | no error |
     | es-CO  | 15051990     | 15/05/1990   | 1990-05-15 | no error |
     | es-CO  | 29/02/2000   | 29/02/2000   | 2000-02-29 | no error |
-    | es-CO  | 29/02/2001   | 29/02/2001   |            | "Ingresa tu fecha de nacimiento." |
-    | es-CO  | 31/04/1990   | 31/04/1990   |            | "Ingresa tu fecha de nacimiento." |
-    | es-CO  | 15/05/199    | 15/05/199    |            | "Ingresa tu fecha de nacimiento." |
-    | es-CO  | 15/05/90     | 15/05/90     |            | "Ingresa tu fecha de nacimiento." |
+    | es-CO  | 29/02/2001   | 29/02/2001   |            | ~~"Ingresa tu fecha de nacimiento."~~ "Fecha no válida. Usa el formato dd/mm/aaaa." (v0.3) |
+    | es-CO  | 31/04/1990   | 31/04/1990   |            | ~~"Ingresa tu fecha de nacimiento."~~ "Fecha no válida. Usa el formato dd/mm/aaaa." (v0.3) |
+    | es-CO  | 15/05/199    | 15/05/199    |            | ~~"Ingresa tu fecha de nacimiento."~~ "Fecha no válida. Usa el formato dd/mm/aaaa." (v0.3) |
+    | es-CO  | 15/05/90     | 15/05/90     |            | ~~"Ingresa tu fecha de nacimiento."~~ "Fecha no válida. Usa el formato dd/mm/aaaa." (v0.3) |
     | es-CO  | 01/03/2010   | 01/03/2010   | 2010-03-01 | "Debes ser mayor de edad (18 años o más) para cotizar." |
 
 Scenario: A stored date is shown in the display format
@@ -348,14 +379,19 @@ Scenario: An unreadable optional date blocks "Continuar"
   Given Colombia also has the optional date field "Fecha de revisión" (key "inspectionDate", errorMessage "Ingresa una fecha válida.")
   And every other field holds a valid value
   When I type "10/13/2026" in "Fecha de revisión" and activate "Continuar"
-  Then I see "Ingresa una fecha válida." next to it, I stay on step 1, the focus is on "Fecha de revisión"
+  Then I see ~~"Ingresa una fecha válida."~~ "Fecha no válida. Usa el formato dd/mm/aaaa." (v0.3, US-04-Q-24) next to it, I stay on step 1, the focus is on "Fecha de revisión"
   And the wizard state holds "" for "inspectionDate"
 ```
 
-An empty stored value with text in the box (rows with an empty `stored`) is the former
+~~An empty stored value with text in the box (rows with an empty `stored`) is the former
 `badInput` case: required fields show `requiredMessage` if configured, else `errorMessage`;
-optional fields show `errorMessage` or "Revisa este campo." (US-01-AC-09 note, unchanged).
-"Fecha de revisión" is a test fixture, as in the existing component test.
+optional fields show `errorMessage` or "Revisa este campo." (US-01-AC-09 note, unchanged).~~
+**v0.3 (HC3, BR-18):** an empty stored value with text in the box (rows with an empty `stored`)
+shows "Fecha no válida. Usa el formato dd/mm/aaaa." for required and optional date fields; an
+empty box keeps `requiredMessage` ?? `errorMessage` for a required field. With the mask (BR-18,
+AC-25) the separators of rows typed with `-` or `.` are shown as `/` as they are typed; the shown
+and stored results of every row are unchanged. "Fecha de revisión" is a test fixture, as in the
+existing component test.
 
 ### US-04-AC-09 — Calendar (derived from US-04-BR-06, BR-13 / Q-12)
 
@@ -420,6 +456,8 @@ of `nextFocusDate` takes the locale tag as input, and Home/End move to the first
 that locale's week. The CDK dialog does not set the HTML `inert` attribute (ADR-0012 §4); the
 focus trap, the backdrop and `aria-hidden` are asserted instead, the focus trap and the backdrop
 in e2e (jsdom has no real focus trapping), `aria-hidden` in the component test.
+**v0.3:** on wide screens the dialog is a compact popover directly below the date text box
+(BR-17, AC-24); everything in this AC is unchanged.
 
 ### US-04-AC-10 — Days disabled by the rules (derived from US-04-BR-06 / Q-12)
 
@@ -467,10 +505,16 @@ Scenario: Existing suites keep passing at the same strength
 
 Scenario: Strapi content unchanged
   Then the branch has no change under backend/ compared with main at 66fc262
+    ~~(no exception)~~ except backend/src/seed/form-fields.ts and tests of the seed (v0.3, BR-07 HC3 exception, BR-19)
+  And no Strapi schema, permission or proxy file changes
 ```
 
 The stored `vehicleYear` is the string of the editing model (ADR-0004, ADR-0003). The test-engineer
 confirms the exact stored object on `main` before writing the expectation.
+**v0.3 HC3 exception:** the first scenario still holds unchanged (every value in it is accepted by
+the input profiles of BR-19). Behaviour changes are limited to the list in BR-07 (a)–(e); the
+second scenario's "pre-US-04 test" set is changed only as §11.1 lists, including its HC3 round 1
+subsection.
 
 ### US-04-AC-12 — Panels on narrow and wide screens (derived from US-04-BR-05, BR-06, BR-11 / Q-13)
 
@@ -487,8 +531,11 @@ Scenario Outline: Panels on narrow and wide screens
     | 360 × 740  | Ciudad              | a bottom sheet: full viewport width, bottom edge at the viewport bottom, at most 85% of the viewport height, with "Cerrar" |
     | 360 × 740  | Elegir fecha        | a bottom sheet as above |
     | 768 × 1024 | Ciudad              | a popover anchored to "Ciudad", not wider than the viewport |
-    | 1280 × 800 | Elegir fecha        | a popover anchored to the date field |
+    | 1280 × 800 | Elegir fecha        | a popover anchored to the date field; v0.3: directly below the date text box, compact (AC-24) |
 ```
+
+**v0.3:** the exact placement and size of the calendar popover from `--breakpoint-sheet` up are
+AC-24; the narrow-screen bottom sheet rows are unchanged.
 
 **HC3 phone check (manual, BR-11):** on a real phone (both countries), focus "Ciudad" and type
 into it: the bottom sheet sits above the on-screen keyboard, and the search input, the active
@@ -505,7 +552,8 @@ Scenario Outline: Step indicator and wizard header
   Then the step indicator lists "Tus datos", "Plan", "Resumen y pago" in this order
   And <current> has aria-current="step" and the text "Paso <n> de 3" is available to assistive technology
   And steps before it are marked "completado"
-  And neither the indicator nor the header contains a focusable element or a heading
+  And ~~neither the indicator nor the header contains a focusable element or a heading~~
+  And (v0.3) the indicator contains no focusable element, the header's only focusable element is the country chip link (AC-28), and neither contains a heading
 
   Examples:
     | page          | current          | n |
@@ -667,7 +715,8 @@ Scenario: Before and after evidence
 ```
 
 `01b`/`01c` "after" names replace "focused" with "open" (the native popups could not be captured
-before; README limitation).
+before; README limitation). **v0.3:** after HC3 round 1 is implemented, the whole `after/` set is
+captured again with the same names (task US-04-T-38); `before/` is not touched.
 
 ### US-04-AC-23 — Visual quality and originality (derived from US-04-BR-02, BR-09, BR-16)
 
@@ -679,6 +728,338 @@ Scenario: Visual quality and originality
   And hover, active, disabled and soft-feedback states and the micro-animations behave as described in §8
   And no logo, name, slogan or text of a real company appears
 ```
+
+### v0.3 acceptance criteria (HC3 round 1, directed by the human, 2026-11-22)
+
+Same conventions as above. Today is pinned to **2026-11-22** in these scenarios unless they say
+otherwise.
+
+### US-04-AC-24 — Calendar below the date field, compact (derived from US-04-BR-17)
+
+```gherkin
+Scenario Outline: The calendar opens below the date field on wide screens
+  Given the viewport is <viewport> and step 1 is shown in <country>
+  And <scroll>
+  When I activate "Elegir fecha"
+  Then the calendar dialog's top edge is between 0 and 16 CSS px below the bottom edge of "Fecha de nacimiento"
+  And its left edge is within 8 CSS px of the left edge of "Fecha de nacimiento"
+  And the dialog lies entirely inside the viewport
+  And its top edge is at or below the bottom edge of the wizard header (no overlap)
+
+  Examples:
+    | viewport   | country  | scroll |
+    | 1280 × 800 | Colombia | the page is scrolled to the top |
+    | 1280 × 800 | Chile    | the page is scrolled so that the bottom edge of "Fecha de nacimiento" is 60 CSS px above the viewport bottom |
+    | 768 × 1024 | Colombia | the page is scrolled to the top |
+
+Scenario: Compact calendar
+  Given the viewport is 1280 × 800 and the calendar is open in Chile on May 1990
+  Then the dialog is at most 352 CSS px wide and at most 448 CSS px tall
+  And every day cell is at least 44 and at most 48 CSS px wide and tall
+  And "Elegir año", "Mes anterior", "Mes siguiente" and "Cerrar" each have a hit box of at least 44 × 44 CSS px
+
+Scenario: Closing returns the focus and the page position is usable
+  Given the viewport is 1280 × 800 and the calendar opened below "Fecha de nacimiento" after the page scrolled
+  When I press Escape
+  Then the dialog closes, the focus is on "Elegir fecha" and "Fecha de nacimiento" is visible in the viewport
+```
+
+At 360 × 740 the bottom sheet of AC-12 is unchanged. The ≤ 26rem (416 px) height is the design
+target, checked at HC3; the test asserts the 28rem (448 px) limit. "Opens above" (BR-17 last
+fallback) is not reachable at the three viewports of BR-11 and is not tested.
+
+### US-04-AC-25 — Typed date: mask and a clear message (derived from US-04-BR-18 / Q-23, Q-24)
+
+```gherkin
+Scenario Outline: The date box formats as I type
+  Given step 1 is shown in Colombia and "Fecha de nacimiento" is empty
+  When I type the keys "<keys>" one at a time in "Fecha de nacimiento"
+  Then the field shows "<shown>"
+
+  Examples:
+    | keys        | shown      |
+    | 15051990    | 15/05/1990 |
+    | 15/05/1990  | 15/05/1990 |
+    | 15-05-1990  | 15/05/1990 |
+    | 150         | 15/0       |
+    | 5/5/1990    | 05/05/1990 |
+    | 15a05b1990  | 15/05/1990 |
+    | 150519901   | 15/05/1990 |
+
+Scenario: Backspace over a separator
+  Given "Fecha de nacimiento" shows "15/05/1990" and has the focus
+  When I press End and then Backspace 4 times
+  Then the field shows "15/05"
+  When I press Backspace once more
+  Then the field shows "15/0"
+
+Scenario Outline: Pasting a date
+  Given step 1 is shown in Colombia and "Fecha de nacimiento" is empty
+  When I paste "<pasted>" into "Fecha de nacimiento"
+  Then the field shows "<shown>"
+
+  Examples:
+    | pasted     | shown      |
+    | 15/05/1990 | 15/05/1990 |
+    | 15-05-1990 | 15/05/1990 |
+    | 15.05.1990 | 15/05/1990 |
+    | 15051990   | 15/05/1990 |
+    | 5/5/1990   | 05/05/1990 |
+
+Scenario Outline: The message after leaving the date field
+  Given step 1 is shown in Colombia
+  When I type "<typed>" in "Fecha de nacimiento" and leave the field
+  Then the field shows "<shown>"
+  And the wizard state holds "<stored>" for "birthDate"
+  And <error>
+
+  Examples:
+    | typed      | shown      | stored     | error |
+    | 15051990   | 15/05/1990 | 1990-05-15 | no error |
+    | 29202001   | 29/20/2001 |            | "Fecha no válida. Usa el formato dd/mm/aaaa." with aria-invalid="true" |
+    | 31021990   | 31/02/1990 |            | "Fecha no válida. Usa el formato dd/mm/aaaa." |
+    | 29022001   | 29/02/2001 |            | "Fecha no válida. Usa el formato dd/mm/aaaa." |
+    | 1505199    | 15/05/199  |            | "Fecha no válida. Usa el formato dd/mm/aaaa." |
+    | 1505       | 15/05      |            | "Fecha no válida. Usa el formato dd/mm/aaaa." |
+    | (nothing)  |            |            | "Ingresa tu fecha de nacimiento." |
+    | 01032010   | 01/03/2010 | 2010-03-01 | "Debes ser mayor de edad (18 años o más) para cotizar." |
+
+Scenario: No message while typing
+  Given step 1 is shown in Colombia
+  When I type "150" in "Fecha de nacimiento" without leaving it
+  Then no message is shown for "Fecha de nacimiento" and it is not aria-invalid
+
+Scenario: A typed date completes step 1 end to end
+  Given step 1 is shown in Colombia
+  When I complete every field with the values of AC-11, typing "15/05/1990" in "Fecha de nacimiento" with the keyboard (no calendar)
+  And I activate "Continuar"
+  Then I am on "/co/planes" and sessionStorage "quote-wizard" holds birthDate "1990-05-15"
+
+Scenario: An invalid date blocks "Continuar"
+  Given every other field of Colombia holds a valid value and "Fecha de nacimiento" shows "29/20/2001"
+  When I activate "Continuar"
+  Then I stay on "/co/datos", the focus is on "Fecha de nacimiento"
+  And it is described by "Fecha no válida. Usa el formato dd/mm/aaaa."
+```
+
+The text box has `inputmode="numeric"`, `maxlength="10"` and the placeholder "dd/mm/aaaa". The
+optional-date case is AC-08's third scenario (v0.3 message).
+
+### US-04-AC-26 — Input profiles and maximum lengths (derived from US-04-BR-19 / Q-26, Q-27)
+
+```gherkin
+Scenario Outline: Characters outside the field's profile are not entered
+  Given step 1 is shown in <country>
+  When I type "<typed>" in "<label>"
+  Then the field shows "<shown>"
+  And the wizard state holds "<shown>" for "<key>"
+
+  Examples:
+    | country  | label               | key            | typed                  | shown                  |
+    | Colombia | Nombre completo     | fullName       | Ana 2                  | Ana␠                   |
+    | Colombia | Nombre completo     | fullName       | José Núñez-O'Neil Jr.  | José Núñez-O'Neil Jr.  |
+    | Colombia | Número de documento | documentNumber | 1.012.345.678          | 1012345678             |
+    | Colombia | Número de documento | documentNumber | 123456789012           | 1234567890             |
+    | Chile    | RUT                 | documentNumber | 12.345.678-k           | 12.345.678-K           |
+    | Chile    | RUT                 | documentNumber | 12.345.678-5x9         | 12.345.678-5           |
+    | Colombia | Placa               | plate          | abc-123x               | ABC123                 |
+    | Chile    | Patente             | plate          | bcdf12                 | BCDF12                 |
+    | Colombia | Línea               | model          | 3 Touring+             | 3 Touring              |
+    | Colombia | Modelo (año)        | vehicleYear    | 20e2.5                 | 2025                   |
+    | Colombia | Modelo (año)        | vehicleYear    | 20225                  | 2022                   |
+    | Chile    | Año                 | vehicleYear    | abc                    | (empty)                |
+
+Scenario: Pasting keeps only the allowed characters
+  Given step 1 is shown in Colombia and "Nombre completo" is empty
+  When I paste "Ana 2 Prueba" into "Nombre completo"
+  Then the field shows "Ana  Prueba" with the caret at the end
+
+Scenario Outline: Attributes of each field
+  Given step 1 is shown in <country>
+  Then "<label>" is a text box (role textbox, type="text") with maxlength <maxlength>, inputmode <inputmode>, autocomplete <autocomplete> and autocapitalize <autocapitalize>
+
+  Examples:
+    | country  | label               | maxlength | inputmode | autocomplete | autocapitalize |
+    | Colombia | Nombre completo     | 80        | (absent)  | name         | words          |
+    | Colombia | Número de documento | 10        | numeric   | (absent)     | (absent)       |
+    | Chile    | RUT                 | 12        | text      | (absent)     | (absent)       |
+    | Colombia | Placa               | 6         | (absent)  | off          | characters     |
+    | Colombia | Línea               | 40        | (absent)  | (absent)     | (absent)       |
+    | Colombia | Modelo (año)        | 4         | numeric   | (absent)     | (absent)       |
+    | Chile    | Año                 | 4         | numeric   | (absent)     | (absent)       |
+
+Scenario: Fields the front end does not know
+  Given Colombia also has the editor-added text field "Teléfono celular" (key "mobilePhone", rule maxLength 15) and the optional number field "Kilometraje" (key "mileage", no rules)
+  Then "Teléfono celular" has maxlength 15 and typing "300 123-4567" shows "300 123-4567"
+  And "Kilometraje" is a text box with inputmode numeric and no maxlength, and typing "12e3.4" shows "1234"
+
+Scenario: The seed rules still validate what the filter cannot see
+  Given the wizard state of Colombia holds fullName "Ana 2" (stored before this change)
+  When step 1 is shown
+  Then "Nombre completo" shows "Ana 2"
+  When I activate "Continuar"
+  Then "Nombre completo" is described by "Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres)." and I stay on step 1
+
+Scenario Outline: Strapi seed content (CO and CL)
+  Given the Strapi seed of <country>
+  Then the field "<key>" has <rules> and errorMessage "<message>"
+
+  Examples:
+    | country | key            | rules                                                        | message |
+    | CO      | fullName       | minLength 3, maxLength 80, pattern (letters, space, ' . -)   | Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres). |
+    | CL      | fullName       | minLength 3, maxLength 80, pattern (letters, space, ' . -)   | Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres). |
+    | CO      | documentNumber | pattern ^[0-9]{6,10}$, maxLength 10                          | Ingresa un número de documento válido (solo números, de 6 a 10 dígitos). |
+    | CL      | documentNumber | pattern (RUT), rutCheckDigit, maxLength 12                   | Ingresa un RUT válido (por ejemplo, 12.345.678-5). |
+    | CO      | plate          | pattern ^[A-Za-z]{3}[0-9]{3}$, maxLength 6                   | Ingresa una placa válida: 3 letras y 3 números (por ejemplo, ABC123). |
+    | CL      | plate          | pattern (two formats), maxLength 6                           | Ingresa una patente válida (por ejemplo, BCDF12 o AB1234). |
+
+Scenario Outline: The fullName pattern
+  Given the seed field "fullName" of Colombia
+  When the shared validator checks "<value>"
+  Then the result is <result>
+
+  Examples:
+    | value                | result |
+    | Ana Prueba Ficticia  | valid |
+    | José Núñez-O'Neil Jr.| valid |
+    | Ana 2                | "Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres)." |
+    | Al                   | "Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres)." |
+    | 'Ana                 | "Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres)." |
+```
+
+"␠" stands for one trailing space ("Ana "). The `mobilePhone` and `mileage` fields are test
+fixtures (no seed change). The seed `pattern` is evaluated by the existing validator without the
+`u` flag, so the letter class is written explicitly (US-04-Q-27). The first value of each
+"Strapi seed" row's rule list: existing rules keep their order and the new rules are appended after them.
+
+### US-04-AC-27 — Lighter gradient background on every page (derived from US-04-BR-20)
+
+```gherkin
+Scenario Outline: The same background on every page
+  When I open <page>
+  Then the body's computed background-image is the gradient of --gradient-page
+  And the body's computed background-color is the value of --color-bg
+
+  Examples:
+    | page |
+    | "/" (country chooser) |
+    | "/co/datos" |
+    | "/cl/planes" |
+    | "/co/resumen" |
+    | the payment confirmation in Chile |
+    | "/ar/datos" (unknown country) |
+
+Scenario: Lighter, with contrast kept
+  Given the production token file
+  Then --gradient-page is a semantic token whose every colour stop is a token
+  And its lightest stop has a higher relative luminance than --primitive-ink-950, and no stop has a lower one
+  And contrast-pairs.json has, for every "page background" pair of AC-02, one row per stop of --gradient-page
+  And every row passes its AC-02 minimum
+```
+
+The look (violet tint near the top, accent tint in the wizard, texture) is judged at HC3 (AC-23).
+
+### US-04-AC-28 — Back links and change of country (derived from US-04-BR-21)
+
+```gherkin
+Scenario Outline: A back link on each step
+  Given I am on <page> in Colombia with <state>
+  Then below the step indicator and above the h1 there is a link with the accessible name exactly "<link>" and a left-arrow icon hidden from assistive technology
+  When I activate "<link>"
+  Then I am on "<target>"
+  And <kept>
+
+  Examples:
+    | page          | state                             | link               | target      | kept |
+    | "/co/datos"   | step 1 completed but not submitted | Cambiar país       | /           | the chooser is shown, and opening "Colombia" again shows the same step 1 values |
+    | "/co/planes"  | step 1 completed                  | Volver a tus datos | /co/datos   | step 1 shows the entered values and the focus is on its h1 |
+    | "/co/resumen" | "Plan Total" chosen               | Volver a planes    | /co/planes  | "Plan Total" is checked and the focus is on its h1 |
+
+Scenario Outline: No back link where there is nothing to go back to
+  When <place> is shown
+  Then there is no link named "Cambiar país", "Volver a tus datos" or "Volver a planes" in the main content
+
+  Examples:
+    | place |
+    | the payment confirmation in Colombia |
+    | "/ar/datos" (unknown country) |
+    | "/" (country chooser) |
+    | "/co/datos" while the country list cannot be loaded |
+
+Scenario Outline: The country chip links to the chooser
+  When I am on <page>
+  Then the header has exactly one link, with the accessible name exactly "Cambiar país (actual: <country>)" and the address "/"
+  And it shows the text "<country>" and the flag, hidden from assistive technology
+
+  Examples:
+    | page                         | country  |
+    | "/co/datos"                  | Colombia |
+    | "/cl/planes"                 | Chile    |
+    | the payment confirmation in Chile | Chile |
+
+Scenario: Change from Colombia to Chile
+  Given I completed step 1 in Colombia and I am on "/co/planes"
+  When I activate "Cambiar país (actual: Colombia)" and then "Chile"
+  Then I am on "/cl/datos", every field is empty
+  And sessionStorage "quote-wizard" holds no Colombian value (US-01 enterCountry rule)
+
+Scenario: Back to the same country keeps the data
+  Given I completed step 1 in Colombia and I am on "/co/planes"
+  When I activate "Cambiar país (actual: Colombia)" and then "Colombia"
+  Then I am on "/co/datos" and step 1 shows the entered values
+
+Scenario Outline: Tab order and targets at the top of a step
+  Given the viewport is 1280 × 800 and <page> is shown in Colombia
+  When I press Tab from the top of the document
+  Then the first stop is the country chip link and the second is "<link>", each with a visible focus indicator
+  And each has a hit box of at least 44 × 44 CSS px
+  And the Tab order from the h1 onwards is the one of <existing AC>, unchanged
+
+  Examples:
+    | page          | link               | existing AC  |
+    | "/co/datos"   | Cambiar país       | US-01-AC-24  |
+    | "/co/planes"  | Volver a tus datos | US-02-AC-16  |
+    | "/co/resumen" | Volver a planes    | US-03-AC-16  |
+
+Scenario Outline: The header is not clipped
+  Given the viewport is <viewport> and "/co/datos" is shown
+  Then the country chip link's box lies inside the viewport and inside the header's content box
+
+  Examples:
+    | viewport   |
+    | 360 × 740  |
+    | 768 × 1024 |
+    | 1280 × 800 |
+```
+
+Tests find the back link with an **exact** name: the chip's name also contains "Cambiar país".
+
+### US-04-AC-29 — A richer country chooser (derived from US-04-BR-20 / Q-25)
+
+```gherkin
+Scenario: Chooser content and structure
+  When I open "/"
+  Then a header shows the text "Cotizador de seguro de auto" and contains no link, no button, no country chip and no step indicator
+  And the heading outline is exactly: h1 "Elige tu país"; h2 "Cómo funciona"
+  And right after the h1 the paragraph "Cotiza el seguro de tu auto en pocos minutos. Elige el país donde está matriculado tu vehículo para ver los planes y precios disponibles." is shown
+  And then the links "Colombia" and "Chile", in the Strapi order, with accessible names exactly "Colombia" and "Chile", each showing its flag and a chevron, both hidden from assistive technology
+  And then the h2 "Cómo funciona" and an ordered list of exactly three items, in this order:
+    | step name      | description                           |
+    | Tus datos      | Cuéntanos sobre ti y tu vehículo.     |
+    | Plan           | Compara coberturas y precios.         |
+    | Resumen y pago | Revisa, acepta los términos y paga.   |
+  And each item shows the step indicator's icon for that step, hidden from assistive technology, then its step name and its description
+  And pressing Tab from the top of the document reaches "Colombia" and then "Chile" and no other element of the page
+
+Scenario: The country list cannot be loaded
+  Given the country list request fails
+  When I open "/"
+  Then the header, the h1, the lead paragraph and "Cómo funciona" are shown
+  And the load error and "Reintentar" behave as US-01-AC-17 (no country link)
+```
+
+The card hover and focus look with the country accent is judged at HC3 (AC-23); the 44 × 44
+targets and no horizontal scroll are covered by AC-18 (chooser row).
 
 ## 6. Gaps and open questions
 
@@ -692,9 +1073,9 @@ does not answer. **[ADR]** marks gaps the architect resolves in an ADR (§10) in
 | US-04-Q-02 | **[Blocks HC1] [ADR]** Per-country flag and accent vs ADR-0001 ("No country code, name or list exists in front-end code"; review grep for `'(CO\|CL)'`). Where do the flag and the accent come from? | The story requires them; ADR-0001 is binding (level 2) and the story also forbids changing the Strapi contract. One of the two must give. | A presentation-only **country-visuals map** in one front-end file, keyed by ISO code (`CO`, `CL` → flag SVG and accent token values), with a neutral fallback (globe icon, brand accent) for any other published country, so adding a country stays content-only (AC-03). The architect amends ADR-0001 (new ADR or a section of the design-system ADR marked as amending ADR-0001) and narrows its review grep to allow only that file. Alternative: add `accentColor` (hex, validated) and a flag asset to the Strapi `country` type (Strapi contract change, seed and boundary parser change, editors can break contrast). **v0.2:** decided as proposed by ADR-0011 (amends ADR-0001): `country-visuals.ts` returns a flag component and an accent key; the review grep becomes a static guard (AC-03 third scenario). | OK as proposed. — Felipe Sabogal, 2026-11-21 (HC1) |
 | US-04-Q-03 | **[ADR]** Palette and how the country accent combines with the violet brand accent. | AA contrast (BR-02); clarity of what is interactive. | Brand violet/indigo carries every interactive and selected state (primary focus ring, selected option, recommended card gradient, current step). The country accent is decorative and limited to the header country chip (flag ring and underline) and the progress line of the step indicator; it never carries meaning alone. ~~Example starting values for the ADR (to be verified there): background `#0B0B12`, surface `#15151F`, border `#2E2E42`, text `#F4F4F8`, muted `#A6A6BC`, violet `#8B5CF6`→`#6D28D9` gradient, primary button white `#FFFFFF` with text `#0B0B12`, error `#FF8A8A`, success `#5EE3A1`, CO accent `#FCD116`, CL accent a light red such as `#FF6B7A` (Chile blue fails 3:1 on near-black).~~ **v0.2:** the starting values are replaced by the palette, gradients and contrast table of ADR-0010 §4 and the country accents of ADR-0011: Colombia `#FFCD00` (the flag yellow), Chile `#F66E5E` (a lighter tint of the flag red's hue). The accent's placement is as proposed (header chip ring and underline, step indicator progress line). The ADRs are the source of every value; the spec does not repeat them. | Default accepted. — Felipe Sabogal, 2026-11-21 (HC1) |
 | US-04-Q-04 | **[Blocks HC1] [ADR]** Custom select and date picker: which accessible primitives (Angular CDK Overlay/Listbox/A11y vs `@angular/aria` at 22.3.0), and how they bind to Signal Forms and the shared validation core (ADR-0004) without changing validation or stored values. This also **supersedes** three approved US-01 decisions: Q-22 ("Native `<input type=\"date\">`"), §9 ("Native controls are used … `select`") and the BR-02 wording "the first entry is a non-selectable prompt" (the prompt becomes the empty shown value, not an option). | The story requires custom controls; ADR-0004 decided Signal Forms with native controls in mind (`syncNative`, `badInput`, `focusBoundControl`). The test changes of §11.1 depend on the element chosen. | Decided by an ADR (§10). Constraints the spec sets: the focusable element is labelable (`<input>` or `<button>`) and targeted by the field's `<label for>`; it is the control `focusBoundControl()` focuses; the model keeps strings (option value, ISO date, `''`); validation stays in `field-validators.ts`; for the date, unreadable text maps to `''` with the same message rules (BR-06), replacing the `syncNative` path for dates only. The human accepts the three US-01 supersessions with this spec. **v0.2:** decided by ADR-0012 (amends ADR-0004): `@angular/aria` 22.3.0 + `@angular/cdk` 22.3.0; `<button>` combobox for select-only, `<input>` for searchable; `FormValueControl<string>`; dates through `transformedValue`; overlays outside the component root in jsdom. The three supersessions are consistent with it (ADR-0012 *Spec impact* 6). | OK as proposed. — Felipe Sabogal, 2026-11-21 (HC1) |
-| US-04-Q-05 | **[Blocks HC1]** Date typed entry: format, accepted variants, how it maps to ISO, and what an incomplete or impossible date does. | Changes the US-01-AC-24 keyboard path (today: segments typed in the browser locale) and the R3-F01 tests; must keep the `badInput` semantics. | dd/mm/aaaa for every country, independent of browser locale; accepted: `d/m/yyyy` with `/`, `-` or `.` separators (1–2 digit day and month), or exactly 8 digits `ddmmyyyy`; 4-digit year only. Re-displayed as dd/mm/aaaa on leaving the field. Incomplete, impossible (31/04, 29/02 of a non-leap year) or 2-digit-year text → stored `''`, text kept, invalid with the existing message rules (no new validation message; a more specific "Ingresa una fecha válida (dd/mm/aaaa)." would be a validation-copy change and is not proposed). Placeholder and hint "dd/mm/aaaa" are code-owned (§8.1); the hint is part of the accessible description. No input mask that inserts characters while typing. | OK as proposed. — Felipe Sabogal, 2026-11-21 (HC1) |
+| US-04-Q-05 | **[Blocks HC1]** Date typed entry: format, accepted variants, how it maps to ISO, and what an incomplete or impossible date does. | Changes the US-01-AC-24 keyboard path (today: segments typed in the browser locale) and the R3-F01 tests; must keep the `badInput` semantics. | dd/mm/aaaa for every country, independent of browser locale; accepted: `d/m/yyyy` with `/`, `-` or `.` separators (1–2 digit day and month), or exactly 8 digits `ddmmyyyy`; 4-digit year only. Re-displayed as dd/mm/aaaa on leaving the field. Incomplete, impossible (31/04, 29/02 of a non-leap year) or 2-digit-year text → stored `''`, text kept, invalid with the existing message rules (no new validation message; a more specific "Ingresa una fecha válida (dd/mm/aaaa)." would be a validation-copy change and is not proposed). Placeholder and hint "dd/mm/aaaa" are code-owned (§8.1); the hint is part of the accessible description. ~~No input mask that inserts characters while typing.~~ **v0.3 (HC3 round 1, human decision):** a mask inserts `/` while typing, and text that is not a complete, existing date shows the code-owned "Fecha no válida. Usa el formato dd/mm/aaaa." instead of the existing message rules (BR-18, AC-25). Accepted variants and ISO mapping unchanged. | OK as proposed. — Felipe Sabogal, 2026-11-21 (HC1) |
 | US-04-Q-06 | **[Blocks HC1]** "Existing e2e tests keep passing without being loosened": which assertions change, and is the rewrite of §11.1 acceptable? Some tests assert native elements by definition (component test "every field type renders its native control": `tagName: 'SELECT'`, `type: 'date'`; `HTMLSelectElement.options`; `toHaveValue('CC')` on a select; native date segments in `en-US`). | Without an explicit list, the test-engineer would guess, and a silent weakening (for example `allControls()` no longer seeing selects, so `invalidControls()` misses them) would go unnoticed. | Approve §11.1 as the complete list. Rule: each replaced assertion asserts both what the person sees (shown value, role, name, state) and what is stored (`quote-wizard` value), so it is at least as strong; no test is deleted without a replacement; helpers find custom controls by role (`combobox`, `option`, `dialog`, `grid`, `gridcell`), never by class or id. | OK as proposed. — Felipe Sabogal, 2026-11-21 (HC1) |
-| US-04-Q-07 | **[Blocks HC1]** The story asks for "clear microcopy in help texts, placeholders, empty states and errors" but also says "the texts that come from Strapi do not change". Help texts, placeholders and field errors come from Strapi. | Scope: a seed change would touch `backend/` and the Strapi texts asserted by tests. | Strapi texts (help, placeholders, field errors, labels, plans, terms) are **not** changed. US-04 adds only code-owned interface copy (§8.1: search, calendar, date hint, step indicator, header, sheet close). Existing code-owned strings (empty and error states of US-01..US-03) also stay unchanged, because tests assert them and they were approved. Better Strapi copy is a later content task for editors. Alternative: revise seed help texts and placeholders in this story (backend change, test updates). | OK as proposed. — Felipe Sabogal, 2026-11-21 (HC1) |
+| US-04-Q-07 | **[Blocks HC1]** The story asks for "clear microcopy in help texts, placeholders, empty states and errors" but also says "the texts that come from Strapi do not change". Help texts, placeholders and field errors come from Strapi. | Scope: a seed change would touch `backend/` and the Strapi texts asserted by tests. | Strapi texts (help, placeholders, field errors, labels, plans, terms) are **not** changed. US-04 adds only code-owned interface copy (§8.1: search, calendar, date hint, step indicator, header, sheet close). Existing code-owned strings (empty and error states of US-01..US-03) also stay unchanged, because tests assert them and they were approved. Better Strapi copy is a later content task for editors. Alternative: revise seed help texts and placeholders in this story (backend change, test updates). **v0.3 (HC3 round 1, human decision):** one Strapi seed text changes, the `fullName` `errorMessage` (CO, CL), with rule changes for `fullName`, `documentNumber` and `plate` (BR-19, §7.1); every other Strapi text stays. | OK as proposed. — Felipe Sabogal, 2026-11-21 (HC1) |
 | US-04-Q-08 | **[ADR]** The two font families and how they are loaded. | BR-12; performance; licence. | A display family for headings and a text family for everything else, both OFL-1.1 variable fonts, self-hosted as WOFF2 subsets (Latin + Latin-1 for Spanish) from the app origin, `font-display: swap`, the text font preloaded. ~~Candidates for the ADR: display "Sora" or "Space Grotesk", text "Inter".~~ Source either `@fontsource-variable/*` npm packages (pinned) or committed files with the OFL text. No Google Fonts or other CDN. **v0.2:** replaced by ADR-0010 §5: display **Archivo** (`wght` and `wdth` axes), text **Atkinson Hyperlegible Next**, from `@fontsource-variable/archivo` 5.3.0 and `@fontsource-variable/atkinson-hyperlegible-next` 5.3.0, one latin-subset variable WOFF2 file per family copied to `/fonts/`, weight ranges limited to the scale, text face preloaded, local system fallback stack (BR-12). | Default accepted. — Felipe Sabogal, 2026-11-21 (HC1) |
 | US-04-Q-09 | **[ADR]** Icon library, exact version, licence, import style; the field-key → icon map and the default icon. | BR-04; bundle size; Angular 22 compatibility. | ~~`lucide-angular` (ISC) at an exact version the architect verifies against `@angular/core` 22.3.0 peer ranges; alternative `lucide-static` SVGs inlined at build time if the Angular wrapper lags.~~ **v0.2:** **`@lucide/angular` 1.77.0** (ISC), ADR-0010 §7: `lucide-angular` is deprecated and its peer range (`@angular/core` 13.x–21.x) does not accept Angular 22. The map below is kept, as Lucide components (`LucideIdCard`, …, default `LucidePencilLine`; AC-04). Individual imports only. Map (lucide names, verified in the ADR): `documentType` id-card, `documentNumber` hash, `fullName` user, `birthDate` calendar, `city` map-pin, `plate` rectangle-horizontal, `make` car, `model` car-front, `vehicleYear` calendar-range; default `pencil-line`. Messages: help `info`, error `circle-alert`, success `circle-check`; plan lists `circle-check`. | Default accepted. — Felipe Sabogal, 2026-11-21 (HC1) |
 | US-04-Q-10 | Flag source and licence. | BR-03; licence and size. | Our own optimised SVGs (~~national flags are public-domain designs~~ **v0.2:** drawn from the official constructions, that is the proportions and geometry; no law fixes the flag colours, so the colour values are published approximations, ADR-0010 §8 and ADR-0011; Colombia three bands 2:1:1; Chile two bands, blue canton, white star), each < 1 kB, inline, `aria-hidden`. Alternative: `flag-icons` (MIT), larger and brings every country. | Default accepted. — Felipe Sabogal, 2026-11-21 (HC1) |
@@ -704,12 +1085,17 @@ does not answer. **[ADR]** marks gaps the architect resolves in an ADR (§10) in
 | US-04-Q-14 | **[ADR]** Motion approach and the step transition. | BR-09, BR-10; bundle weight and maintenance. | Angular native `animate.enter` / `animate.leave` with CSS keyframes and transitions driven by duration and easing tokens; no animation library (Motion or GSAP add weight for effects CSS covers). Step transition is **enter-only** (fade + 8 px rise, "base" duration) so only one page is ever in the DOM; router `withViewTransitions()` is an alternative for the ADR. Reduced motion: duration tokens set to `0ms` and keyframes disabled under the media query. **v0.2:** decided as proposed by ADR-0013 (option A, enter-only step transition); reduced motion is applied by construction (animations declared only inside `prefers-reduced-motion: no-preference`, tokens `0ms` under `reduce`, CDK `disableAnimations: true`; BR-10, AC-17). | Default accepted. — Felipe Sabogal, 2026-11-21 (HC1) |
 | US-04-Q-15 | Skeletons: where, and what happens to the loading text that tests assert. | BR-09; AC-15; existing tests assert "Cargando…" texts. | Skeletons on step 1 (field-shaped blocks), step 2 (three card shapes), the terms region and the country list; `aria-hidden`; static under reduced motion. The existing loading text stays in its live region (visually hidden next to the skeleton), so no test or announcement changes. | Default accepted. — Felipe Sabogal, 2026-11-21 (HC1) |
 | US-04-Q-16 | Which screens get micro-animations, and which effects? | BR-09; must not interfere with announcements or tests. | Step indicator fill; select and calendar panel open/close; error text fade-in; plan card hover lift and choose (border and glow); summary sections fade in with a short stagger (≤ 400 ms total); "Pagar" processing spinner; confirmation check-circle ~~draw~~ **v0.2:** scale and fade (scale 0.85 → 1 with opacity, `--duration-slow`; `transform`/`opacity` only, since a stroke draw animates `stroke-dashoffset`; ADR-0013 §2). No counting-up of prices or changing numbers (screen readers would read intermediate values). | Default accepted. — Felipe Sabogal, 2026-11-21 (HC1) |
-| US-04-Q-17 | Step indicator and wizard header: labels, interactivity, confirmation state, contents. | BR-09, BR-13; Tab order tests (US-03-AC-16) must not change. | Indicator steps "Tus datos", "Plan", "Resumen y pago"; not interactive (no links back; "Atrás", "Editar mis datos" and "Cambiar plan" remain the ways back); `aria-current="step"`, visually hidden "Paso n de 3" and "completado"; on the confirmation all completed. Header: the text "Cotizador de seguro de auto" (not a heading, not a link) and the country chip (flag + Strapi country name); no focusable element. Shown on the wizard pages, not on the chooser or the unknown-country page. | Default accepted. — Felipe Sabogal, 2026-11-21 (HC1) |
+| US-04-Q-17 | Step indicator and wizard header: labels, interactivity, confirmation state, contents. | BR-09, BR-13; Tab order tests (US-03-AC-16) must not change. | Indicator steps "Tus datos", "Plan", "Resumen y pago"; not interactive (no links back; "Atrás", "Editar mis datos" and "Cambiar plan" remain the ways back); `aria-current="step"`, visually hidden "Paso n de 3" and "completado"; on the confirmation all completed. Header: the text "Cotizador de seguro de auto" (not a heading, not a link) and the country chip (flag + Strapi country name); no focusable element. Shown on the wizard pages, not on the chooser or the unknown-country page. **v0.3 (HC3 round 1, human decision):** the indicator stays non-interactive; back links above the `h1` and the country chip as a link to the chooser are added (BR-21); the chooser shows the header without the chip (BR-20); the unknown-country page still has no header. | Default accepted. — Felipe Sabogal, 2026-11-21 (HC1) |
 | US-04-Q-18 | 44 × 44 px targets: everywhere, and what about earlier ACs that said 24 × 24? | BR-11; US-01-AC-26, US-02-AC-18, US-03-AC-18 are manual ACs with 24 × 24. | 44 × 44 for every interactive element, measured as in BR-11; it supersedes the 24 × 24 of those ACs, and AC-18 automates it. No exception for inline links (there are none in the wizard today). | Default accepted. — Felipe Sabogal, 2026-11-21 (HC1) |
 | US-04-Q-19 | Evidence: which files, who captures them, and the missing "before" of the country chooser. | BR-15; the before set has no chooser page and could not show native popups open. | The orchestrator captures `after/` with the same script and data as `before/`, plus `00-paises-*` in both sets (the "before" chooser captured from `main` before implementation starts, task US-04-T-06). Names per AC-22. README updated with the after table. | Default accepted. — Felipe Sabogal, 2026-11-21 (HC1) |
 | US-04-Q-20 | Automated accessibility scan: add `@axe-core/playwright` (MPL-2.0, dev only) or not? | Contrast and ARIA errors could be caught automatically; adds a dependency with a weak-copyleft licence. | No new test dependency: contrast is checked on token pairs (AC-02), roles and names in component tests, the rest by the HC3 screen reader and visual pass. Alternative: add `@axe-core/playwright` pinned, run on every page at the three sizes (BR-14 licence exception needed). | Default accepted. — Felipe Sabogal, 2026-11-21 (HC1) |
 | US-04-Q-21 | Do the approved US-01..US-03 specs get updated for what US-04 supersedes (Q-04, Q-18)? | Traceability: a reader of US-01 would still read "native date input". | Not rewritten. After HC1 the spec-writer adds one Review log row to each affected spec pointing to US-04 (US-01: Q-22, §9, BR-02 prompt wording, AC-26; US-02: AC-18; US-03: AC-18). Test titles keep their original AC IDs. | Default accepted. — Felipe Sabogal, 2026-11-21 (HC1) |
 | US-04-Q-22 | Segmented pill toggles: where? | Reference style; must keep native semantics. | The US-03 "Simulación de pago" group is styled as a pill segmented control; it stays a native radio group (tests and US-03-AC-17 unchanged). No other segmented control is introduced. | Default accepted. — Felipe Sabogal, 2026-11-21 (HC1) |
+| US-04-Q-23 | (v0.3) Date mask details the HC3 request leaves open: what a typed separator does, when `/` appears, Backspace over `/`. | AC-25 rows and the existing tests that type "15/05/1990" and "5/5/1990" character by character. | As BR-18: digits only; a typed separator pads a one-digit day or month ("5/" → "05/"), shows `/` once after a complete group, is dropped elsewhere; `/` appears when the next digit is typed; Backspace removes a trailing separator with the digit before it. Caret handling for edits in the middle of the text per ADR-0014. Reviewed at the HC3 QA of this round. | |
+| US-04-Q-24 | (v0.3) Does "Fecha no válida. Usa el formato dd/mm/aaaa." also replace the Strapi `errorMessage` of an **optional** date field for unreadable text (AC-08 third scenario: "Ingresa una fecha válida.")? | The HC3 request names only the birth date; one rule for all date fields is simpler and clearer. | Yes: same message for required and optional date fields; an empty optional field still has no error. Reviewed at the HC3 QA of this round. | |
+| US-04-Q-25 | (v0.3) Order on the chooser: is "Cómo funciona" before or after the country links? | The brief lists it under the lead text; the page's single job is choosing a country, and keyboard users reach the links sooner if they come first. | h1, lead paragraph, country links, then "Cómo funciona" (AC-29). Reviewed at the HC3 QA of this round. | |
+| US-04-Q-26 | (v0.3) Does the input-profile filter apply to values restored from the wizard state, and is the plate stored in upper case? | A stored "Ana 2" from before the change; data shown must match data stored. | The filter applies only to typing and pasting; restored values are shown as stored and validated by the Strapi rules (AC-26 "seed rules" scenario). The plate is shown and stored in upper case (the seed patterns accept both cases, so validation and the step 1 output are unaffected for valid plates; the summary shows the stored upper case). Reviewed at the HC3 QA of this round. | |
+| US-04-Q-27 | (v0.3) The seed `fullName` pattern: the validator compiles patterns without the `u` flag, so `\p{L}` cannot be used; which letters are allowed? The front-end filter allows any Unicode letter. | A name with a letter the pattern does not list would pass the filter and fail validation. | Pattern `^[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ '.-]*$` (Latin-1 letters: covers á é í ó ú ü ñ and also ç, ã, ö…; a superset of the brief's explicit Spanish class `^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ '.-]*$`). A name with a letter outside Latin-1 shows the `fullName` message. Alternative: the brief's Spanish-only class. Reviewed at the HC3 QA of this round. | |
 
 Checklist items with no gap: *country context, deep links, persistence, concurrency, draft vs
 published, formatting of prices and dates on the summary, masking, security of content access*
@@ -720,10 +1106,27 @@ default for new keys (AC-04), selects with more options become searchable (Q-11)
 
 ### 7.1 Strapi
 
-**No change.** US-04 reads the same content as US-01..US-03 (ADR-0001, ADR-0006). The country
-`name` and `localeTag` already provided are enough for the header, the calendar names and the
-calendar's first day of the week. ADR-0011 keeps the flag and accent in the front end, so no
-`country` attribute is added.
+~~**No change.**~~ **v0.3: no schema or contract change; three seed content changes (BR-19,
+human decision at HC3 round 1).** US-04 reads the same content types as US-01..US-03 (ADR-0001,
+ADR-0006). The country `name` and `localeTag` already provided are enough for the header, the chip
+link name, the calendar names and the calendar's first day of the week. ADR-0011 keeps the flag and
+accent in the front end, so no `country` attribute is added.
+
+Seed changes in `backend/src/seed/form-fields.ts` (form-field `rules` and `errorMessage` only;
+`dynamic-form-fields` contract v1 unchanged; rules use existing kinds):
+
+| Country | Field `key` | Change |
+|---|---|---|
+| CO, CL | `fullName` | Append rule `pattern` `^[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ '.-]*$` (US-04-Q-27) after `minLength` 3 and `maxLength` 80. `errorMessage` "Ingresa tu nombre completo (entre 3 y 80 caracteres)." → "Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres)." |
+| CO | `documentNumber` | Append rule `maxLength` 10 (the `pattern` `^[0-9]{6,10}$` stays). |
+| CL | `documentNumber` (RUT) | Append rule `maxLength` 12 ("12.345.678-5" is 12 characters; `pattern` and `rutCheckDigit` stay). |
+| CO, CL | `plate` | Append rule `maxLength` 6 (patterns stay). |
+
+The seed only creates entries that are missing (the existing rule, not changed), so a database
+seeded before this change keeps the old content; the local demo is reset with
+`docker compose -p mci-demo down -v`. The front-end test fixtures that mirror the seed
+(`frontend/src/testing/seed-fixtures.ts`) and the US-01 seed annex
+([seed-fields.md](../US-01/seed-fields.md)) are updated to match (§11.1, task US-04-T-40).
 
 ### 7.2 Front-end presentation maps (code, not content)
 
@@ -731,8 +1134,27 @@ calendar's first day of the week. ADR-0011 keeps the flag and accent in the fron
 |---|---|---|---|
 | Field icon (`shared/field-icons.ts`, ADR-0010 §7) | field `key` | `@lucide/angular` component for `documentType`, `documentNumber`, `fullName`, `birthDate`, `city`, `plate`, `make`, `model`, `vehicleYear` (names in AC-04) | `LucidePencilLine` for any other key of type `text`, `number`, `select`, `date`; none for `checkbox` |
 | Country visuals (`shared/country-visuals.ts`, ADR-0011) | country `code`, upper-cased (`'CO'`, `'CL'`) | flag component and accent key (`'co'`, `'cl'`); the colour values live only in `tokens.css` | `{ flag: null, accent: null }`: `LucideEarth` and the brand accent |
+| Input profile (v0.3; file name per ADR-0014, CLAUDE.md §6) | field `key`; for unmapped keys, the field `type` | allowed characters, letter case, fallback max length, `inputmode`, `autocomplete`, `autocapitalize` (table below) | `number` type → "digits"; any other unmapped field → no filter, no fallback max, no hints |
 
-Both maps are presentation only: no behaviour, validation or copy depends on them.
+~~Both maps are presentation only: no behaviour, validation or copy depends on them.~~ **v0.3:**
+the field-icon and country-visuals maps are presentation only. The input-profile map is
+presentation and **input behaviour** only: it filters what can be typed or pasted and sets the
+attributes; no validation rule or message depends on it, and it is keyed by field key, never by
+country (the RUT variant is chosen by the presence of a `rutCheckDigit` rule).
+
+Input profiles (BR-19). `maxlength` = the field's Strapi `maxLength` rule value if present, else the
+fallback below.
+
+| Profile (key) | Allowed characters | Case | Fallback max | `inputmode` | `autocomplete` | `autocapitalize` |
+|---|---|---|---|---|---|---|
+| `fullName` | any Unicode letter, space, `'`, `-`, `.` | as typed | 80 | — | `name` | `words` |
+| `documentNumber` without `rutCheckDigit` | digits | — | 10 | `numeric` | — | — |
+| `documentNumber` with `rutCheckDigit` (RUT) | digits, `.`, `-`, `k`/`K` | `k` shown and stored as `K` | 12 | `text` | — | — |
+| `plate` | ASCII letters, digits | upper case | 6 | — | `off` | `characters` |
+| `model` | any Unicode letter, digits, space, `-`, `.`, `/` | as typed | 40 | — | — | — |
+| `vehicleYear` | digits | — | 4 | `numeric` | — | — |
+| any other `number` field ("digits") | digits | — | none | `numeric` | — | — |
+| `date` fields | the date mask (BR-18) | — | 10 (`maxlength`) | `numeric` | — | — |
 
 ## 8. UI states
 
@@ -752,6 +1174,14 @@ Both maps are presentation only: no behaviour, validation or copy depends on the
 | Processing payment | "Pagar" | Spinner in the button, "Procesando pago…" | Unchanged (US-03) |
 | Confirmation | Payment approved | Check-circle scales and fades in (`transform` and `opacity` only, ADR-0013); indicator all completed | Unchanged focus and title |
 | Reduced motion | `prefers-reduced-motion: reduce` | Every state above without movement | — |
+| Calendar open, wide (v0.3) | "Elegir fecha" at ≥ `--breakpoint-sheet` | Compact popover directly below the date text box; the page scrolls first if it would not fit below; never over the sticky header | As "Calendar open" (BR-17, AC-24) |
+| Date typing (v0.3) | Keys in the date text box | Digits with `/` inserted ("15/0"); other characters do not appear; no message while typing | `inputmode="numeric"`, `maxlength="10"`; no announcement per keystroke |
+| Date not valid (v0.3) | Leaving the field, or "Continuar", with text that is not a complete, existing date | "Fecha no válida. Usa el formato dd/mm/aaaa." with the error icon; the text stays | `aria-invalid="true"`, message in `aria-describedby`, announced once (BR-18) |
+| Filtered input (v0.3) | Typing or pasting a character outside the field's profile, or past `maxlength` | The character does not appear; the caret stays after the last kept character; no message | No announcement (the Strapi validation message appears only per the existing timing) |
+| Back link (v0.3) | Wizard steps 1–3 | "← Cambiar país" / "← Volver a tus datos" / "← Volver a planes" above the h1 | `<a>` with `routerLink`; arrow `aria-hidden`; 44 × 44; visible focus (BR-21) |
+| Country chip link (v0.3) | Wizard header with a resolved country | Flag + country name (optional "Cambiar país" hint on wide screens) | Accessible name "Cambiar país (actual: {país})"; flag `aria-hidden` |
+| Chooser (v0.3) | "/" | Header with the product name; h1, lead paragraph, country cards (flag, name, chevron, accent on hover/focus), "Cómo funciona" with three numbered steps | One h1, one h2; icons `aria-hidden`; only the country links are Tab stops |
+| Page background (v0.3) | Every page | Lighter dark gradient with a violet tint near the top (`--gradient-page`), solid `--color-bg` fallback | AA at every stop (BR-20) |
 
 ### 8.1 Code-owned copy added by US-04
 
@@ -774,6 +1204,19 @@ is not a new string.
 | "Tus datos" / "Plan" / "Resumen y pago" | Step indicator labels |
 | "Progreso de la cotización" | Accessible name of the step indicator list |
 | "Paso {n} de 3" / "completado" | Visually hidden step indicator texts |
+| "Fecha no válida. Usa el formato dd/mm/aaaa." | (v0.3) Error of a date text box whose text is not a complete, existing date (BR-18) |
+| "Cambiar país" | (v0.3) Back link of step 1 (→ `/`); also the optional visible hint of the header chip on wide screens |
+| "Volver a tus datos" | (v0.3) Back link of step 2 (→ `/<cc>/datos`) |
+| "Volver a planes" | (v0.3) Back link of step 3 (→ `/<cc>/planes`) |
+| "Cambiar país (actual: {país})" | (v0.3) Accessible name of the header country chip link; `{país}` is the Strapi country `name`, for example "Cambiar país (actual: Colombia)" |
+| "Cotiza el seguro de tu auto en pocos minutos. Elige el país donde está matriculado tu vehículo para ver los planes y precios disponibles." | (v0.3) Chooser lead paragraph |
+| "Cómo funciona" | (v0.3) Chooser `h2` |
+| "Cuéntanos sobre ti y tu vehículo." / "Compara coberturas y precios." / "Revisa, acepta los términos y paga." | (v0.3) Descriptions of the chooser steps "Tus datos", "Plan", "Resumen y pago" (step names reused from the step indicator) |
+
+v0.3 reused strings: "Cotizador de seguro de auto" (chooser header), "Elige tu país" (chooser
+`h1`, unchanged), "Tus datos", "Plan", "Resumen y pago" (chooser list). The new `fullName`
+`errorMessage` "Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres)." is **Strapi
+seed content** (§7.1), not code-owned copy.
 
 ## 9. Non-functional requirements
 
@@ -782,7 +1225,10 @@ is not a new string.
   "Elegir fecha" stop; one `h1` per page; decorative icons and flags hidden; `forced-colors`
   fallbacks for gradient text and borders; screen reader pass at HC3 (NVDA or VoiceOver) on the
   select (both kinds, including how a collapsed combobox without `aria-controls` is announced,
-  ADR-0012), the calendar, the year list and the step indicator.
+  ADR-0012), the calendar, the year list and the step indicator. **v0.3:** back links and the
+  chip link are real links with visible focus and 44 × 44 targets; the date mask and the input
+  filters announce nothing per keystroke; the screen reader pass at HC3 also covers the chip link
+  name and the date box while typing.
 - **Responsive:** mobile-first CSS (`min-width` queries on the `--breakpoint-*` tokens); 320–1440
   CSS px with no horizontal scroll (verified at 360, 768, 1280); 44 × 44 px targets; bottom sheet
   below `--breakpoint-sheet` (600 px), fitting above the on-screen keyboard on phones (HC3 phone
@@ -790,7 +1236,9 @@ is not a new string.
 - **Multi-country:** one build; no country branch except the presentation map
   `country-visuals.ts` (ADR-0011, enforced by the static guard of AC-03); calendar names, date
   formatting and the first day of the week from `Intl`/CLDR and the country `localeTag`, with no
-  country code in the date picker; the date text format is the same for every country.
+  country code in the date picker; the date text format is the same for every country. **v0.3:**
+  input profiles are keyed by field key, never by country code; the RUT variant follows the
+  `rutCheckDigit` rule, so the AC-03 country-code guard still holds.
 - **Security / privacy:** no third-party origin at runtime (fonts, icons, flags self-hosted, so no
   new CSP or proxy change); no value of the form in logs; no `innerHTML` for icons or flags (the
   existing static guard applies: icons and flags are components or inline template SVG).
@@ -839,7 +1287,21 @@ is not a new string.
   9. **ADR-0013** (Accepted 2026-11-21) — native `animate.enter` + CSS on duration tokens, no
      animation library, enter-only step transition, reduced motion by construction (US-04-Q-14,
      Q-16; BR-09, BR-10; AC-14, AC-17).
-- **Needed:** none.
+- ~~**Needed:** none.~~
+- **Needed (v0.3, HC3 round 1; written by the architect in parallel, must be Accepted by the
+  human before implementation):**
+  1. **ADR-0014 — Input profiles, typed-date mask and anchored calendar; page background**
+     (amends ADR-0012 and ADR-0010). Must decide: the input-profile map (file, shape, lookup by key
+     and type, RUT variant by rule) and how the filter hooks into the Signal Forms binding without
+     changing the string model or the validation core (ADR-0004); caret handling of the filter and
+     the date mask; `number` fields as `type="text"` and what remains of the `syncNative`/`badInput`
+     path (ADR-0004 note, ADR-0012 amendment); how the date control shows "Fecha no válida…" for
+     unreadable text while the model stays `''` (amends the ADR-0012 `transformedValue` and message
+     resolution for dates); the CDK position strategy for the popover below the field, the
+     scroll-into-view step, the never-over-the-header rule and the compact sizes (amends ADR-0012
+     §3/§4); `--gradient-page`, `--color-bg`, any surface token changes and the regenerated
+     `contrast-pairs.json` (amends ADR-0010 §4); new Lucide icons (`ArrowLeft`, chevron) imported
+     individually (ADR-0010 §7). (US-04-Q-23..Q-27; BR-17..BR-21; AC-24..AC-28.)
 
 The four ADRs listed as needed in v0.1, kept for traceability (all written and Accepted at HC2,
 2026-11-21, as items 6–9 above):
@@ -914,6 +1376,12 @@ affected; the e2e suites exercise the lazy route.
 | US-04-AC-21 | unit (static guard on `package.json`) | `static-guards` |
 | US-04-AC-22 | manual (screenshots in `docs/qa/US-04/`, checked at HC3) | None automated |
 | US-04-AC-23 | manual (HC3 visual review in CO and CL at three sizes) | None automated |
+| US-04-AC-24 | e2e (bounding boxes of the dialog, the date box and the header at 1280 × 800 and 768 × 1024, incl. the field low on the page; cell and button sizes; focus return) + manual (HC3 look, 26rem target) | `e2e-us04` |
+| US-04-AC-25 | unit (pure mask function: every keys, Backspace and paste row) + component (message resolution, no message while typing, blocked "Continuar" and focus) + e2e (real keyboard typing incl. "29202001", end-to-end typed date to `/co/planes`) | `date-text` (or the mask module named by ADR-0014), `date-field`, `quote-form-page`, `e2e-us04` |
+| US-04-AC-26 | unit (profile lookup and filter function: every row; `maxlength` resolution; seed-fixture validator rows for the `fullName` pattern) + component (attributes, filtering on input and paste, hydrated "Ana 2", unknown fields) + e2e (real typing of the rows "Ana 2", "abc-123x", "20e2.5", "12.345.678-k") + backend unit (seed content rows) | input-profile spec (name per ADR-0014), `field-validators`, `quote-form-page`, `e2e-us04`, a backend seed test (`backend/tests/`) |
+| US-04-AC-27 | unit (static guard: `--gradient-page` semantic token, stops are tokens, lightest-stop luminance; contrast rows per stop) + e2e (computed `background-image`/`background-color` of `body` on six pages) + manual (HC3 look) | `design-guards`, `contrast`, `e2e-us04` |
+| US-04-AC-28 | component (links, names, hrefs, absence on confirmation/unknown/error, header link count, Tab stops) + e2e (navigation and data kept or discarded, focus indicator, 44 × 44, header not clipped at three viewports) | `wizard-chrome`, `quote-form-page`, `plan-list-page`, `summary-page`, `e2e-us04` |
+| US-04-AC-29 | component (structure, outline, copy, icons hidden, Tab stops, error state) + e2e (header and copy visible at three viewports) + manual (HC3 look) | `country-chooser-page`, `e2e-us04` |
 
 ### 11.1 Changes to existing tests (complete list; US-04-Q-06)
 
@@ -961,6 +1429,55 @@ asserted only while the list is open (BR-05).
 | `quote-form-page.spec.ts` | US-01-AC-09/10/18 date `badInput` tests (stubbed `validity.badInput`) | Type unreadable text ("15/05/199", "10/13/2026") instead of stubbing; same assertions (store `''`, message, `aria-invalid`, focus on the date box after a failed click or Enter submit). |
 | `field-config.spec.ts`, `field-validators.spec.ts`, `field-values.spec.ts`, `summary-page.spec.ts` | Mentions of `'date'` as a field type or ISO values | Expected unchanged (types and stored values do not change); the test-engineer confirms. |
 
+### 11.1.1 Changes to existing tests for v0.3 (HC3 round 1; complete list)
+
+Same rule as §11.1: each change follows a behaviour the human changed at HC3 (BR-07 exception
+(a)–(e)) and keeps shown **and** stored assertions; nothing is deleted without a replacement.
+Found with a search of `frontend/e2e/*.spec.ts`, `frontend/e2e/support/*.ts`,
+`frontend/src/**/*.spec.ts` and `frontend/src/testing/*.ts` for the date required message, the
+`fullName` message, `spinbutton`/`type: 'number'`/`badInput`, header focusability, chooser header
+absence and the calendar position. Playwright `fill()` sets the whole value in one input event,
+which the date mask handles like a paste (BR-18), so `fill('15/05/1990')` and `fill('5/5/1990')`
+keep working.
+
+**E2E**
+
+| File | Test | Today | Change |
+|---|---|---|---|
+| `us-01-data-form-co.spec.ts` | US-01-AC-02 / AC-10 / AC-18 "required date partly cleared" (R3-F01), 2 tests (`clearDateDigit`, `MESSAGE`) | "15/05/199" after leaving → "Ingresa tu fecha de nacimiento." | Same steps; the message is "Fecha no válida. Usa el formato dd/mm/aaaa." (BR-18); every other assertion unchanged. |
+| `us-01-data-form-co.spec.ts` | US-01-AC-02 row `['Nombre completo', 'Al', …]` | "Ingresa tu nombre completo (entre 3 y 80 caracteres)." | "Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres)." (seed, §7.1). |
+| `us-01-data-form-co.spec.ts` | US-01-AC-09 '"1e" typed key by key in "Modelo (año)"' | Native number: value `''`, `validity.badInput` true, stored `''`, yearRange message | Text box with the digits profile: "1e" shows "1" and stores "1" (`badInput` assertions removed: no native number control any more); "Continuar" shows "El modelo debe estar entre los últimos 20 años y el próximo año.", `aria-invalid`, stays on `/co/datos`. The `US-01-AC-09` ID stays; the title says the letter is not entered. |
+| `us-01-data-form-co.spec.ts` | US-01-AC-09 '"abc" cannot even be typed into the number field' | Passes as is | Assertions unchanged; only the comment about the native number control is updated. |
+| `us-01-data-form-co.spec.ts` | US-01-AC-24 keyboard completion, `tabTo('Tipo de documento', { max: 6 })` from the top | Header and indicator add no stop | Expected unchanged: the chip link and "Cambiar país" are two unlabelled stops before the first field, within `max: 6`; the test-engineer confirms. Typing "15/05/1990" key by key gives "15/05/1990" with the mask (AC-25 row). |
+| `us-01-country-context.spec.ts` | US-01-AC-22 `expectEmptyStep1` | Loop over `getByRole('spinbutton')` | The year is now a textbox (covered by the textbox loop); replace the spinbutton loop with an assertion that the year text box (by label) has value `''`, so the check does not become vacuous. |
+| `us-04-design-system.spec.ts` | US-04-AC-08 (es-CO and en-US) '"29/02/2001" … shows the required message' | `toHaveAccessibleDescription(/Ingresa tu fecha de nacimiento\./)` | `/Fecha no válida\. Usa el formato dd\/mm\/aaaa\./`; title updated; the rest unchanged. |
+| `us-04-design-system.spec.ts` | US-04-AC-12 "1280 x 800, Elegir fecha: a popover anchored to the date field" | Accepts the popover above **or** below within 40 px | Below only, per AC-24 (or replaced by the AC-24 tests, which are stricter). The 768 × 1024 "Ciudad" test is unchanged (select panels are not in BR-17). |
+
+**Component and unit**
+
+| File | Test | Today | Change |
+|---|---|---|---|
+| `src/testing/seed-fixtures.ts` | `fullName` (CO, CL), `documentNumber`, `plate` fixtures | Old seed | Mirror §7.1: `pattern` rule and new `errorMessage` for `fullName`; `maxLength` 10 / 12 / 6. |
+| `src/app/shared/field-validators.spec.ts` | line ~181 `validateField(fullName, 'Al')` | Old message | New `fullName` message; plus the AC-26 pattern rows. |
+| `quote-form-page.spec.ts` | US-01-AC-02 row `['Nombre completo', 'Al', …]` and the full-message assertion near line 306 | Old message | New message. The `toContain('Ingresa tu nombre completo')` substring checks stay valid. |
+| `quote-form-page.spec.ts` | US-01-AC-01 "every field type renders its control … number (spinbutton)" | `Modelo (año)`: `{ tagName: 'INPUT', type: 'number' }` | `{ tagName: 'INPUT', type: 'text' }` with `inputmode="numeric"` and role textbox; title "number (text box, numeric)". |
+| `quote-form-page.spec.ts` | US-01-AC-21 "what is typed is written as it changes" | Types "2015.5" in "Año", expects stored "2015.5" | Types "2015.5", expects shown and stored "2015" (the "." is not entered). The hydration test with stored "2015.5" is unchanged (US-04-Q-26: restored values are not filtered). |
+| `quote-form-page.spec.ts` | US-01-AC-09 / AC-21 number "cannot parse" block (stubbed `validity.badInput`, 7 tests incl. Kilometraje "1e"/"2015e") | Stub sets `badInput` and value `''` | The stub no longer models a reachable state (text box, digits profile). Replace each with typing: "2015e" shows and stores "2015"; "1e" shows and stores "1"; the required-message and optional-message assertions move to an empty required year (requiredMessage ?? errorMessage) and to an out-of-range value, as ADR-0014 decides for the remaining `syncNative` path. The US-01-AC-09 IDs stay. |
+| `quote-form-page.spec.ts` | US-01-AC-09 / AC-10 optional date "10/13/2026" (2 tests: errorMessage / "Revisa este campo.") | Shows the field's `errorMessage` or "Revisa este campo." | Both show "Fecha no válida. Usa el formato dd/mm/aaaa." (US-04-Q-24); other assertions unchanged. |
+| `quote-form-page.spec.ts` | US-01-AC-02 / AC-10 / AC-18 "required date emptied after it was valid", rows "15/05/199" | "Ingresa tu fecha de nacimiento." | "Fecha no válida. Usa el formato dd/mm/aaaa." for the unreadable row; the cleared (`''`) row keeps "Ingresa tu fecha de nacimiento.". |
+| `src/app/shared/date-field.spec.ts` | US-04-AC-08 rows 29/02/2001, 31/04/1990, 15/05/199, 15/05/90 (`REQUIRED`), the "unreadable text is the former badInput" test and the optional "Fecha de revisión" test | Required / field message | "Fecha no válida. Usa el formato dd/mm/aaaa."; stored `''` and visible text unchanged. |
+| `src/app/shared/date-field.spec.ts` | US-04-AC-08 "no input mask: typing '15' leaves '15'" | Asserts no `/` inserted | Replaced by the AC-25 mask rows ("150" → "15/0"); the test of "15" alone may stay with a true title. |
+| `src/app/shared/wizard-chrome.spec.ts` | US-04-AC-13 "neither the indicator nor the header contains a focusable element or a heading" | Header: 0 focusable | Indicator: 0; header: exactly 1 focusable element, the chip link (AC-13 v0.3, AC-28); headings 0. |
+| `src/app/shared/wizard-chrome.spec.ts` | US-04-AC-13 "the Tab order of step 3 is unchanged … first stop is 'Editar mis datos'" | First stop "Editar mis datos" | First stops: chip link, "Volver a planes", then "Editar mis datos" (AC-28). |
+| `country-chooser-page.spec.ts` | US-04-AC-03 "the chooser is not a wizard page: no wizard header and no step indicator" | `header, [role="banner"]` is null | A header with "Cotizador de seguro de auto" and no link, no chip and no `data-country-accent`; no step indicator (AC-29). |
+| `contrast.spec.ts`, `design-guards.spec.ts` | Read `contrast-pairs.json` and `tokens.css` | — | Expected unchanged in code; the data changes (new rows per gradient stop). New AC-27 guard added. |
+
+Not affected (checked): `quote-form-page.spec.ts` US-01-AC-17 link lists on `/`, `/ar/datos` and
+the country-error state (`querySelectorAll('a')`): the chooser header has no link and no back link
+or chip link renders without a resolved country (BR-21); `us-01-country-context.spec.ts` link
+queries run on pages without the chip; the US-02-AC-16 / US-03-AC-16 keyboard tests Tab forward from
+the focused `h1`, after the new stops.
+
 ## 12. Traceability matrix (filled before HC3)
 
 Generated with `scripts/trace.sh US-04` and pasted here.
@@ -973,3 +1490,5 @@ Generated with `scripts/trace.sh US-04` and pasted here.
 | 2026-11-21 | Felipe Sabogal (human) | HC1 | **Approved** (v0.1) | The six blocking gaps (Q-01, Q-02, Q-04, Q-05, Q-06, Q-07) accepted as proposed; every other default accepted; the `story.md` translation confirmed. The 14 adjustments that ADR-0010..0013 force are approved and go into v0.2, plus a human decision: the calendar's first day of the week follows the country locale (CLDR: Sunday for es-CO, Monday for es-CL). (Translated from the Spanish session.) |
 | 2026-11-21 | spec-writer | v0.2 | ADR-driven adjustments 1–14 approved at HC1; week start per locale | Revision after HC1 and HC2 (ADR-0010..0013 Accepted), applying their *Spec impact* sections. Status kept `Approved` (human pre-approval of items 1–14 and the week start, row above); version 0.2. **(1) Q-09:** icon package `@lucide/angular` 1.77.0 (`lucide-angular` deprecated, peers stop at Angular 21); old text struck, v0.2 note; BR-04, §2, §7.2; AC-04 Examples now name the Lucide components and the default `LucidePencilLine`. **(2) AC-02:** row "input and card border" → "input and interactive card border"; note and BR-02: non-interactive panels (summary sections) keep a decorative hairline, allowed by WCAG 1.4.11. **(3) BR-12 / AC-19:** one variable WOFF2 file per family with the `font-weight` range limited to the scale; the system fallback stack names local fonts, never downloaded, not counted as families; AC-19 `Then` lines reworded accordingly. **(4) Q-08 / Q-03:** starting fonts and colours struck and replaced by references to ADR-0010 §4–§5 (Archivo + Atkinson Hyperlegible Next; palette) and ADR-0011 (Colombia `#FFCD00`, Chile `#F66E5E`); values not duplicated. **(5) "Seleccionado":** kept; it is the existing US-02 marker (US-02 §8, §8.1, US-02-AC-03), so §8.1 lists it among reused strings, not as new copy; §8 row says so. **(6) Q-10:** "public-domain designs" → drawn from the official constructions; flag colours are published approximations (no law fixes them). **(7) Empty searchable select:** prompt = placeholder and `inputValue()` `''` (select-only: button text); glossary *Custom select* and *Shown value*, BR-05, §8, AC-05 (now also asserts "Tipo de documento" text, stored `''`, and `aria-controls` while open), §11.1 preamble defines "shows the prompt", `expectEmptyStep1`, US-03-AC-11 row, US-01-AC-07/AC-23 rows, `dom.ts` `shownValue`. **(8) AC-09:** "page behind is inert" → focus trap (Tab and Shift+Tab), backdrop, `aria-hidden="true"` on the page behind; BR-06, §8 aligned; note on what jsdom and e2e assert. **(9) `aria-controls`:** asserted only while the list is open (BR-05, AC-05, AC-06 note, §8, §11.1 AC-01 row and `dom.ts` lookup); HC3 screen reader note in §9. **(10) Week start (human decision):** BR-06, Q-12 (old "Monday" struck), §7.1, §8, §9; AC-09 keyboard outline gains a `country` column and two Colombia rows (Home → Sunday 13/05/1990, End → Saturday 19/05/1990); "Calendar names" becomes an outline with the column order per country (es-CO Sunday first, es-CL Monday first); §11 AC-09 adds the unit level. **(11) Phone keyboard:** BR-11 and an AC-12 note: HC3 phone check that the searchable select's bottom sheet fits above the on-screen keyboard; Q-11, Q-13, §9, §11 AC-12 row. **(12) Q-16:** confirmation check-circle scales and fades (transform/opacity) instead of a stroke draw; §8 row. **(13) BR-01 / AC-01:** media conditions also accept `(hover: hover)` (plus `prefers-reduced-motion`, `forced-colors`, `prefers-color-scheme`), breakpoints `min-width` only; also the `forced-colors` system colours as allowed literals and the guard's sensitivity self-test (ADR-0010 §2). **(14) AC-17:** `getAnimations()` returns an empty list; BR-10 adds the by-construction rules, and AC-17 gains a second scenario "Reduced motion by construction" (static guard, ADR-0013 §4). **Further alignments with the accepted ADRs (for the human to confirm):** step 1 lazy-loaded (`loadComponent`, ADR-0012 §7) in §2 scope, out of scope (route addresses unchanged), §9 and §11 preamble; AC-03 gains a third scenario "Country codes stay in the country-visuals map" (static guard replacing ADR-0001's review grep, ADR-0011), BR-03 and Q-02 note; BR-09 and Q-14 name the motion mechanism (ADR-0013) and allow paint-only state transitions, §9 *Performance* reworded the same way; BR-14 and an AC-21 note list the five accepted dependencies; AC-14 note (enter-only, token values); AC-23 names ADR-0010/0011; §7.1 no Strapi attribute; §7.2 file names and values; glossary token prefixes and panel breakpoint; Q-01, Q-04, Q-13 v0.2 notes; §2 skills bullet (EVAL outcome); §9 *Maintainability* uses the ADR file names; §10 lists ADR-0010..0013 as accepted with what they amend (ADR-0011 → ADR-0001, ADR-0012 → ADR-0004) and *Needed: none*; §11 short names (`calendar-dates`, `select-search`, `field-icons`, `country-visuals`) and rows AC-01, 03, 04, 07, 09, 12, 14, 17, 19. *Human answer* cells untouched; replaced default text struck through, not deleted. No ID renumbered, retired or added. Counts: 16 BR, 23 AC (0 original, 23 derived), 22 Q (none open). Review log rows pointing here added to US-01, US-02 and US-03 specs (US-04-Q-21, task US-04-T-26). |
 | 2026-11-21 | Felipe Sabogal (human) | v0.2 confirmation | **Confirmed** the v0.2 alignments outside the 14 adjustments (step 1 lazy-loaded; the country-code static guard, AC-03; reduced motion by construction, AC-17; the accepted dependencies, BR-14; wording). **Accepted** the week-start fallback: where the browser exposes no Intl week data (Firefox < 153, Safari < 15.4, Chrome < 99) the calendar starts on Monday (ADR-0012 implementation note). (Translated from the Spanish session.) |
+| 2026-11-22 | Felipe Sabogal (human) | HC3 round 1 | **Changes requested** (explicit instruction, CLAUDE.md §1) | After a manual QA pass on the local stack, the human asked (Spanish, excerpts): "deberia desplegarlo ahi abajo" (calendar), "si escribo la fecha mira que no me deja", "valida los inputs si son de type text, number, etcc, porque en nombre me deja escribir numero y con un maximo de caractes en cada input como lo recomiendes", "El fondo si puedes hacerlo un poco mas claro y con degradado", "agregarle flechas para regresar a un modulo anterior o si quiere cambiar quizas de colombia a chile", "[el selector de país] esta muy simple visualmente, puedes agregarle como un texto de más un header, y lo mismo del bg para todas". The main session turned this into decisions D1–D7; their concrete values are its recommendation, reviewed by the human in the HC3 QA of this round. |
+| 2026-11-22 | spec-writer (Claude Opus 5.5) | v0.3 | HC3 round 1 changes; status stays `Approved` (human-directed) | **Added:** BR-17 (D1, calendar compact and below the field), BR-18 (D2, date mask, "Fecha no válida. Usa el formato dd/mm/aaaa."), BR-19 (D3, input profiles, `maxlength`, `number` as text box, seed content changes), BR-20 (D4 background `--gradient-page` on every page + D6 richer chooser), BR-21 (D5, back links, chip link, change of country, header not clipped); AC-24 (calendar placement and size), AC-25 (mask, paste, message, end-to-end typed date), AC-26 (profiles, attributes, unknown fields, hydrated value, seed rows, `fullName` pattern), AC-27 (background on six pages, gradient tokens and contrast per stop), AC-28 (back links, chip link, change of country, Tab stops, header not clipped), AC-29 (chooser header, lead, links, "Cómo funciona" list); gaps Q-23 (mask details), Q-24 (message also for optional dates), Q-25 (chooser order), Q-26 (no filter on restored values; plate upper case), Q-27 (`fullName` pattern letter class), none blocking, defaults reviewed at the HC3 QA. **Amended (old text struck, not deleted):** §1 summary note; §2 in scope (v0.3 bullet), out of scope (logic/seed bullet, in-wizard switcher note, number control note); glossary (input profile, date mask, back link, chip link); BR-06 (mask and message, calendar placement), BR-07 (explicit HC3 exception list (a)–(e); only `backend/src/seed/form-fields.ts` may change under `backend/`), BR-13 (two new Tab stops at the top of each step; covered by AC-28); AC-02 note (every stop of `--gradient-page`); AC-08 four error cells and the optional-date message, note rewritten; AC-09 note; AC-11 Strapi scenario exception and note; AC-12 1280 row and note; AC-13 header focusability line; Q-05, Q-07, Q-17 v0.3 notes in the proposed-default column (*Human answer* cells untouched); §7.1 seed changes table (no schema change); §7.2 input-profile map and profile table; §8 eight new state rows; §8.1 new strings (listed exactly) and reused strings; §9 accessibility and multi-country notes; §10 ADR-0014 needed (amends ADR-0012 and ADR-0010); §11 rows AC-24..AC-29; new §11.1.1 with the complete list of existing tests that change. No ID renumbered or retired. Counts: 21 BR, 29 AC (0 original, 29 derived), 27 Q (Q-23..Q-27 open, non-blocking). |

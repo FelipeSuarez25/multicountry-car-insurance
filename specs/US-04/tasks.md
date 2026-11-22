@@ -7,12 +7,12 @@
 
 | Field | Value |
 |---|---|
-| Current step | HC3 (review R2 APPROVED) |
+| Current step | HC3 round 1 changes: spec v0.3 (done) → ADR-0014 (architect, in parallel; needs human acceptance) → tests (red) → strapi seed + frontend implementation → gate → review R3 → after screenshots → HC3 QA |
 | Branch | feat/us-04-design-system |
 | PR | — |
-| Blockers | none (the two defective tests were fixed by the test-engineer in a16c82d) |
-| **Next action** | test-engineer fixes nit US-04-R2-F01; then the human's HC3 (PR, manual QA per T-25, merge). |
-| Last updated | 2026-11-22 by orchestrator (Claude Opus 5.5) |
+| Blockers | ADR-0014 must be Accepted by the human before implementation (T-31..T-35); tests may start from spec v0.3 and the ADR draft |
+| **Next action** | test-engineer: T-29 and T-30 (tests for US-04-AC-24..AC-29 and the §11.1.1 changes, red), from spec v0.3 and ADR-0014. |
+| Last updated | 2026-11-22 by spec-writer (Claude Opus 5.5) |
 
 ## Tasks
 
@@ -47,6 +47,20 @@ T-16..T-23 depend on the ADRs (T-02..T-05); T-12 and T-13 depend on US-04-Q-04 a
 | US-04-T-24 | After screenshots in `docs/qa/US-04/after/` (names of AC-22) and README table | US-04-AC-22 | orchestrator | done: 45 after screenshots in `docs/qa/US-04/after/` (orchestrator), incl. the select and the calendar open | (this commit) |
 | US-04-T-25 | HC3 manual checks: visual review CO/CL at three sizes, keyboard only, screen reader on select, calendar and indicator, originality; phone check that the searchable select's bottom sheet fits above the on-screen keyboard (AC-12) | US-04-AC-20, US-04-AC-22, US-04-AC-23 | human (HC3) | todo | |
 | US-04-T-26 | After HC1 (if US-04-Q-21 default holds): one Review log row in US-01, US-02 and US-03 specs pointing to what US-04 supersedes | US-04-AC-11 | spec-writer | done (Review log rows in US-01, US-02 and US-03 specs) | (this commit) |
+| US-04-T-27 | HC3 round 1: spec v0.3 (BR-17..BR-21, AC-24..AC-29, Q-23..Q-27, amendments, §11.1.1) | US-04-AC-24, US-04-AC-25, US-04-AC-26, US-04-AC-27, US-04-AC-28, US-04-AC-29 | spec-writer | done | |
+| US-04-T-28 | ADR-0014 "Input profiles, typed-date mask and anchored calendar; page background" (amends ADR-0012 and ADR-0010); human acceptance | US-04-AC-24, US-04-AC-25, US-04-AC-26, US-04-AC-27 | architect + human | in progress (parallel) | |
+| US-04-T-29 | Unit and component tests (red): mask and paste rows, date message resolution, input-profile lookup/filter/`maxlength`, `fullName` pattern rows, gradient token guard and contrast rows, back links, chip link, header focusables, chooser structure; plus the component/unit changes of spec §11.1.1 | US-04-AC-25, US-04-AC-26, US-04-AC-27, US-04-AC-28, US-04-AC-29, US-04-AC-11 | test-engineer | todo | |
+| US-04-T-30 | E2E tests (red): calendar placement and size (incl. field low on the page), typed date end to end, real typing of profile rows, backgrounds on six pages, back links and change of country, Tab stops, header not clipped, chooser; plus the e2e changes of spec §11.1.1 | US-04-AC-24, US-04-AC-25, US-04-AC-26, US-04-AC-27, US-04-AC-28, US-04-AC-29, US-04-AC-11 | test-engineer | todo | |
+| US-04-T-31 | Strapi seed content: `fullName` pattern + `errorMessage` (CO, CL), `documentNumber` `maxLength` 10 / 12, `plate` `maxLength` 6 (spec §7.1); no schema change | US-04-AC-26 | strapi-developer | todo | |
+| US-04-T-32 | Frontend: date mask, paste, "Fecha no válida…" message; compact calendar popover below the field with scroll-into-view and no header overlap | US-04-AC-24, US-04-AC-25 | frontend-developer | todo | |
+| US-04-T-33 | Frontend: input-profile map, filter on input and paste, `maxlength` from Strapi rule or profile, `number` as `type="text" inputmode="numeric"`, keyboard hints | US-04-AC-26 | frontend-developer | todo | |
+| US-04-T-34 | Frontend: `--gradient-page` / `--color-bg` on every page, surface tokens, regenerated `contrast-pairs.json`; richer chooser (header, lead, cards, "Cómo funciona") | US-04-AC-27, US-04-AC-29 | frontend-developer | todo | |
+| US-04-T-35 | Frontend: back links on steps 1–3, header chip as link to `/`, header layout not clipped | US-04-AC-28 | frontend-developer | todo | |
+| US-04-T-36 | Gate (attempt 3): lint, build, unit, e2e twice, backend tests, `trace.sh`, scans; backend diff limited to the seed | US-04-AC-11 | orchestrator | todo | |
+| US-04-T-37 | Review R3 of the HC3 round 1 changes | US-04-AC-24, US-04-AC-25, US-04-AC-26, US-04-AC-27, US-04-AC-28, US-04-AC-29 | code-reviewer | todo | |
+| US-04-T-38 | Refresh `docs/qa/US-04/after/` (same capture set; `before/` untouched) | US-04-AC-22 | orchestrator | todo | |
+| US-04-T-39 | HC3 QA of round 1: review the recommended values (Q-23..Q-27, sizes, profiles, copy), both countries, keyboard only, mobile width, screen reader on the chip link and date box; plus the pending T-25 checks | US-04-AC-23, US-04-AC-24, US-04-AC-27, US-04-AC-29 | human (HC3) | todo | |
+| US-04-T-40 | Traceability in other specs: Review log row in US-01 spec (US-01-AC-09 number part no longer reachable, badInput message for dates replaced, `fullName` message and new seed rules) and update of `specs/US-01/seed-fields.md` to the §7.1 seed | US-04-AC-11, US-04-AC-26 | spec-writer | todo | |
 
 ## Gate history
 
@@ -61,6 +75,8 @@ T-16..T-23 depend on the ADRs (T-02..T-05); T-12 and T-13 depend on US-04-Q-04 a
 | 2026-11-22 | Review R1 decisions | **Decided**: F03 and F04 — restore the approved design (the ADR-0013 sheet slide; the plan `h1` focused on arrival as in US-02) and make the e2e wait for the animation and for the plans instead; fix F01, F02, F05, F06, F07 and F08; F09 (focus ring box on the arriving `h1`) kept, judged at HC3 | Felipe Sabogal (human) | [R1](../../reviews/US-04-review-R1.md) |
 | 2026-11-22 | Gate (attempt 2, after R1 fixes) | **PASSED** (orchestrator, clean stack): frontend lint 0, build 0 (initial 458.67 kB raw / 102.99 kB transfer), unit 1285/1285; backend lint 0, build 0, 86/86, unchanged vs main; e2e 176/176 twice; `trace.sh` US-01..US-03 exit 0, US-04 exit 1 **only** because R1-F01/F02 (major) stay open until the reviewer closes them in R2; code scan exit 0 (personal data none); log scan 23 = 23. R1 fixes e3172ac..87ad356 (one per finding; F05 no change needed); R1 tests 85f5ad7; two defective R1 e2e tests fixed in 09db7bf (icon hit-test below the fold; platform select-all). After screenshots refreshed | orchestrator | 09db7bf |
 | 2026-11-22 | Review R2 | **APPROVED**: all R1 findings fixed (F01..F08), F09 deferred to HC3 by the human; no fix changed the approved design to suit a test; 1 nit R2-F01 (an R1-F04 unit test title claims a check it does not make; an unread event result). `trace.sh US-04` exit 0 | code-reviewer | [R2](../../reviews/US-04-review-R2.md) |
+| 2026-11-22 | HC3 round 1 | **Changes requested** by the human after manual QA (calendar below the field, typed date, input validation and max lengths, lighter gradient background, back arrows and change of country, richer chooser); decisions D1–D7 by the main session, values reviewed at the next HC3 QA | Felipe Sabogal (human) | spec §13 |
+| 2026-11-22 | 1 Spec (v0.3) | Spec v0.3 written: +5 BR (21), +6 AC (29, all derived), +5 Q (27; Q-23..Q-27 non-blocking), ADR-0014 needed, §11.1.1 lists the existing tests that change | spec-writer (Claude Opus 5.5) | spec §13 |
 
 ## Session log
 
