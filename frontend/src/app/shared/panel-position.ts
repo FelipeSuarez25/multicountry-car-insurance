@@ -16,7 +16,45 @@ export function isWideViewport(observer: BreakpointObserver): boolean {
   return observer.isMatched(WIDE_QUERY);
 }
 
-/** A popover under the control (above it when there is no room), or the viewport bottom for a sheet. */
+/**
+ * True when the room under the control is smaller than the popover (plus the gaps), so the page
+ * should scroll the control up before the popover opens (ADR-0014 section 1, US-04-AC-24). Pure.
+ */
+export function needsScrollBeforeOpen(controlBottom: number, viewportHeight: number, panelHeight: number, gap: number): boolean {
+  return controlBottom + panelHeight + gap > viewportHeight;
+}
+
+/** The length of a root custom property in CSS px (`rem` or `px`), or 0 when it is not declared. */
+function rootLengthPx(name: string): number {
+  const root = document.documentElement;
+  const raw = getComputedStyle(root).getPropertyValue(name).trim();
+  const value = parseFloat(raw);
+  if (Number.isNaN(value)) return 0;
+  return raw.endsWith('rem') ? value * parseFloat(getComputedStyle(root).fontSize) : value;
+}
+
+/** The sticky header's height plus its gap: the top of the room a popover may use (`scroll-padding-top` of `html`). */
+function headerOffsetPx(): number {
+  const value = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop);
+  return Number.isNaN(value) ? 0 : value;
+}
+
+/**
+ * Before a wide popover opens: when the room under the control is short, scroll the control to just
+ * under the sticky header (`scroll-padding-top`), instantly and with no motion, so the popover can
+ * open directly below it (ADR-0014 section 1).
+ */
+export function revealRoomBelow(control: HTMLElement): void {
+  const panelHeight = rootLengthPx('--size-calendar-max-height');
+  if (needsScrollBeforeOpen(control.getBoundingClientRect().bottom, window.innerHeight, panelHeight, GAP * 2)) {
+    control.scrollIntoView({ block: 'start', behavior: 'instant' });
+  }
+}
+
+/**
+ * A popover under the control, or above it only when it cannot fit below (the fit area excludes the
+ * sticky header, so it never covers it), or the viewport bottom for a sheet.
+ */
 export function panelPositionStrategy(injector: Injector, origin: HTMLElement, sheet: boolean): PositionStrategy {
   if (sheet) return createGlobalPositionStrategy(injector).bottom('0');
   return createFlexibleConnectedPositionStrategy(injector, origin)
@@ -26,5 +64,5 @@ export function panelPositionStrategy(injector: Injector, origin: HTMLElement, s
     ])
     .withFlexibleDimensions(false)
     .withPush(true)
-    .withViewportMargin(GAP);
+    .withViewportMargin({ top: headerOffsetPx() || GAP, bottom: GAP, start: GAP, end: GAP });
 }

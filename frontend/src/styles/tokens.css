@@ -33,9 +33,11 @@
 
   /* ---- Primitive tier ------------------------------------------------------------------- */
   --primitive-ink-950: #0B0B14;
+  --primitive-ink-925: #11101C;
   --primitive-ink-900: #14131E;
   --primitive-ink-850: #1D1C2A;
   --primitive-ink-800: #272736;
+  --primitive-ink-750: #31303F;
   --primitive-ink-700: #3B3B4C;
   --primitive-ink-500: #7E7E93;
   --primitive-ink-300: #BCBCCC;
@@ -47,6 +49,7 @@
   --primitive-violet-700: #6427C4;
   --primitive-violet-800: #4F1B9E;
   --primitive-indigo-950: #16154D;
+  --primitive-violet-950: #231541;
   --primitive-red-300: #FF9592;
   --primitive-green-300: #74E29F;
   --primitive-white: #FFFFFF;
@@ -62,10 +65,10 @@
   --primitive-accent-cl: #F66E5E;
 
   /* ---- Semantic tier: colour ------------------------------------------------------------ */
-  --color-bg: var(--primitive-ink-950);
-  --color-surface: var(--primitive-ink-900);
-  --color-surface-raised: var(--primitive-ink-850);
-  --color-surface-hover: var(--primitive-ink-800);
+  --color-bg: var(--primitive-ink-925);
+  --color-surface: var(--primitive-ink-850);
+  --color-surface-raised: var(--primitive-ink-800);
+  --color-surface-hover: var(--primitive-ink-750);
   --color-border-subtle: var(--primitive-ink-700);
   --color-border-control: var(--primitive-ink-500);
   --color-text: var(--primitive-ink-50);
@@ -79,6 +82,7 @@
   --color-error: var(--primitive-red-300);
   --color-success: var(--primitive-green-300);
   --color-country-accent: var(--color-brand);
+  --color-choice-accent: var(--color-brand);
 
   /* ---- Semantic tier: type -------------------------------------------------------------- */
   --font-display: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -135,6 +139,7 @@
   --size-icon-small: 1rem;
   --size-icon-large: 2.5rem;
   --size-flag-height: 1rem;
+  --size-flag-large: 2.25rem;
   --size-content-max: 72rem;
   --size-form-max: 40rem;
   --size-summary-max: 48rem;
@@ -143,6 +148,11 @@
   --size-popover-min: 12rem;
   --size-popover-max: 24rem;
   --size-calendar-width: 21.5rem;
+  --size-calendar-max-height: 27rem;
+  --size-calendar-weekday: 1.75rem;
+  --size-header-height: 4.25rem;
+  --size-page-gradient: 40rem;
+  --size-choice-min: 7rem;
   --size-sheet-max-height: 85dvh;
   --size-list-max-height: 16rem;
   --size-terms-max-height: 24rem;
@@ -170,6 +180,7 @@
   --gradient-button-primary: linear-gradient(180deg, var(--primitive-white) 0%, var(--primitive-violet-200) 100%);
   --gradient-display-text: linear-gradient(180deg, var(--primitive-ink-50) 0%, var(--primitive-violet-300) 100%);
   --gradient-skeleton: linear-gradient(90deg, var(--primitive-ink-850) 0%, var(--primitive-ink-800) 50%, var(--primitive-ink-850) 100%);
+  --gradient-page: linear-gradient(180deg, var(--primitive-violet-950) 0%, var(--primitive-ink-925) 100%);
   --texture-dots: radial-gradient(circle, color-mix(in srgb, var(--primitive-white) 7%, transparent) 1px, transparent 1.5px);
   --texture-dots-gap: 1.5rem;
   --color-backdrop: color-mix(in srgb, var(--primitive-ink-950) 72%, transparent);
@@ -236,6 +247,15 @@
 
 [data-country-accent='cl'] {
   --color-country-accent: var(--primitive-accent-cl);
+}
+
+/* The same accents for the country links of the chooser, which is not a wizard page (US-04-AC-29). */
+[data-choice-accent='co'] {
+  --color-choice-accent: var(--primitive-accent-co);
+}
+
+[data-choice-accent='cl'] {
+  --color-choice-accent: var(--primitive-accent-cl);
 }
 
 /* Reduced motion, second line of defence (ADR-0013 section 3): every timing token is 0ms. */

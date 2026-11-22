@@ -4,9 +4,9 @@ import { ChangeDetectionStrategy, Component, ElementRef, Injector, inject, input
 import { transformedValue, type FormValueControl } from '@angular/forms/signals';
 import { LucideCalendarDays } from '@lucide/angular';
 import { Calendar, type CalendarData } from './calendar';
-import { formatDateText, parseDateText } from './date-text';
+import { DATE_TEXT_ERROR, formatDateText, maskDateDigits, parseDateText } from './date-text';
 import type { FieldConfig } from './field-config.model';
-import { isWideViewport, panelPositionStrategy } from './panel-position';
+import { isWideViewport, panelPositionStrategy, revealRoomBelow } from './panel-position';
 import { CLOCK } from '../core/clock';
 
 /**
@@ -52,7 +52,7 @@ export class DateField implements FormValueControl<string> {
     parse: (typed) => {
       this.lastTyped = typed;
       const iso = parseDateText(typed);
-      return iso === null ? { value: '', error: { kind: 'parse', message: '' } } : { value: iso };
+      return iso === null ? { value: '', error: { kind: 'parse', message: DATE_TEXT_ERROR } } : { value: iso };
     },
     format: (iso) => ((parseDateText(this.lastTyped) ?? '') === iso ? this.lastTyped : formatDateText(iso)),
   });
@@ -61,8 +61,16 @@ export class DateField implements FormValueControl<string> {
     this.box().nativeElement.focus(options);
   }
 
+  /** The mask (ADR-0014 section 2): digits with `/` after the day and the month; the caret follows the digits. */
   protected onInput(event: Event): void {
-    this.text.set((event.target as HTMLInputElement).value);
+    const el = event.target as HTMLInputElement;
+    const raw = el.value;
+    const { text, caret } = maskDateDigits(raw, el.selectionStart ?? raw.length);
+    if (text !== raw) {
+      el.value = text;
+      el.setSelectionRange(caret, caret);
+    }
+    this.text.set(text);
   }
 
   /** A readable text is shown in the display format when the person leaves the box. */
@@ -81,6 +89,8 @@ export class DateField implements FormValueControl<string> {
   protected open(): void {
     const origin = this.box().nativeElement;
     const sheet = !isWideViewport(this.breakpoints);
+    // Wide: when the room below is short, scroll the box under the sticky header first, so the calendar opens below it.
+    if (!sheet) revealRoomBelow(origin);
     const titleId = `${this.controlId()}-calendar-title`;
     const data: CalendarData = { config: this.config(), today: this.clock(), localeTag: this.localeTag(), value: this.value(), titleId, sheet };
     this.calendarOpen.set(true);

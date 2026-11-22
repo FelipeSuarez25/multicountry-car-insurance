@@ -2,10 +2,6 @@
   <div class="head">
     <span class="title" [id]="data.titleId" aria-live="polite">{{ title() }}</span>
     <div class="controls">
-      <button type="button" class="secondary years" [attr.aria-expanded]="choosingYear()" (click)="toggleYears()">
-        <svg lucideCalendarDays></svg>
-        <span>Elegir año</span>
-      </button>
       <button type="button" class="secondary" aria-label="Mes anterior" (click)="moveMonth(-1)">
         <svg lucideChevronLeft></svg>
       </button>
@@ -61,8 +57,14 @@
     </table>
   }
 
-  <button type="button" class="secondary close" (click)="close()">
-    <svg lucideX></svg>
-    <span>Cerrar</span>
-  </button>
+  <div class="foot">
+    <button type="button" class="secondary years" [attr.aria-expanded]="choosingYear()" (click)="toggleYears()">
+      <svg lucideCalendarDays></svg>
+      <span>Elegir año</span>
+    </button>
+    <button type="button" class="secondary close" (click)="close()">
+      <svg lucideX></svg>
+      <span>Cerrar</span>
+    </button>
+  </div>
 </div>

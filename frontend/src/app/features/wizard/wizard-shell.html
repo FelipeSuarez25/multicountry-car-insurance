@@ -1,13 +1,3 @@
-<header class="header">
-  <div class="header__inner">
-    <p class="header__product">Cotizador de seguro de auto</p>
-    @if (country; as current) {
-      <p class="chip">
-        <app-country-flag [code]="current.code" [accentRing]="true" />
-        <span>{{ current.name }}</span>
-      </p>
-    }
-  </div>
-</header>
+<app-site-header [country]="country ?? null" />
 <app-step-indicator [current]="step()" [confirmed]="progress.confirmed()" />
 <router-outlet />

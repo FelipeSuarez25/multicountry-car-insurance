@@ -12,13 +12,17 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Keeps a focused or scrolled-to element out from under the sticky header (ADR-0014 section 1). */
+  scroll-padding-top: calc(var(--size-header-height) + var(--space-2));
 }
 
 body {
   margin: 0;
-  background-color: var(--color-bg);
-  background-image: var(--texture-dots);
-  background-size: var(--texture-dots-gap) var(--texture-dots-gap);
+  /* Dots over the violet-to-dark page gradient over the solid base (ADR-0014 section 4). */
+  background:
+    var(--texture-dots) 0 0 / var(--texture-dots-gap) var(--texture-dots-gap) repeat,
+    var(--gradient-page) top / 100% var(--size-page-gradient) no-repeat,
+    var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-text);
   font-size: var(--text-body);

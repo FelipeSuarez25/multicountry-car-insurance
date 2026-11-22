@@ -1,0 +1,11 @@
+<header class="header">
+  <div class="header__inner">
+    <p class="header__product">Cotizador de seguro de auto</p>
+    @if (country(); as current) {
+      <a class="chip" routerLink="/" [attr.aria-label]="'Cambiar país (actual: ' + current.name + ')'">
+        <app-country-flag [code]="current.code" [accentRing]="true" />
+        <span>{{ current.name }}</span>
+      </a>
+    }
+  </div>
+</header>

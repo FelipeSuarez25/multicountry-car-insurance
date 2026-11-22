@@ -1,5 +1,7 @@
-<main class="page" animate.enter="page-enter" [attr.aria-busy]="countries.status() === 'loading' ? 'true' : null">
+<app-site-header />
+<main class="page page--chooser" animate.enter="page-enter" [attr.aria-busy]="countries.status() === 'loading' ? 'true' : null">
   <h1 tabindex="-1">Elige tu país</h1>
+  <p class="lead">Cotiza el seguro de tu auto en pocos minutos. Elige el país donde está matriculado tu vehículo para ver los planes y precios disponibles.</p>
   @switch (countries.status()) {
     @case ('error') {
       <app-load-error message="No pudimos cargar la lista de países. Intenta de nuevo." (retry)="retry()" />
@@ -8,8 +10,8 @@
       <ul class="list">
         @for (country of countries.countries(); track country.code) {
           <li>
-            <a class="link" [routerLink]="['/', country.code.toLowerCase(), 'datos']">
-              <app-country-flag [code]="country.code" />
+            <a class="link" [attr.data-choice-accent]="accentOf(country.code)" [routerLink]="['/', country.code.toLowerCase(), 'datos']">
+              <app-country-flag [code]="country.code" [large]="true" />
               <span class="link__name">{{ country.name }}</span>
               <svg lucideChevronRight class="link__chevron"></svg>
             </a>
@@ -25,4 +27,30 @@
       </div>
     }
   }
+  <section class="how">
+    <h2>Cómo funciona</h2>
+    <ol class="how__steps">
+      @for (step of steps; track step.n) {
+        <li class="how__step">
+          <span class="how__icon" aria-hidden="true">
+            @switch (step.n) {
+              @case (1) {
+                <svg lucideUserRound></svg>
+              }
+              @case (2) {
+                <svg lucideShieldCheck></svg>
+              }
+              @default {
+                <svg lucideReceipt></svg>
+              }
+            }
+          </span>
+          <span class="how__text">
+            <strong class="how__name">{{ step.label }}</strong>
+            <span class="how__description">{{ step.description }}</span>
+          </span>
+        </li>
+      }
+    </ol>
+  </section>
 </main>

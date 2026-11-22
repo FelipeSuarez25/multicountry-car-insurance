@@ -5,6 +5,7 @@ import { FormFieldStore } from '../../core/form-field-store';
 import { QuoteStore } from '../../core/quote-store';
 import type { Country } from '../../shared/country.model';
 import type { FieldConfig } from '../../shared/field-config.model';
+import { BackLink } from '../../shared/back-link';
 import { LoadError } from '../../shared/load-error';
 import { QuoteForm } from './quote-form';
 
@@ -16,7 +17,7 @@ type PageStatus = 'loading' | 'error' | 'ready';
  */
 @Component({
   selector: 'app-quote-form-page',
-  imports: [QuoteForm, LoadError],
+  imports: [QuoteForm, LoadError, BackLink],
   templateUrl: './quote-form-page.html',
   styleUrl: './quote-form-page.css',
 })

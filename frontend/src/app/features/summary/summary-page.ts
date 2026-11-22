@@ -13,6 +13,7 @@ import { TermsApi } from '../../core/terms-api';
 import type { Country } from '../../shared/country.model';
 import { LucideCircleAlert, LucideCircleCheck, LucideInfo, LucideLoaderCircle } from '@lucide/angular';
 import { WizardProgressStore } from '../../core/wizard-progress-store';
+import { BackLink } from '../../shared/back-link';
 import { LoadError } from '../../shared/load-error';
 import { formatMoney } from '../../shared/money-format';
 import type { Plan } from '../../shared/plan.model';
@@ -44,7 +45,7 @@ interface ChosenPlanView {
  */
 @Component({
   selector: 'app-summary-page',
-  imports: [LoadError, RichText, LucideCircleAlert, LucideCircleCheck, LucideInfo, LucideLoaderCircle],
+  imports: [BackLink, LoadError, RichText, LucideCircleAlert, LucideCircleCheck, LucideInfo, LucideLoaderCircle],
   templateUrl: './summary-page.html',
   styleUrl: './summary-page.css',
 })
@@ -66,6 +67,8 @@ export class SummaryPage {
   private readonly heading = viewChild.required<ElementRef<HTMLHeadingElement>>('heading');
   private readonly country: Country | undefined = this.countries.find(this.route.snapshot.paramMap.get('country') ?? '');
   private termsRequest: Subscription | null = null;
+  /** The back link of step 3 (US-04-BR-21). */
+  protected readonly toPlans = ['/', (this.country?.code ?? '').toLowerCase(), 'planes'];
 
   protected readonly dataStatus = signal<DataStatus>('loading');
   protected readonly rows = signal<SummaryRows>({ holder: [], vehicle: [] });

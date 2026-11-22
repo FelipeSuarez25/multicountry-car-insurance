@@ -1,4 +1,7 @@
 <main class="page page--summary" animate.enter="page-enter">
+  @if (!confirmed()) {
+    <app-back-link [link]="toPlans" label="Volver a planes" />
+  }
   <h1 #heading tabindex="-1">{{ headingText() }}</h1>
 
   @if (confirmed()) {

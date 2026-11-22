@@ -11,7 +11,7 @@ import { countryVisuals } from './country-visuals';
   selector: 'app-country-flag',
   imports: [NgComponentOutlet, LucideEarth],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '[class.flag--accent]': 'accentRing()' },
+  host: { '[class.flag--accent]': 'accentRing()', '[class.flag--large]': 'large()' },
   styleUrl: './country-flag.css',
   template: `
     @if (flag(); as component) {
@@ -26,5 +26,7 @@ export class CountryFlag {
   readonly code = input.required<string>();
   /** Draws the ring of the flag in the country accent (the header chip). */
   readonly accentRing = input(false);
+  /** The larger flag of the country cards. */
+  readonly large = input(false);
   protected readonly flag = computed(() => countryVisuals(this.code()).flag);
 }

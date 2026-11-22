@@ -4,6 +4,7 @@
     "fg": "--color-text",
     "bg": [
       "--color-bg",
+      "--gradient-page",
       "texture-worst",
       "--color-surface",
       "--color-surface-raised",
@@ -17,6 +18,7 @@
     "fg": "--color-text-muted",
     "bg": [
       "--color-bg",
+      "--gradient-page",
       "texture-worst",
       "--color-surface",
       "--color-surface-raised",
@@ -30,6 +32,7 @@
     "fg": "--color-link",
     "bg": [
       "--color-bg",
+      "--gradient-page",
       "texture-worst",
       "--color-surface",
       "--color-surface-raised",
@@ -43,6 +46,7 @@
     "fg": "--color-error",
     "bg": [
       "--color-bg",
+      "--gradient-page",
       "texture-worst",
       "--color-surface",
       "--color-surface-raised",
@@ -56,6 +60,7 @@
     "fg": "--color-success",
     "bg": [
       "--color-bg",
+      "--gradient-page",
       "texture-worst",
       "--color-surface",
       "--color-surface-raised",
@@ -69,6 +74,7 @@
     "fg": "--color-border-control",
     "bg": [
       "--color-bg",
+      "--gradient-page",
       "--color-surface",
       "--color-surface-raised",
       "--color-surface-hover"
@@ -81,6 +87,7 @@
     "fg": "--color-focus",
     "bg": [
       "--color-bg",
+      "--gradient-page",
       "texture-worst",
       "--color-surface",
       "--color-surface-raised",
@@ -94,6 +101,7 @@
     "fg": "--color-brand",
     "bg": [
       "--color-bg",
+      "--gradient-page",
       "--color-surface",
       "--color-surface-raised"
     ],
@@ -114,6 +122,7 @@
     "fg": "--component-button-primary-edge",
     "bg": [
       "--color-bg",
+      "--gradient-page",
       "--color-surface"
     ],
     "min": 3,
@@ -151,6 +160,7 @@
     "fg": "--component-plan-recommended-border",
     "bg": [
       "--color-bg",
+      "--gradient-page",
       "--color-surface"
     ],
     "min": 3,
@@ -161,6 +171,7 @@
     "fg": "--gradient-display-text",
     "bg": [
       "--color-bg",
+      "--gradient-page",
       "texture-worst"
     ],
     "min": 3,
@@ -198,6 +209,7 @@
     "fg": "--color-country-accent",
     "bg": [
       "--color-bg",
+      "--gradient-page",
       "--color-surface",
       "--color-surface-raised"
     ],

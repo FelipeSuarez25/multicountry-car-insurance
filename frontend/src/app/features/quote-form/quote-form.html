@@ -48,26 +48,14 @@
                 [ariaDescribedby]="described"
               />
             }
-            @case ('number') {
-              <input
-                type="number"
-                class="input"
-                [class.input--icon]="icon !== null"
-                (beforeinput)="flushBindings()"
-                (input)="syncNative($event, config.key)"
-                [id]="id"
-                [formField]="text(config.key)"
-                [attr.placeholder]="config.placeholder ?? null"
-                [attr.aria-required]="config.isRequired"
-                [attr.aria-invalid]="error ? 'true' : null"
-                [attr.aria-describedby]="described"
-              />
-            }
             @default {
               <input
                 type="text"
                 class="input"
                 [class.input--icon]="icon !== null"
+                [appInputProfile]="entryOf(config.key).profile"
+                [appInputProfileMax]="entryOf(config.key).max"
+                (input)="typed(config.key)"
                 [id]="id"
                 [formField]="text(config.key)"
                 [attr.placeholder]="config.placeholder ?? null"

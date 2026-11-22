@@ -4,8 +4,8 @@ import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/ro
 import { filter, map } from 'rxjs';
 import { CountryStore } from '../../core/country-store';
 import { WizardProgressStore } from '../../core/wizard-progress-store';
-import { CountryFlag } from '../../shared/country-flag';
 import { countryVisuals } from '../../shared/country-visuals';
+import { SiteHeader } from '../../shared/site-header';
 import { StepIndicator } from '../../shared/step-indicator';
 
 /**
@@ -16,10 +16,10 @@ import { StepIndicator } from '../../shared/step-indicator';
  */
 @Component({
   selector: 'app-wizard-shell',
-  imports: [RouterOutlet, CountryFlag, StepIndicator],
+  imports: [RouterOutlet, SiteHeader, StepIndicator],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '[attr.data-country-accent]': 'accent()' },
-  styleUrl: './wizard-shell.css',
+  styles: ':host { display: block; }',
   templateUrl: './wizard-shell.html',
 })
 export class WizardShell {

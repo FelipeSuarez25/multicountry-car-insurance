@@ -13,3 +13,11 @@
   height: var(--size-flag-height);
   color: var(--color-text-muted);
 }
+/* The country cards of the chooser draw a larger flag (the flag components size themselves from tokens). */
+:host(.flag--large) ::ng-deep svg {
+  height: var(--size-flag-large);
+}
+:host(.flag--large) .globe {
+  width: var(--size-flag-large);
+  height: var(--size-flag-large);
+}

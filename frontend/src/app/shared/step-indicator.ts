@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { LucideCheck, LucideReceipt, LucideShieldCheck, LucideUserRound } from '@lucide/angular';
 
-interface Step {
+export interface Step {
   n: 1 | 2 | 3;
   label: string;
 }
 
-const STEPS: readonly Step[] = [
+/** The three wizard steps, in order (also listed on the country chooser). */
+export const WIZARD_STEPS: readonly Step[] = [
   { n: 1, label: 'Tus datos' },
   { n: 2, label: 'Plan' },
   { n: 3, label: 'Resumen y pago' },
@@ -31,7 +32,7 @@ export class StepIndicator {
   readonly confirmed = input(false);
 
   protected readonly steps = computed(() =>
-    STEPS.map((step) => {
+    WIZARD_STEPS.map((step) => {
       const done = this.confirmed() || (this.current() ?? 0) > step.n;
       return { ...step, done, isCurrent: !this.confirmed() && this.current() === step.n };
     }),

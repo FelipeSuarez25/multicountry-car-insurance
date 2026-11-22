@@ -1,6 +1,19 @@
+:host {
+  display: block;
+}
+.page--chooser {
+  max-width: var(--size-summary-max);
+}
+.lead {
+  max-width: var(--size-measure);
+  margin-bottom: var(--space-6);
+  color: var(--color-text-muted);
+  font-size: var(--text-lead);
+  line-height: var(--leading-lead);
+}
 .list {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-4);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -8,16 +21,17 @@
 .link {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  min-height: var(--size-target-min);
-  padding: var(--space-4);
+  gap: var(--space-4);
+  min-height: var(--size-choice-min);
+  padding: var(--space-4) var(--space-5);
   border: var(--border-width-hairline) solid var(--component-plan-border);
   border-radius: var(--radius-card);
   background: var(--component-panel-bg);
   color: var(--color-text);
   font-family: var(--font-display);
-  font-size: var(--text-lead);
+  font-size: var(--text-heading);
   font-weight: var(--weight-bold);
+  font-stretch: var(--text-subheading-stretch);
   text-decoration: none;
 }
 .link__name {
@@ -26,21 +40,71 @@
 .link__chevron {
   color: var(--color-text-muted);
 }
+.link:focus-visible {
+  border-color: var(--color-choice-accent);
+}
+.link:focus-visible .link__chevron {
+  color: var(--color-choice-accent);
+}
 @media (hover: hover) {
   .link:hover {
     background: var(--color-surface-hover);
-    border-color: var(--color-brand);
+    border-color: var(--color-choice-accent);
+    box-shadow: 0 0 0 var(--border-width-hairline) var(--color-choice-accent);
   }
+  .link:hover .link__chevron {
+    color: var(--color-choice-accent);
+  }
+}
+.how {
+  margin-top: var(--space-7);
+}
+.how__steps {
+  display: grid;
+  gap: var(--space-4);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.how__step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.how__icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--size-icon-large);
+  height: var(--size-icon-large);
+  border: var(--border-width-hairline) solid var(--color-border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-raised);
+  color: var(--color-brand);
+}
+.how__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.how__description {
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+  line-height: var(--leading-small);
 }
 @media (min-width: 37.5em) {
   .list {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .how__steps {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 @media (prefers-reduced-motion: no-preference) {
   .link {
     transition:
       background-color var(--duration-fast) var(--ease-standard),
-      border-color var(--duration-fast) var(--ease-standard);
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 }
