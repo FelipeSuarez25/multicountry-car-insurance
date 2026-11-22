@@ -203,5 +203,23 @@
     ],
     "min": 3,
     "ac": "US-04-AC-02"
+  },
+  {
+    "id": "text-on-brand",
+    "fg": "--color-text-on-brand",
+    "bg": [
+      "--color-brand"
+    ],
+    "min": 4.5,
+    "ac": "US-04-AC-02"
+  },
+  {
+    "id": "focus-on-hover",
+    "fg": "--color-focus",
+    "bg": [
+      "--color-surface-hover"
+    ],
+    "min": 3,
+    "ac": "US-04-AC-02"
   }
 ]
