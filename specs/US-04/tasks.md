@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Current step | 7 Fixes (review R1: changes requested) |
+| Current step | 6 Review round 2 (gate attempt 2 passed after the R1 fixes) |
 | Branch | feat/us-04-design-system |
 | PR | — |
 | Blockers | none (the two defective tests were fixed by the test-engineer in a16c82d) |
-| **Next action** | test-engineer writes the R1 tests first; then the frontend-developer fixes F01–F08; then gate and review round 2. |
+| **Next action** | code-reviewer runs review round 2 (verify the R1 fixes). |
 | Last updated | 2026-11-21 by frontend-developer (Claude Sonnet 5.5) |
 
 ## Tasks
@@ -59,6 +59,7 @@ T-16..T-23 depend on the ADRs (T-02..T-05); T-12 and T-13 depend on US-04-Q-04 a
 | 2026-11-21 | Step 3 (tests first) | **Done** (4d75937): 30 test files; red for the right reason (5 TS2307 for planned modules; rewritten US-01..03 tests fail only because the custom controls do not exist yet; 168 e2e tests listed). The test-engineer's contract conventions (signatures in calendar-dates/date-text/field-icons, `parseDateText` returns `null` for unreadable text per ADR-0012, the `contrast-pairs.json` shape, header/indicator/skeleton DOM conventions) accepted by the orchestrator as technical choices within the spec | orchestrator | 4d75937 |
 | 2026-11-21 | Gate (attempt 1) | **PASSED** (orchestrator, clean stack): frontend lint 0, build 0 (initial 458.23 kB raw / 102.95 kB transfer, no warning), unit 1276/1276; backend lint 0, build 0, 86/86; backend unchanged vs main (0 files); e2e 168/168 twice (8 files); `trace.sh` US-01..US-04 exit 0; code scan exit 0 (6 known exceptions; personal data none); log scan 23 = 23 | orchestrator | 876d0f3 |
 | 2026-11-22 | Review R1 decisions | **Decided**: F03 and F04 — restore the approved design (the ADR-0013 sheet slide; the plan `h1` focused on arrival as in US-02) and make the e2e wait for the animation and for the plans instead; fix F01, F02, F05, F06, F07 and F08; F09 (focus ring box on the arriving `h1`) kept, judged at HC3 | Felipe Sabogal (human) | [R1](../../reviews/US-04-review-R1.md) |
+| 2026-11-22 | Gate (attempt 2, after R1 fixes) | **PASSED** (orchestrator, clean stack): frontend lint 0, build 0 (initial 458.67 kB raw / 102.99 kB transfer), unit 1285/1285; backend lint 0, build 0, 86/86, unchanged vs main; e2e 176/176 twice; `trace.sh` US-01..US-03 exit 0, US-04 exit 1 **only** because R1-F01/F02 (major) stay open until the reviewer closes them in R2; code scan exit 0 (personal data none); log scan 23 = 23. R1 fixes e3172ac..87ad356 (one per finding; F05 no change needed); R1 tests 85f5ad7; two defective R1 e2e tests fixed in 09db7bf (icon hit-test below the fold; platform select-all). After screenshots refreshed | orchestrator | 09db7bf |
 
 ## Session log
 
