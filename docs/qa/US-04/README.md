@@ -21,6 +21,15 @@ CO and CL at 360×740, 768×1024 and 1280×800. No capture has horizontal scroll
 the page, so a page screenshot cannot show them open. The "before" set shows those fields focused
 instead. The "after" set will show the custom select and calendar open (story requirement).
 
-## `after/`
+## `after/` (captured 2026-11-21, after the US-04 implementation)
 
-Added when US-04 is implemented, with the same names.
+Captured by the orchestrator on a clean stack built from `876d0f3` (gate attempt 1 passed), same method
+and sizes as `before/`. No capture has horizontal scroll. Same names as `before/`, except that the custom
+controls can now be captured **open**:
+
+| File prefix | What |
+|---|---|
+| `01b-datos-select-open-` | Step 1 with the custom city select open (anchored panel on wider screens, bottom sheet below 600 px) |
+| `01c-datos-calendar-open-` | Step 1 with the calendar dialog open (week start from the locale: Sunday for CO, Monday for CL; days after the latest valid birth date disabled) |
+
+Every other prefix matches `before/` one to one, so each pair can be compared side by side.

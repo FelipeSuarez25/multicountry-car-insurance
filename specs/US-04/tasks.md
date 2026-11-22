@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Current step | 5 Gate (implementation done) |
+| Current step | 6 Review round 1 (gate attempt 1 passed) |
 | Branch | feat/us-04-design-system |
 | PR | — |
 | Blockers | none (the two defective tests were fixed by the test-engineer in a16c82d) |
-| **Next action** | orchestrator runs the gate and captures the after screenshots (T-24); then review round 1. |
+| **Next action** | code-reviewer runs review round 1. |
 | Last updated | 2026-11-21 by frontend-developer (Claude Sonnet 5.5) |
 
 ## Tasks
@@ -44,7 +44,7 @@ T-16..T-23 depend on the ADRs (T-02..T-05); T-12 and T-13 depend on US-04-Q-04 a
 | US-04-T-21 | Plan list redesign: interactive cards, recommended gradient and glow, check-circle lists, responsive grid | US-04-AC-16, US-04-AC-18 | frontend-developer | done | 8d1d105 |
 | US-04-T-22 | Summary, payment and confirmation redesign: segmented simulation group, micro-animations, confirmation check | US-04-AC-18, US-04-AC-23 | frontend-developer | done | 941b1d7 |
 | US-04-T-23 | Skeletons, step enter transition, state styles, soft error feedback, reduced motion | US-04-AC-14, US-04-AC-15, US-04-AC-17 | frontend-developer | done | e2079d0, 3a370f9, 8d1d105, 941b1d7, 96129dc |
-| US-04-T-24 | After screenshots in `docs/qa/US-04/after/` (names of AC-22) and README table | US-04-AC-22 | orchestrator | todo | |
+| US-04-T-24 | After screenshots in `docs/qa/US-04/after/` (names of AC-22) and README table | US-04-AC-22 | orchestrator | done: 45 after screenshots in `docs/qa/US-04/after/` (orchestrator), incl. the select and the calendar open | (this commit) |
 | US-04-T-25 | HC3 manual checks: visual review CO/CL at three sizes, keyboard only, screen reader on select, calendar and indicator, originality; phone check that the searchable select's bottom sheet fits above the on-screen keyboard (AC-12) | US-04-AC-20, US-04-AC-22, US-04-AC-23 | human (HC3) | todo | |
 | US-04-T-26 | After HC1 (if US-04-Q-21 default holds): one Review log row in US-01, US-02 and US-03 specs pointing to what US-04 supersedes | US-04-AC-11 | spec-writer | done (Review log rows in US-01, US-02 and US-03 specs) | (this commit) |
 
@@ -57,6 +57,7 @@ T-16..T-23 depend on the ADRs (T-02..T-05); T-12 and T-13 depend on US-04-Q-04 a
 | 2026-11-21 | HC1 + HC2 | **Approved / Accepted**: spec v0.1 approved (six blocking gaps as proposed, other defaults accepted, story translation confirmed, the 14 ADR-driven adjustments approved for v0.2, calendar week start per country locale); ADR-0010, 0011 (amends ADR-0001), 0012 (amends ADR-0004) and 0013 accepted. Skills: EVAL-003/004 rejected, EVAL-005 `frontend-design` adopted with adjustments (27e40b0) | Felipe Sabogal (human) | spec §13, adr/0010..0013 |
 | 2026-11-21 | 3 Tests (red) | US-04 tests written from spec v0.2 and ADR-0010..0013: new and extended unit and component specs, one new e2e file, existing helpers and specs rewritten per spec 11.1 without weakening them. `tsc -p tsconfig.spec.json` fails only with 5 x TS2307 for the planned pure modules; the rest of the unit suite runs 1178 tests, 981 pass (every unchanged pre-US-04 test) and 197 fail because the custom controls, tokens, icons, flags, header, indicator and skeletons do not exist yet | test-engineer (Claude Sonnet 5.5) | this file; `scripts/trace.sh US-04 --no-fail` |
 | 2026-11-21 | Step 3 (tests first) | **Done** (4d75937): 30 test files; red for the right reason (5 TS2307 for planned modules; rewritten US-01..03 tests fail only because the custom controls do not exist yet; 168 e2e tests listed). The test-engineer's contract conventions (signatures in calendar-dates/date-text/field-icons, `parseDateText` returns `null` for unreadable text per ADR-0012, the `contrast-pairs.json` shape, header/indicator/skeleton DOM conventions) accepted by the orchestrator as technical choices within the spec | orchestrator | 4d75937 |
+| 2026-11-21 | Gate (attempt 1) | **PASSED** (orchestrator, clean stack): frontend lint 0, build 0 (initial 458.23 kB raw / 102.95 kB transfer, no warning), unit 1276/1276; backend lint 0, build 0, 86/86; backend unchanged vs main (0 files); e2e 168/168 twice (8 files); `trace.sh` US-01..US-04 exit 0; code scan exit 0 (6 known exceptions; personal data none); log scan 23 = 23 | orchestrator | 876d0f3 |
 
 ## Session log
 
