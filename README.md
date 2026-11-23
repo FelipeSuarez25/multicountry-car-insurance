@@ -4,8 +4,9 @@ A single Angular application and build that sells car insurance in **Colombia** 
 Form fields, plans and terms are managed per country in **Strapi** by the business team, with no
 deploys needed. It is built through an **AI-driven development flow** with Claude Code.
 
-> **Status:** US-01 (policyholder and vehicle data form) is implemented and in review.
-> US-02 (plan list) and US-03 (summary and payment) follow the same flow next.
+> **Status:** all four stories are **Ready for QA**: US-01 (policyholder and vehicle data form),
+> US-02 (plan list), US-03 (summary and payment) and US-04 (design system and visual redesign,
+> the human's own request). Results in numbers and the reflection: [FLOW.md §7](FLOW.md#7-reflection).
 
 ## Where to look
 
@@ -136,4 +137,6 @@ Rules to keep in mind:
 
 | ID | Limitation | Why it is accepted | Decided |
 |---|---|---|---|
-| US-01-R4-F01 | If a date field is edited into an unreadable state **less than ~25 ms** after it was completed, the screen and the wizard state can diverge. For a required date, "Continuar" then silently does nothing; for an optional date, the step completes with `null` while a date is shown. Chromium fires no `beforeinput` on date inputs, so the flush used for number inputs does not cover them. | The code reviewer reproduced it only with scripted input at 0–20 ms and never at 25 ms or more, so it is not reachable at human typing speed. Fixing it means more custom synchronisation around Signal Forms' deferred DOM writes, which is the pattern that caused two regressions in US-01. Revisit if Signal Forms adds a synchronous binding flush or if real users hit it. | Felipe Sabogal, 2026-11-21 (HC3 of US-01); see `reviews/US-01-review-R4.md` |
+| US-01-R4-F01 | ~~If a date field is edited into an unreadable state **less than ~25 ms** after it was completed, the screen and the wizard state can diverge. For a required date, "Continuar" then silently does nothing; for an optional date, the step completes with `null` while a date is shown. Chromium fires no `beforeinput` on date inputs, so the flush used for number inputs does not cover them.~~ **Superseded by US-04** (ADR-0012, ADR-0014): the date is now a text box with a mask, and number fields are text boxes, so neither the native date input nor the flush exists any more. | The code reviewer reproduced it only with scripted input at 0–20 ms and never at 25 ms or more, so it is not reachable at human typing speed. Fixing it means more custom synchronisation around Signal Forms' deferred DOM writes, which is the pattern that caused two regressions in US-01. Revisit if Signal Forms adds a synchronous binding flush or if real users hit it. | Felipe Sabogal, 2026-11-21 (HC3 of US-01); see `reviews/US-01-review-R4.md` |
+| US-04-R3-F08 | "Nombre completo" lets any Unicode letter be typed, but the seed pattern accepts only Latin-1 letters, so a name such as "Łukasz" can be typed and is then rejected with the field's message. | The users are in Colombia and Chile; the Strapi pattern is the source of truth and the business team can widen it without a deploy. | Felipe Sabogal, 2026-11-22 (HC3 of US-04); see `reviews/US-04-review-R3.md` |
+| US-04 e2e browsers | The e2e suite runs only in Chromium. Firefox and WebKit were not run. Where an API is missing, the code falls back: week start uses Monday (CLDR world default) without `Intl.Locale#getWeekInfo`, and the header uses a solid background without `backdrop-filter`. | Playwright's Chromium is the only browser installed in the gate. The fallbacks are covered by unit and static tests. | Felipe Sabogal, 2026-11-21/22 (HC1 and HC3 of US-04); ADR-0012, spec US-04 v0.4 |

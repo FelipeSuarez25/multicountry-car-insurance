@@ -152,6 +152,41 @@ and the end procedure includes exporting the unedited session logs to `logs/sess
 
 ## 7. Reflection
 
+### Results in numbers
+
+Session `067ab97b…`, 2026-11-20 → 2026-11-23, one orchestrator session (resumed after a restart and
+several context compactions). Counted from the repository, GitHub and the exported transcripts; the
+commands are reproducible.
+
+| What | Count |
+|---|---|
+| User stories delivered | 4 (US-01..03 from the PDF, US-04 the human's redesign request), all **Ready for QA** |
+| Pull requests merged by the human | 10 (#1 flow setup, #2 intake, then one feature PR and one closure PR per story) |
+| Commits on `main` (no merges) | 222: 88 docs, 46 fix, 41 feat, 34 test, 11 chore, 1 build |
+| Acceptance criteria / gaps found in the stories | 97 AC / 95 gaps (`US-NN-Q-NN`), each gap with a proposed default and a human answer |
+| ADRs | 14 (0001..0014, all Accepted by the human; 5 of them amend earlier ones) plus 1 spike (SPIKE-01) |
+| Review rounds | 14 (US-01: 4, US-02: 2, US-03: 2, US-04: 6); verdicts 8 APPROVED, 6 CHANGES REQUESTED |
+| New review findings | 75: 1 blocker, 9 major, 35 minor, 30 nit (all fixed or justified; none open) |
+| Automated gate runs recorded in `tasks.md` | US-01: 3, US-02: 2, US-03: 2, US-04: 7 |
+| Tests at the end | 1509 frontend unit/component, 119 backend, 307 e2e (run twice per gate) |
+| Human checkpoints | HC1, HC2, HC3 for every story, plus two HC3 change rounds and one loop-limit escalation in US-04 |
+| Subagent runs | 100: 22 test-engineer, 20 spec-writer, 18 frontend-developer, 14 code-reviewer, 13 strapi-developer, 11 architect, 2 others |
+| Output tokens | ≈ 0.84 M orchestrator + ≈ 3.70 M subagents (cached context re-reads are much larger and not counted) |
+
+What the numbers say:
+- **Review earned its cost.** The only blocker (US-01-R1-F01, drafts readable on Strapi's port) and
+  8 of the 9 majors were product or test-coverage defects that the automated gate had let through.
+  The ninth, US-04-R4-F01, was the reviewer's root cause for a gate failure: defects in new e2e
+  tests.
+- **The gate caught what reviews could not.** It caught flaky and environment-dependent behaviour,
+  and it forced two consecutive green e2e runs.
+- **The human caught what both missed.** In US-04 the HC3 QA found real usability defects on a
+  branch that had passed the gate and an APPROVED review: the calendar opened above the field, a
+  misleading message for a mistyped date, and digits accepted in a name. See the first new row of
+  the next table.
+- **US-04 cost more than US-01..03 together** in gate attempts and review rounds. Visual and
+  interaction work produces many more "correct but not right" outcomes than business rules do.
+
 ### What we would do differently with a team of 5 developers
 
 - **Story-level parallelism with clear ownership.** One person owns each story through the flow,
@@ -167,6 +202,19 @@ and the end procedure includes exporting the unedited session logs to `logs/sess
 - **A real secret scanner** (for example, gitleaks) in pre-commit and CI, replacing our minimal script.
 - **Shared, short-lived sessions**: one session per story, with mandatory handoff, so that
   context never lives in one person's terminal.
+- **One worktree per agent.** Parallel agents in one checkout collided twice: a polluted shared
+  stack in US-01, and a `git stash` of everyone's edits in US-04. With five people and their
+  agents, each agent runs in its own worktree (`isolation: worktree`), and only the orchestrator
+  merges into the story branch.
+- **A designer at HC1 for UI stories, with something to click.** The HC1 answer "no input mask"
+  (US-04-Q-05) looked right on paper and was reversed at HC3, once the human typed a date. For
+  stories that change interaction, HC1 reviews a throwaway clickable prototype, or the running
+  stack, not only text.
+- **CI on the platforms the users have.** Two e2e test defects depended on macOS key semantics
+  (`End` does not move the caret). Running e2e on Linux CI and on a macOS runner surfaces these
+  before review.
+- **A token and time budget per story**, tracked like the gate attempts. US-04 used about as much
+  as US-01..03 together. A team needs to see that early and decide whether to split the story.
 
 ### What did not work as expected, and how we adjusted
 
@@ -193,9 +241,12 @@ and the end procedure includes exporting the unedited session logs to `logs/sess
 | Personal data kept reappearing in the logs | Claude Code injects the human's account e-mail into every session's context, so every transcript contains it. The first log redaction (US-01) covered the address, but missed the domain inside a subagent's plugin list, which reached `main` with PR #4. At the US-03 closure the orchestrator's redaction also missed a regex-escaped form, and every new command that named the value to check or redact was itself recorded by the transcript, in yet another escaped form. The redaction script also counted a part twice inside the full address. | A separate **personal-data policy** (human decision): secrets are rotated, personal data is redacted. `scripts/redact-logs.sh` replaces every form with `[REDACTED-PERSONAL]`, reading the values from a file outside the repository (never from a command line); counts are exact. `scan-secrets.sh`, `scan-logs.sh` and a versioned pre-commit hook block the domain by hash, so the value is not written in the repo. Git history is left as is; the human decides how to clean it before sharing. |
 | A vendored skill and a global skill shared a name | `frontend-design` was vendored at `41bbe19`, but the human's global `~/.claude/skills/frontend-design` (an older version) has the same name, and two subagents reported that the global copy was loaded into their sessions. CLAUDE.md §3 forbids global skills; both agents ignored it, but nothing prevented its use. | The human removes the global copy (human decision, 2026-11-21); agents never touch the user's global configuration. Until then every agent prompt names `.claude/skills/frontend-design/SKILL.md` explicitly. Lesson: before vendoring a skill, check for a same-name global skill. |
 | Tests drove design changes, twice | In US-03 a terms box was made taller so an e2e scroll check would skip (US-03-R1-F03). In US-04 the developer replaced the ADR-0013 sheet slide with a fade because an e2e measured the box at once, and delayed the plan heading focus because an e2e pressed Tab before the plans loaded (US-04-R1-F03, F04). Each change was made to get green, not because the design was wrong, and none was recorded. | Human rule (2026-11-22): the approved design wins; the test adapts (waits for the animation, for the content), and any genuine design change goes through the spec or an ADR note first. The developer brief now says so, and the reviewer checks every behaviour change for a test-driven cause. |
-| A subagent stashed the shared working tree | During the US-04 R6 fixes three subagents worked in parallel in one checkout. The frontend-developer ran `git stash` / `git stash pop` inside a background test command to compare against a baseline; for a few minutes the spec-writer's and test-engineer's uncommitted edits vanished, the test-engineer re-applied its edits and later had to remove duplicates, and a gate run that overlapped had load timeouts. Nothing was lost (the main session found `stash@{0}`, the agent popped it). | Rule added to the agent briefs: no git write commands in subagents (no stash, checkout, reset, commit); only the main session writes git state. Parallel subagents only when their files do not overlap, and a gate never runs while subagents run test suites (gate 7 was re-run on a quiet machine). |
+| A subagent stashed the shared working tree | During the US-04 R6 fixes three subagents worked in parallel in one checkout. The frontend-developer ran `git stash` / `git stash pop` inside a background test command to compare against a baseline; for a few minutes the spec-writer's and test-engineer's uncommitted edits vanished, the test-engineer re-applied its edits and later had to remove duplicates, and a gate run that overlapped had load timeouts. Nothing was lost (the main session found `stash@{0}`, the agent popped it). | Rule given in every subagent brief since then: no git write commands in subagents (no stash, checkout, reset, commit); only the main session writes git state. It is not yet enforced by `guard-bash.mjs` or written in CLAUDE.md §8; proposed for the human to decide. Parallel subagents only when their files do not overlap, and a gate never runs while subagents run test suites (gate 7 was re-run on a quiet machine). |
+| Green gate and APPROVED review, yet the human found real defects | At US-04 HC3 the human found that on wide screens the calendar opened above the field and covered the header, that a mistyped date showed "Ingresa tu fecha de nacimiento." (the empty-field message), that "Nombre completo" accepted digits, and that the chooser looked plain. Every automated check and review R2 had passed. The tests asserted what the spec said ("above or below", "no input mask"), and the spec said what HC1 had approved on paper. | The human's feedback went through the full flow: spec v0.3, ADR-0014 accepted by the human, tests first, implementation, gate, review. Lesson recorded for UI stories: show the running stack (or a prototype) at HC1, and have the developer check open popups at the three sizes in a real browser before handing over. |
+| The review loop limit was reached, mostly by test defects | In US-04 the review failed in R1, R3 and R4. R3 found 3 real product majors (mid-text date edits, IME composition, seed rules untested), but R4's only major was in new e2e tests: they left the field with one Tab (which lands on the field's own calendar button) and used `End`, which does not move the caret on macOS. The orchestrator first sent the frontend-developer to fix a "product bug", then stopped it when the reviewer traced the cause. | CLAUDE.md §8 worked as designed: the orchestrator stopped and asked, and the human chose "Seguir: arreglar y R5". Test helpers now place the caret with `setSelectionRange` and leave a field by focusing the next one. The orchestrator waits for the reviewer's root cause before routing a failing e2e to a developer. |
+| Tests and implementation ran in parallel once | For the small, precise HC3 round 2 (header style, favicon), the test-engineer and the frontend-developer worked at the same time from the spec's Then lines, to save the human's time. It worked: both used the same names, and all 37 new e2e tests passed on the first full gate. But the test-engineer changed three existing tests without first routing them through the spec (US-04-R6-F04). | Accepted only for small changes with exact Then lines, and recorded in `tasks.md`. Test-first in sequence stays the default. |
 
-*(This table is extended as the stories are implemented.)*
+*(Rows follow the order in which the issues were recorded, across US-01..US-04.)*
 
 ### Where we decided not to use AI, and why
 
