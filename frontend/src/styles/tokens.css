@@ -1,0 +1,296 @@
+/*
+ * The design tokens of the app: the only file that declares a custom property or an @font-face
+ * (ADR-0010, US-04-BR-01). Three tiers, told apart by prefix:
+ *   --primitive-*   raw values; referenced only from this file
+ *   semantic        --color-, --font-, --text-, --leading-, --tracking-, --weight-, --space-, --size-,
+ *                   --radius-, --border-, --shadow-, --gradient-, --texture-, --duration-, --delay-,
+ *                   --ease-, --motion-, --z-, --breakpoint-, --focus-
+ *   --component-*   per-component bindings of semantic tokens
+ * Colours are 6-digit hex; a translucent colour is color-mix(in srgb, <hex> N%, transparent); the
+ * contrast test (AC-02) resolves these forms and nothing else.
+ */
+
+/* Fonts: one variable WOFF2 per family, latin subset, same origin (ADR-0010 section 5). */
+@font-face {
+  font-family: 'Archivo';
+  src: url('/fonts/archivo-latin-wdth-normal.woff2') format('woff2');
+  font-display: swap;
+  font-weight: 700 800;
+  font-stretch: 100% 125%;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Atkinson Hyperlegible Next';
+  src: url('/fonts/atkinson-hyperlegible-next-latin-wght-normal.woff2') format('woff2');
+  font-display: swap;
+  font-weight: 400 700;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  color-scheme: dark;
+
+  /* ---- Primitive tier ------------------------------------------------------------------- */
+  --primitive-ink-950: #0B0B14;
+  --primitive-ink-925: #11101C;
+  --primitive-ink-900: #14131E;
+  --primitive-ink-850: #1D1C2A;
+  --primitive-ink-800: #272736;
+  --primitive-ink-750: #31303F;
+  --primitive-ink-700: #3B3B4C;
+  --primitive-ink-500: #7E7E93;
+  --primitive-ink-300: #BCBCCC;
+  --primitive-ink-50: #F6F6FB;
+  --primitive-violet-200: #D8D0FF;
+  --primitive-violet-300: #C0B0FE;
+  --primitive-violet-400: #AA8FFF;
+  --primitive-violet-500: #9060FB;
+  --primitive-violet-700: #6427C4;
+  --primitive-violet-800: #4F1B9E;
+  --primitive-indigo-950: #16154D;
+  --primitive-violet-950: #231541;
+  --primitive-red-300: #FF9592;
+  --primitive-green-300: #74E29F;
+  --primitive-white: #FFFFFF;
+  /* Flag artwork (ADR-0011): published approximations, decorative */
+  --primitive-flag-co-yellow: #FFCD00;
+  --primitive-flag-co-blue: #003087;
+  --primitive-flag-co-red: #C8102E;
+  --primitive-flag-cl-blue: #0039A6;
+  --primitive-flag-cl-red: #D52B1E;
+  --primitive-flag-cl-white: #FFFFFF;
+  /* Country accents (ADR-0011) */
+  --primitive-accent-co: #FFCD00;
+  --primitive-accent-cl: #F66E5E;
+
+  /* ---- Semantic tier: colour ------------------------------------------------------------ */
+  --color-bg: var(--primitive-ink-925);
+  --color-surface: var(--primitive-ink-850);
+  --color-surface-raised: var(--primitive-ink-800);
+  --color-surface-hover: var(--primitive-ink-750);
+  --color-border-subtle: var(--primitive-ink-700);
+  --color-border-control: var(--primitive-ink-500);
+  --color-text: var(--primitive-ink-50);
+  --color-text-muted: var(--primitive-ink-300);
+  --color-text-disabled: var(--primitive-ink-500);
+  --color-text-on-brand: var(--primitive-ink-950);
+  --color-brand: var(--primitive-violet-400);
+  --color-brand-glow: var(--primitive-violet-500);
+  --color-focus: var(--primitive-violet-300);
+  --color-link: var(--primitive-violet-300);
+  --color-error: var(--primitive-red-300);
+  --color-success: var(--primitive-green-300);
+  --color-country-accent: var(--color-brand);
+  --color-choice-accent: var(--color-brand);
+
+  /* ---- Semantic tier: type -------------------------------------------------------------- */
+  --font-display: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-text: 'Atkinson Hyperlegible Next', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --text-display: clamp(2rem, 1.25rem + 3.2vw, 3rem);
+  --text-price: 2.25rem;
+  --text-heading: 1.5rem;
+  --text-subheading: 1.3125rem;
+  --text-lead: 1.125rem;
+  --text-body: 1rem;
+  --text-small: 0.875rem;
+  --text-display-stretch: 125%;
+  --text-price-stretch: 112%;
+  --text-heading-stretch: 112%;
+  --text-subheading-stretch: 100%;
+  --leading-display: 1.05;
+  --leading-price: 1.1;
+  --leading-heading: 1.25;
+  --leading-subheading: 1.3;
+  --leading-lead: 1.5;
+  --leading-body: 1.55;
+  --leading-small: 1.45;
+  --tracking-display: -0.02em;
+  --tracking-price: -0.01em;
+  --tracking-normal: 0;
+  --tracking-small: 0.01em;
+  --weight-regular: 400;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-heavy: 800;
+
+  /* ---- Semantic tier: scales ------------------------------------------------------------ */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --radius-control: 0.5rem;
+  --radius-card: 0.875rem;
+  --radius-feature: 1.5rem;
+  --radius-pill: 999rem;
+  --border-width-hairline: 1px;
+  --border-width-selected: 2px;
+  --focus-ring-width: 3px;
+  --focus-ring-offset: 2px;
+  --size-target-min: 2.75rem;
+  --size-button-min: 12rem;
+  --size-label-column: 12rem;
+  --size-option-min: 3rem;
+  --size-icon: 1.25rem;
+  --size-icon-small: 1rem;
+  --size-icon-large: 2.5rem;
+  --size-flag-height: 1rem;
+  --size-flag-large: 2.25rem;
+  --size-content-max: 72rem;
+  --size-form-max: 40rem;
+  --size-summary-max: 48rem;
+  --size-measure: 68ch;
+  --size-plan-min: 17rem;
+  --size-popover-min: 12rem;
+  --size-popover-max: 24rem;
+  --size-calendar-width: 21.5rem;
+  --size-calendar-max-height: 27rem;
+  --size-calendar-weekday: 1.75rem;
+  --size-header-height: 4.25rem;
+  --size-brand-mark: 2rem;
+  --size-page-gradient: 40rem;
+  --size-choice-min: 7rem;
+  --size-sheet-max-height: 85dvh;
+  --size-list-max-height: 16rem;
+  --size-terms-max-height: 24rem;
+  --size-skeleton-line: 1rem;
+  --size-skeleton-field: 2.75rem;
+  --size-skeleton-plan: 16rem;
+  --size-progress-height: 0.25rem;
+  --size-progress-dot: 1.75rem;
+  --size-glow-offset: 1.5rem;
+  --size-backdrop-blur: 0.25rem;
+  --z-base: 0;
+  --z-icon: 1;
+  --z-header: 10;
+  --z-overlay: 1000;
+  --breakpoint-sheet: 37.5em;
+  --breakpoint-wide: 64em;
+
+  /* ---- Semantic tier: shadows, gradients, texture ---------------------------------------- */
+  --shadow-none: none;
+  --shadow-panel: 0 0.5rem 2rem color-mix(in srgb, var(--primitive-ink-950) 80%, transparent);
+  --shadow-glow-brand: 0 0 0 1px color-mix(in srgb, var(--primitive-violet-400) 35%, transparent), 0 1.5rem 4rem color-mix(in srgb, var(--primitive-violet-500) 45%, transparent);
+  --shadow-selected: 0 0 0 2px var(--color-brand);
+  --shadow-ring-hover: 0 0 0 var(--border-width-selected) color-mix(in srgb, var(--primitive-violet-300) 55%, transparent);
+  --gradient-plan-recommended: linear-gradient(180deg, var(--primitive-violet-700) 0%, var(--primitive-violet-800) 45%, var(--primitive-indigo-950) 100%);
+  --gradient-button-primary: linear-gradient(180deg, var(--primitive-white) 0%, var(--primitive-violet-200) 100%);
+  --gradient-display-text: linear-gradient(180deg, var(--primitive-ink-50) 0%, var(--primitive-violet-300) 100%);
+  --gradient-skeleton: linear-gradient(90deg, var(--primitive-ink-850) 0%, var(--primitive-ink-800) 50%, var(--primitive-ink-850) 100%);
+  --gradient-page: linear-gradient(180deg, var(--primitive-violet-950) 0%, var(--primitive-ink-925) 100%);
+  /* The header's 1px bottom edge (US-04-BR-22). The wizard element redeclares it below, so the country accent is the middle stop there. */
+  --gradient-header-edge: linear-gradient(90deg, var(--primitive-violet-400) 0%, var(--color-country-accent) 45%, transparent 100%);
+  --shadow-chip-glow: inset 0 0 0 1px color-mix(in srgb, var(--color-country-accent) 55%, transparent), 0 0 0.75rem color-mix(in srgb, var(--color-country-accent) 30%, transparent);
+  --texture-dots: radial-gradient(circle, color-mix(in srgb, var(--primitive-white) 7%, transparent) 1px, transparent 1.5px);
+  --texture-dots-gap: 1.5rem;
+  --color-backdrop: color-mix(in srgb, var(--primitive-ink-950) 72%, transparent);
+
+  /* ---- Semantic tier: motion (ADR-0013) ------------------------------------------------- */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+  --duration-shimmer: 1400ms;
+  --duration-spin: 800ms;
+  --delay-stagger-1: 0ms;
+  --delay-stagger-2: 50ms;
+  --delay-stagger-3: 100ms;
+  --delay-stagger-4: 150ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-linear: linear;
+  --motion-rise: 0.5rem;
+  --motion-lift: 0.125rem;
+
+  /* ---- Component tier ------------------------------------------------------------------- */
+  --component-button-primary-bg: var(--gradient-button-primary);
+  --component-button-primary-text: var(--primitive-ink-950);
+  --component-button-primary-edge: var(--primitive-violet-200);
+  --component-button-primary-bg-active: var(--primitive-violet-200);
+  --component-button-secondary-border: var(--color-border-control);
+  --component-button-disabled-bg: var(--color-surface-hover);
+  --component-input-bg: var(--color-surface-raised);
+  --component-input-border: var(--color-border-control);
+  --component-panel-bg: var(--color-surface);
+  --component-panel-border: var(--color-border-subtle);
+  --component-popup-bg: var(--color-surface-raised);
+  --component-plan-bg: var(--color-surface);
+  --component-plan-border: var(--color-border-control);
+  --component-plan-recommended-bg: var(--gradient-plan-recommended);
+  --component-plan-recommended-text: var(--primitive-white);
+  --component-plan-recommended-muted: var(--primitive-violet-200);
+  --component-plan-recommended-check: var(--primitive-green-300);
+  --component-plan-recommended-border: var(--color-brand);
+  --component-plan-radio-border: var(--primitive-violet-200);
+  --component-plan-radio-dot: var(--primitive-white);
+  --component-badge-bg: var(--primitive-violet-300);
+  --component-badge-text: var(--primitive-ink-950);
+  --component-option-active-bg: var(--color-surface-hover);
+  --component-day-selected-bg: var(--color-brand);
+  --component-day-selected-text: var(--primitive-ink-950);
+  --component-segment-selected-bg: var(--color-brand);
+  --component-segment-selected-text: var(--primitive-ink-950);
+  --component-skeleton-bg: var(--gradient-skeleton);
+  --component-flag-ring: var(--color-border-control);
+  --component-flag-co-yellow: var(--primitive-flag-co-yellow);
+  --component-flag-co-blue: var(--primitive-flag-co-blue);
+  --component-flag-co-red: var(--primitive-flag-co-red);
+  --component-flag-cl-blue: var(--primitive-flag-cl-blue);
+  --component-flag-cl-red: var(--primitive-flag-cl-red);
+  --component-flag-cl-white: var(--primitive-flag-cl-white);
+  /* App header (US-04-BR-22): translucent violet over the page gradient, solid where it cannot blur. */
+  --component-header-bg: color-mix(in srgb, var(--primitive-violet-950) 82%, transparent);
+  --component-header-bg-solid: var(--primitive-violet-950);
+  --component-header-backdrop: blur(0.75rem) saturate(1.6);
+  --component-brand-mark-from: var(--primitive-violet-400);
+  --component-brand-mark-to: var(--primitive-violet-700);
+  --component-brand-mark-glyph: var(--primitive-white);
+  --component-brand-mark-check: var(--primitive-violet-700);
+}
+
+/* Country accents (ADR-0011): the colour values live here and nowhere else. */
+[data-country-accent='co'] {
+  --color-country-accent: var(--primitive-accent-co);
+}
+
+[data-country-accent='cl'] {
+  --color-country-accent: var(--primitive-accent-cl);
+}
+
+/*
+ * A custom property that reads --color-country-accent resolves where it is declared, so the two
+ * values that carry the accent into the header (US-04-BR-22) are declared again on the wizard
+ * element, where the accent is set.
+ */
+[data-country-accent] {
+  --gradient-header-edge: linear-gradient(90deg, var(--primitive-violet-400) 0%, var(--color-country-accent) 45%, transparent 100%);
+  --shadow-chip-glow: inset 0 0 0 1px color-mix(in srgb, var(--color-country-accent) 55%, transparent), 0 0 0.75rem color-mix(in srgb, var(--color-country-accent) 30%, transparent);
+}
+
+/* The same accents for the country links of the chooser, which is not a wizard page (US-04-AC-29). */
+[data-choice-accent='co'] {
+  --color-choice-accent: var(--primitive-accent-co);
+}
+
+[data-choice-accent='cl'] {
+  --color-choice-accent: var(--primitive-accent-cl);
+}
+
+/* Reduced motion, second line of defence (ADR-0013 section 3): every timing token is 0ms. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+    --duration-shimmer: 0ms;
+    --duration-spin: 0ms;
+    --delay-stagger-1: 0ms;
+    --delay-stagger-2: 0ms;
+    --delay-stagger-3: 0ms;
+    --delay-stagger-4: 0ms;
+  }
+}

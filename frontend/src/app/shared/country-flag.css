@@ -1,0 +1,23 @@
+:host {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+}
+/* The header chip rings its flag in the country accent (ADR-0011); the colour is a token. */
+:host(.flag--accent) {
+  border-radius: var(--radius-control);
+  box-shadow: 0 0 0 var(--border-width-selected) var(--color-country-accent);
+}
+.globe {
+  width: var(--size-flag-height);
+  height: var(--size-flag-height);
+  color: var(--color-text-muted);
+}
+/* The country cards of the chooser draw a larger flag (the flag components size themselves from tokens). */
+:host(.flag--large) ::ng-deep svg {
+  height: var(--size-flag-large);
+}
+:host(.flag--large) .globe {
+  width: var(--size-flag-large);
+  height: var(--size-flag-large);
+}

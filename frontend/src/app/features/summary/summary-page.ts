@@ -11,6 +11,9 @@ import { QuoteStore } from '../../core/quote-store';
 import { RANDOM_DIGITS } from '../../core/random-digits';
 import { TermsApi } from '../../core/terms-api';
 import type { Country } from '../../shared/country.model';
+import { LucideCircleAlert, LucideCircleCheck, LucideInfo, LucideLoaderCircle } from '@lucide/angular';
+import { WizardProgressStore } from '../../core/wizard-progress-store';
+import { BackLink } from '../../shared/back-link';
 import { LoadError } from '../../shared/load-error';
 import { formatMoney } from '../../shared/money-format';
 import type { Plan } from '../../shared/plan.model';
@@ -42,7 +45,7 @@ interface ChosenPlanView {
  */
 @Component({
   selector: 'app-summary-page',
-  imports: [LoadError, RichText],
+  imports: [BackLink, LoadError, RichText, LucideCircleAlert, LucideCircleCheck, LucideInfo, LucideLoaderCircle],
   templateUrl: './summary-page.html',
   styleUrl: './summary-page.css',
 })
@@ -59,10 +62,13 @@ export class SummaryPage {
   private readonly gateway = inject(PaymentGateway);
   private readonly clock = inject(CLOCK);
   private readonly randomDigits = inject(RANDOM_DIGITS);
+  private readonly progress = inject(WizardProgressStore);
   private readonly abort = new AbortController();
   private readonly heading = viewChild.required<ElementRef<HTMLHeadingElement>>('heading');
   private readonly country: Country | undefined = this.countries.find(this.route.snapshot.paramMap.get('country') ?? '');
   private termsRequest: Subscription | null = null;
+  /** The back link of step 3 (US-04-BR-21). */
+  protected readonly toPlans = ['/', (this.country?.code ?? '').toLowerCase(), 'planes'];
 
   protected readonly dataStatus = signal<DataStatus>('loading');
   protected readonly rows = signal<SummaryRows>({ holder: [], vehicle: [] });
@@ -85,6 +91,7 @@ export class SummaryPage {
   constructor() {
     inject(DestroyRef).onDestroy(() => {
       // Leaving the page abandons any attempt: nothing is cleared and nothing is shown.
+      this.progress.confirmed.set(false);
       this.abort.abort();
       this.termsRequest?.unsubscribe();
     });
@@ -168,6 +175,7 @@ export class SummaryPage {
         this.quoteNumber.set(formatQuoteNumber(country.code, this.clock(), this.randomDigits()));
         this.quote.clearQuote();
         this.paymentState.set('confirmed');
+        this.progress.confirmed.set(true);
         this.title.setTitle(`${CONFIRMED_HEADING} | ${APP_TITLE}`);
         afterNextRender(() => this.heading().nativeElement.focus(), { injector: this.injector });
       } else {

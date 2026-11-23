@@ -4,76 +4,83 @@
     @let error = errorOf(config);
     @let described = describedBy(config, error);
     @let id = 'field-' + config.key;
+    @let icon = iconOf(config);
     <div class="field" [class.field--checkbox]="config.type === 'checkbox'">
       @if (config.type === 'checkbox') {
         <input
           type="checkbox"
+          class="check"
           [id]="id"
           [formField]="flag(config.key)"
           [attr.aria-required]="config.isRequired"
           [attr.aria-invalid]="error ? 'true' : null"
           [attr.aria-describedby]="described"
         />
-        <label [for]="id">{{ config.label }}@if (config.isRequired) {<span aria-hidden="true"> *</span>}</label>
+        <label class="check__label" [for]="id">{{ config.label }}@if (config.isRequired) {<span aria-hidden="true"> *</span>}</label>
       } @else {
-        <label [for]="id">{{ config.label }}@if (config.isRequired) {<span aria-hidden="true"> *</span>}</label>
-        @switch (config.type) {
-          @case ('select') {
-            <select
-              [id]="id"
-              [formField]="text(config.key)"
-              [attr.aria-required]="config.isRequired"
-              [attr.aria-invalid]="error ? 'true' : null"
-              [attr.aria-describedby]="described"
-            >
-              <option value="" disabled>Selecciona una opción</option>
-              @for (option of config.options; track option.value) {
-                <option [value]="option.value">{{ option.label }}</option>
-              }
-            </select>
+        <label class="field__label" [for]="id" [id]="id + '-label'">{{ config.label }}@if (config.isRequired) {<span aria-hidden="true"> *</span>}</label>
+        <div class="control">
+          @if (icon) {
+            <span class="control__icon"><ng-container *ngComponentOutlet="icon" /></span>
           }
-          @case ('number') {
-            <input
-              type="number"
-              (beforeinput)="flushBindings()"
-              (input)="syncNative($event, config.key)"
-              [id]="id"
-              [formField]="text(config.key)"
-              [attr.placeholder]="config.placeholder ?? null"
-              [attr.aria-required]="config.isRequired"
-              [attr.aria-invalid]="error ? 'true' : null"
-              [attr.aria-describedby]="described"
-            />
+          @switch (config.type) {
+            @case ('select') {
+              <app-custom-select
+                [formField]="text(config.key)"
+                [controlId]="id"
+                [labelId]="id + '-label'"
+                [options]="config.options ?? []"
+                [hasIcon]="icon !== null"
+                [ariaRequired]="config.isRequired"
+                [ariaInvalid]="error !== null"
+                [ariaDescribedby]="described"
+              />
+            }
+            @case ('date') {
+              <app-date-field
+                [formField]="text(config.key)"
+                [controlId]="id"
+                [config]="config"
+                [localeTag]="localeTag()"
+                [hasIcon]="icon !== null"
+                [ariaRequired]="config.isRequired"
+                [ariaInvalid]="error !== null"
+                [ariaDescribedby]="described"
+              />
+            }
+            @default {
+              <input
+                type="text"
+                class="input"
+                [class.input--icon]="icon !== null"
+                [appInputProfile]="entryOf(config.key).profile"
+                [appInputProfileMax]="entryOf(config.key).max"
+                (input)="typed(config.key)"
+                [id]="id"
+                [formField]="text(config.key)"
+                [attr.placeholder]="config.placeholder ?? null"
+                [attr.aria-required]="config.isRequired"
+                [attr.aria-invalid]="error ? 'true' : null"
+                [attr.aria-describedby]="described"
+              />
+            }
           }
-          @case ('date') {
-            <input
-              type="date"
-              (input)="syncNative($event, config.key)"
-              [id]="id"
-              [formField]="text(config.key)"
-              [attr.aria-required]="config.isRequired"
-              [attr.aria-invalid]="error ? 'true' : null"
-              [attr.aria-describedby]="described"
-            />
-          }
-          @default {
-            <input
-              type="text"
-              [id]="id"
-              [formField]="text(config.key)"
-              [attr.placeholder]="config.placeholder ?? null"
-              [attr.aria-required]="config.isRequired"
-              [attr.aria-invalid]="error ? 'true' : null"
-              [attr.aria-describedby]="described"
-            />
-          }
-        }
+        </div>
+      }
+      @if (config.type === 'date') {
+        <p class="message message--help" [id]="config.key + '-hint'">Formato: dd/mm/aaaa</p>
       }
       @if (config.helpText) {
-        <p class="field__help" [id]="config.key + '-help'">{{ config.helpText }}</p>
+        <p class="message message--help" [id]="config.key + '-help'">
+          <svg lucideInfo></svg>
+          <span>{{ config.helpText }}</span>
+        </p>
       }
       @if (error) {
-        <p class="field__error" [id]="config.key + '-error'" role="alert">{{ error }}</p>
+        <p class="message message--error" animate.enter="message-enter" [id]="config.key + '-error'" role="alert">
+          <svg lucideCircleAlert></svg>
+          <span>{{ error }}</span>
+        </p>
       }
     </div>
   }

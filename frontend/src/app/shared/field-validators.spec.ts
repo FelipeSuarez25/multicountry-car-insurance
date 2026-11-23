@@ -178,7 +178,46 @@ describe('US-01-AC-08 rule semantics (US-01-BR-01, spec 7.1)', () => {
     expect(valid(fullName, 'Ana')).toBe(true);
     expect(valid(fullName, 'a'.repeat(80))).toBe(true);
     expect(valid(fullName, 'a'.repeat(81))).toBe(false);
-    expect(validateField(fullName, 'Al', TODAY)).toBe('Ingresa tu nombre completo (entre 3 y 80 caracteres).');
+    expect(validateField(fullName, 'Al', TODAY)).toBe('Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres).');
+  });
+
+  describe('US-04-AC-26 the seed fullName pattern (letters, space, apostrophe, dot, hyphen), CO and CL', () => {
+    const MESSAGE = 'Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres).';
+
+    it.each(['CO', 'CL'] as const)('US-04-AC-26 %s: the valid rows of the AC table pass', (country) => {
+      const fullName = seedField(country, 'fullName');
+      expect(validateField(fullName, 'Ana Prueba Ficticia', TODAY)).toBeNull();
+      expect(validateField(fullName, "José Núñez-O'Neil Jr.", TODAY)).toBeNull();
+    });
+
+    it.each(['CO', 'CL'] as const)('US-04-AC-26 %s: "Ana 2", "Al" and "\'Ana" fail with the new message', (country) => {
+      const fullName = seedField(country, 'fullName');
+      for (const value of ['Ana 2', 'Al', "'Ana"]) expect(validateField(fullName, value, TODAY), value).toBe(MESSAGE);
+    });
+
+    it('US-04-AC-26 the pattern rule is appended after minLength and maxLength (existing rules keep their order)', () => {
+      const kinds = seedField('CO', 'fullName').rules.map((r) => r.kind);
+      expect(kinds).toEqual(['minLength', 'maxLength', 'pattern']);
+    });
+
+    it('US-04-AC-26 the seed rules gain maxLength 10 (CO document), 12 (CL RUT) and 6 (plates) after their existing rules', () => {
+      const maxOf = (country: 'CO' | 'CL', key: string): number | undefined => {
+        const rule = seedField(country, key).rules.find((r) => r.kind === 'maxLength');
+        return rule && rule.kind === 'maxLength' ? rule.value : undefined;
+      };
+      expect(maxOf('CO', 'documentNumber')).toBe(10);
+      expect(maxOf('CL', 'documentNumber')).toBe(12);
+      expect(maxOf('CO', 'plate')).toBe(6);
+      expect(maxOf('CL', 'plate')).toBe(6);
+      expect(seedField('CL', 'documentNumber').rules.map((r) => r.kind)).toEqual(['pattern', 'rutCheckDigit', 'maxLength']);
+    });
+
+    it('US-04-AC-26 the new maxLength rules do not reject the valid seed values (RUT with dots and dash is 12 characters)', () => {
+      expect(validateField(seedField('CL', 'documentNumber'), '12.345.678-5', TODAY)).toBeNull();
+      expect(validateField(seedField('CO', 'documentNumber'), '1012345678', TODAY)).toBeNull();
+      expect(validateField(seedField('CO', 'plate'), 'ABC123', TODAY)).toBeNull();
+      expect(validateField(seedField('CL', 'plate'), 'BCDF12', TODAY)).toBeNull();
+    });
   });
 
   it('min and max are inclusive numeric bounds, negatives are allowed unless min forbids them', () => {

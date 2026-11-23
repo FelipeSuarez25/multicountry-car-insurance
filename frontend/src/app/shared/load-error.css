@@ -1,0 +1,6 @@
+:host {
+  display: block;
+}
+.load-error__message {
+  margin-bottom: var(--space-4);
+}

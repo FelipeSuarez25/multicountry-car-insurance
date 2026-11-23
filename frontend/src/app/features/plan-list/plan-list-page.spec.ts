@@ -214,7 +214,7 @@ describe('US-02 step 2 page: the plan list (component tests through the real rou
     it('US-01-AC-24 on arriving at step 2 from a valid "Continuar" the keyboard focus is on the step 2 heading', async () => {
       await start();
       await app.open('/co/datos');
-      fillForm(app.root, CO_VALID_INPUT);
+      await fillForm(app.root, CO_VALID_INPUT);
       await app.settle();
       await continuar();
       expect(app.path()).toBe('/co/planes');
@@ -583,7 +583,7 @@ describe('US-02 step 2 page: the plan list (component tests through the real rou
 
       button(app.root, 'Atrás').click();
       await app.settle();
-      fillForm(app.root, { 'Modelo (año)': '2015' });
+      await fillForm(app.root, { 'Modelo (año)': '2015' });
       await app.settle();
       button(app.root, 'Continuar').click();
       await app.settle();
@@ -780,7 +780,7 @@ describe('US-02 step 2 page: the plan list (component tests through the real rou
     it('US-02-AC-19 from step 1 to the summary every request is a GET without an Authorization header, and none contains a step 1 value', async () => {
       await start();
       await app.open('/co/datos');
-      fillForm(app.root, CO_VALID_INPUT);
+      await fillForm(app.root, CO_VALID_INPUT);
       await app.settle();
       await continuar();
       expect(app.path()).toBe('/co/planes');
@@ -814,6 +814,162 @@ describe('US-02 step 2 page: the plan list (component tests through the real rou
       const [request] = app.server.requestsOf('plans');
       expect(request.countryCode).toBe('CO');
       expect(request.url).not.toMatch(/birth|vehicle|1990|2022|documentNumber|plate/i);
+    });
+  });
+
+  // ---------------------------------------------------------------------------------------------
+  // US-04: interactive cards, check-circle lists, skeleton, heading outline
+  // ---------------------------------------------------------------------------------------------
+
+  describe('US-04-AC-16 interactive plan cards (US-04-BR-09)', () => {
+    const PREMIUM_DESCRIPTION = 'Cobertura completa con deducible bajo.';
+    /** The element of a card that shows exactly this text (a person clicks on what they read). */
+    const showing = (planName: string, wanted: string, tag = '*'): HTMLElement => {
+      const onlyIcons = (e: HTMLElement): boolean => Array.from(e.children).every((c) => c.tagName.toLowerCase() === 'svg');
+      const found = Array.from(card(planName).querySelectorAll<HTMLElement>(tag)).find((e) => compact(e.textContent) === compact(wanted) && onlyIcons(e));
+      if (!found) throw new Error(`"${planName}" shows no element with the text "${wanted}"`);
+      return found;
+    };
+
+    it('US-04-AC-16 a pointer click on the short description of "Plan Premium" chooses it, and no other plan is chosen', async () => {
+      await openCl();
+      expect(chosenNames(app.root)).toEqual([]);
+      showing('Plan Premium', PREMIUM_DESCRIPTION).click();
+      await app.settle();
+      expect(radio(app.root, 'Plan Premium').checked).toBe(true);
+      expect(chosenNames(app.root)).toEqual(['Plan Premium']);
+      expect(storedPlan()).toEqual({ key: 'premium' });
+    });
+
+    it('US-04-AC-16 "Plan Protegido" keeps the "Recomendado" badge after another plan is chosen', async () => {
+      await openCl();
+      expect(withText('Recomendado')).toEqual(['Plan Protegido']);
+      showing('Plan Premium', PREMIUM_DESCRIPTION).click();
+      await app.settle();
+      expect(withText('Recomendado')).toEqual(['Plan Protegido']);
+      expect(withText('Seleccionado')).toEqual(['Plan Premium']);
+    });
+
+    it('US-04-AC-16 a click anywhere on a card chooses its plan: its price, a coverage item, a benefit item, and again on another plan', async () => {
+      await openCl();
+      const premium = seedPlan('CL', 'premium');
+      const targets: [string, () => HTMLElement][] = [
+        ['the price', () => showing('Plan Premium', '$792.000')],
+        ['a coverage item', () => showing('Plan Premium', premium.coverages[0], 'li')],
+        ['a benefit item', () => showing('Plan Premium', premium.benefits[0], 'li')],
+      ];
+      for (const [what, target] of targets) {
+        // start from another plan so that the click has to change the choice
+        choosePlanOption(app.root, 'Plan Esencial');
+        await app.settle();
+        expect(chosenNames(app.root), 'before').toEqual(['Plan Esencial']);
+        target().click();
+        await app.settle();
+        expect(chosenNames(app.root), what).toEqual(['Plan Premium']);
+      }
+    });
+
+    it('US-04-AC-16 the choice is still a native radio group (arrow keys behave as in US-02-AC-16, proven in e2e): radios of one name inside the radiogroup, none replaced by a custom widget', async () => {
+      await openCl();
+      const radios = planRadios(app.root);
+      expect(radios).toHaveLength(3);
+      expect(radios.every((r) => r.tagName === 'INPUT' && r.type === 'radio')).toBe(true);
+      expect(new Set(radios.map((r) => r.name)).size).toBe(1);
+      expect(groupOf(app.root)?.getAttribute('role')).toBe('radiogroup');
+    });
+
+    it('US-04-AC-16 every coverage and benefit item shows a check-circle icon hidden from assistive technology, and its text is unchanged', async () => {
+      await openCl();
+      for (const plan of seedPlans('CL')) {
+        const items = Array.from(card(plan.name).querySelectorAll('ul li'));
+        expect(items.map((li) => normalise(li.textContent)), plan.name).toEqual([...plan.coverages, ...plan.benefits]);
+        for (const li of items) {
+          const icon = li.querySelector('svg');
+          expect(icon, `${plan.name}: ${li.textContent}`).not.toBeNull();
+          expect(icon?.getAttribute('aria-hidden')).toBe('true');
+        }
+      }
+    });
+
+    it('US-04-AC-04 the accessible names of "Atrás" and "Continuar" are unchanged by their icons', async () => {
+      await openCl();
+      expect(normalise(button(app.root, 'Atrás').textContent)).toBe('Atrás');
+      expect(normalise(button(app.root, 'Continuar').textContent)).toBe('Continuar');
+      for (const icon of Array.from(app.root.querySelectorAll('svg'))) expect(icon.getAttribute('aria-hidden')).toBe('true');
+    });
+  });
+
+  describe('US-04-AC-15 skeletons while the plans load (the live text stays)', () => {
+    const shapes = (): number =>
+      Array.from(app.root.querySelectorAll('[aria-hidden="true"]')).filter((e) => e.tagName.toLowerCase() !== 'svg' && normalise(e.textContent) === '').length;
+
+    it('US-04-AC-15 while the plans load there are skeleton shapes hidden from assistive technology and "Cargando planes…" is still in a polite live region; when the plans arrive the shapes are replaced', async () => {
+      vi.useFakeTimers();
+      await start(wizardEntryWithPlan('CL', CL_SPEC_RAW, null));
+      app.server.plans['CL'] = 'hang';
+      const navigation = app.begin('/cl/planes');
+      await app.settle();
+      const loading = shapes();
+      expect(loading, 'skeleton shapes while loading').toBeGreaterThan(0);
+      const status = Array.from(app.root.querySelectorAll<HTMLElement>('[role="status"], [aria-live="polite"]')).find((e) => normalise(e.textContent) === LOADING);
+      expect(status, 'the loading text is in a live region').toBeDefined();
+      expect(isPoliteLiveRegion(status as HTMLElement)).toBe(true);
+      expect(status?.closest('[aria-hidden="true"]')).toBeNull();
+      expect(app.root.querySelector('[aria-busy="true"]')).not.toBeNull();
+
+      await vi.advanceTimersByTimeAsync(10_000);
+      await vi.advanceTimersByTimeAsync(50);
+      TestBed.tick();
+      await navigation;
+      app.server.plans['CL'] = seedPlanItems('CL');
+      button(app.root, 'Reintentar').click();
+      await app.settle();
+      expect(names()).toEqual(CL_NAMES);
+      expect(shapes(), 'the skeleton is replaced by the cards').toBeLessThan(loading);
+      expect(text()).not.toContain(LOADING);
+    });
+  });
+
+  describe('US-04-AC-20 heading outline of step 2', () => {
+    it('US-04-AC-20 step 2 in Chile is h1 "Elige tu plan", then per plan an h2 with its name and h3 "Coberturas" and "Beneficios"; the header and the step indicator add no heading', async () => {
+      await openCl();
+      const expected: [string, string][] = [['h1', HEADING]];
+      for (const plan of seedPlans('CL')) {
+        expected.push(['h2', plan.name], ['h3', 'Coberturas']);
+        if (plan.benefits.length > 0) expected.push(['h3', 'Beneficios']);
+      }
+      const outline = Array.from(app.root.querySelectorAll('h1, h2, h3, h4, h5, h6')).map((h) => [h.tagName.toLowerCase(), normalise(h.textContent)]);
+      expect(outline).toEqual(expected);
+      expect(app.root.querySelectorAll('main')).toHaveLength(1);
+    });
+  });
+
+  describe('US-04-R1-F04 the plan heading has the focus on arrival, before the plans load (US-02 section 8 "Arrival")', () => {
+    it('US-04-R1-F04 while "Cargando planes…" is shown the h1 "Elige tu plan" already has the focus; after a timeout, "Reintentar" shows the plans', async () => {
+      vi.useFakeTimers();
+      await start(wizardEntryWithPlan('CL', CL_SPEC_RAW, null));
+      app.server.plans['CL'] = 'hang';
+      const navigation = app.begin('/cl/planes');
+      await app.settle();
+      expect(text()).toContain(LOADING);
+      expect(planRadios(app.root)).toEqual([]);
+      expect(document.activeElement).toBe(heading());
+
+      await vi.advanceTimersByTimeAsync(10_000);
+      await vi.advanceTimersByTimeAsync(50);
+      TestBed.tick();
+      await navigation;
+      app.server.plans['CL'] = seedPlanItems('CL');
+      button(app.root, 'Reintentar').click();
+      await app.settle();
+      expect(names()).toEqual(CL_NAMES);
+    });
+
+    it('US-04-R1-F04 when the plans arrive the plans are shown and the h1 still has the focus (the focus never waits for the content, and the content does not take it)', async () => {
+      await openCl();
+      expect(names()).toEqual(CL_NAMES);
+      expect(planRadios(app.root)).toHaveLength(3);
+      expect(document.activeElement).toBe(heading());
     });
   });
 });

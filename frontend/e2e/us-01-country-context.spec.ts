@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { CL_LABELS, field, fillField, visibleLabels } from './support/form';
+import { CL_LABELS, expectPrompt, field, fillField, storedValues, visibleLabels } from './support/form';
 
 /**
  * The country context against the real stack with the seed (ADR-0001, ADR-0003).
@@ -108,11 +108,22 @@ test.describe('US-01-AC-17 the country list cannot be loaded', () => {
 });
 
 test.describe('US-01-AC-22 data does not cross countries', () => {
-  async function expectEmptyStep1(page: Page): Promise<void> {
+  /**
+   * US-04 spec 11.1: a select shows the prompt (the text of a select-only button, the empty value AND the
+   * placeholder of a searchable input) and the wizard state holds no non-empty value for it. Text boxes
+   * (the date box included), number boxes and checkboxes are checked as before.
+   */
+  async function expectEmptyStep1(page: Page, yearLabel: 'Modelo (año)' | 'Año'): Promise<void> {
     for (const box of await page.getByRole('textbox').all()) await expect(box).toHaveValue('');
-    for (const spin of await page.getByRole('spinbutton').all()) await expect(spin).toHaveValue('');
+    // US-04 spec 11.1.1: the year is a text box now (the textbox loop covers it); name it so the check cannot become vacuous.
+    await expect(field(page, yearLabel)).toHaveValue('');
+    expect(await page.getByRole('spinbutton').count(), 'no spinbutton is left in step 1').toBe(0);
     for (const box of await page.getByRole('checkbox').all()) await expect(box).not.toBeChecked();
-    for (const combo of await page.getByRole('combobox').all()) await expect(combo).toHaveValue('');
+    const combos = await page.getByRole('combobox').all();
+    expect(combos.length, 'the step 1 selects are comboboxes').toBeGreaterThan(0);
+    for (const combo of combos) await expectPrompt(combo);
+    const stored = await storedValues(page);
+    for (const key of ['documentType', 'city', 'make']) expect(stored[key] ?? '', `${key} in the wizard state`).toBe('');
   }
 
   test('US-01-AC-22 what I typed in Colombia is not shown in Chile, nor in Colombia again', async ({ page }) => {
@@ -130,11 +141,11 @@ test.describe('US-01-AC-22 data does not cross countries', () => {
 
     await page.goto('/cl/datos');
     await expect(field(page, 'Patente')).toBeVisible();
-    await expectEmptyStep1(page);
+    await expectEmptyStep1(page, 'Año');
 
     await page.goto('/co/datos');
     await expect(field(page, 'Placa')).toBeVisible();
-    await expectEmptyStep1(page);
+    await expectEmptyStep1(page, 'Modelo (año)');
     await expect(field(page, 'Nombre completo')).toHaveValue('');
   });
 
@@ -146,6 +157,6 @@ test.describe('US-01-AC-22 data does not cross countries', () => {
 
     await page.goto('/co/datos');
     await expect(field(page, 'Placa')).toBeVisible();
-    await expectEmptyStep1(page);
+    await expectEmptyStep1(page, 'Modelo (año)');
   });
 });

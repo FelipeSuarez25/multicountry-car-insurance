@@ -200,11 +200,11 @@ export function wizardEntryWithPlan(country: string, values: Record<string, unkn
   });
 }
 
-/** "I completed step 1 in Chile" of spec section 5: birth date 1990-05-15, year 2022 (age 36, vehicle 4). */
+/** "I completed step 1 in Chile" of spec section 5: birth date 15/05/1990 (stored 1990-05-15), year 2022 (age 36, vehicle 4). */
 export const CL_SPEC_INPUT: Record<string, string | boolean> = {
   RUT: '12.345.678-5',
   'Nombre completo': 'Ana Prueba Ficticia',
-  'Fecha de nacimiento': '1990-05-15',
+  'Fecha de nacimiento': '15/05/1990',
   Ciudad: 'Santiago',
   Patente: 'BCDF12',
   Marca: 'Kia',

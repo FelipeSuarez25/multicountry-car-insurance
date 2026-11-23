@@ -1,0 +1,30 @@
+:host {
+  display: inline-flex;
+  flex: none;
+}
+svg {
+  display: block;
+  width: auto;
+  height: var(--size-flag-height);
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius-control);
+  box-shadow: 0 0 0 var(--border-width-hairline) var(--component-flag-ring);
+}
+.co-yellow {
+  fill: var(--component-flag-co-yellow);
+}
+.co-blue {
+  fill: var(--component-flag-co-blue);
+}
+.co-red {
+  fill: var(--component-flag-co-red);
+}
+.cl-white {
+  fill: var(--component-flag-cl-white);
+}
+.cl-red {
+  fill: var(--component-flag-cl-red);
+}
+.cl-blue {
+  fill: var(--component-flag-cl-blue);
+}

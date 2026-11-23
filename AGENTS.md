@@ -36,6 +36,7 @@ checks their diffs, and talks to the human. It does not do the agents' work on s
 | [review-checklist](.claude/skills/review-checklist/SKILL.md) | Project | Review procedure, severities, checklist (security, multi-country, a11y, Angular, Strapi), report template | code-reviewer |
 | [session-handoff](.claude/skills/session-handoff/SKILL.md) | Project | Session start and end procedure, `tasks.md` update, unedited log export | orchestrator |
 | [angular-developer](.claude/skills/angular-developer/SKILL.md) | **Third-party**: angular/skills@97c663a, MIT ([provenance](.claude/skills/THIRD_PARTY.md), [evaluation](docs/skills/third-party-evaluation.md)) | Up-to-date Angular 22 API reference (Signal Forms, signals, testing, routing) | frontend-developer. Precedence is lowest (`CLAUDE.md` §1); overrides are in `CLAUDE.md` §5. |
+| [frontend-design](.claude/skills/frontend-design/SKILL.md) | **Third-party**: anthropics/skills@41bbe19, Apache-2.0 ([provenance](.claude/skills/THIRD_PARTY.md), [evaluation](docs/skills/third-party-evaluation.md), EVAL-005) | Visual direction, type scale, layout restraint and interface microcopy; a self-check against generic generated-looking designs | spec-writer, architect, frontend-developer, code-reviewer. Precedence is lowest (`CLAUDE.md` §1); overrides are in `CLAUDE.md` §5 (no memory; the brief is the approved spec and ADRs; no aesthetic risk beyond the ADR; Spanish interface copy only). |
 
 ## Deterministic helpers (no AI)
 

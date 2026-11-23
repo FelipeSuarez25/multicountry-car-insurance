@@ -11,6 +11,7 @@ import { alertTexts, button, control, fillForm, maybeButton, maybeControl, norma
 import { controlledGateway, type ControlledGateway, type PaymentOutcome } from '../../../testing/payment-fakes';
 import { accessibleDescription, accessibleName, chosenNames, choosePlanOption, compact, groupName, groupOf, isPoliteLiveRegion, planRadios } from '../../../testing/plan-dom';
 import { CL_SPEC_RAW, wizardEntryWithPlan } from '../../../testing/plan-fixtures';
+import { STEP_LABELS, backLinksIn, indicatorItems, nameOf, stepIndicator, wizardHeader } from '../../../testing/custom-controls';
 import { CO_VALID_RAW, WIZARD_STORAGE_KEY, seedStrapiItems, toStrapiFieldItem } from '../../../testing/seed-fixtures';
 import {
   accessibleText,
@@ -847,10 +848,20 @@ describe('US-03 step 3 page: the summary and the payment (component tests throug
       await clickPay();
       gateway.settle({ status: 'approved' });
       await flush();
-      for (const gone of ['Ana Prueba Ficticia', 'ABC123', 'Plan Total', 'Tus datos', 'Tu vehículo', 'Plan elegido', CO_TERMS_TITLE, 'Editar mis datos', 'Cambiar plan', '5678']) {
+      // Personal values, plan names and prices are forbidden anywhere in the app root, the step indicator included.
+      for (const gone of ['Ana Prueba Ficticia', 'ABC123', 'Plan Total', CO_TERMS_TITLE, '5678']) {
         expect(text(), gone).not.toContain(gone);
       }
       expect(compact(text())).not.toContain('$2.310.000');
+      // The section names and the summary buttons are gone from the page content; "Tus datos" survives only as a step name in the indicator (US-04-AC-13).
+      const page = app.root.querySelector('main') as HTMLElement;
+      for (const gone of ['Tus datos', 'Tu vehículo', 'Plan elegido', 'Editar mis datos', 'Cambiar plan']) {
+        expect(normalise(page.textContent), gone).not.toContain(gone);
+      }
+      expect(h2s(app.root)).toHaveLength(0);
+      const indicator = stepIndicator(app.root) as HTMLElement;
+      expect(indicator).not.toBeNull();
+      expect(normalise(indicator.textContent).replace(/Tus datos|Plan|Resumen y pago|Paso \d de 3|completado/g, '').trim()).toBe('');
       expect(maybeButton(app.root, 'Pagar')).toBeNull();
       expect(app.root.querySelectorAll('input, select, textarea')).toHaveLength(0);
     });
@@ -1173,7 +1184,7 @@ describe('US-03 step 3 page: the summary and the payment (component tests throug
       await accept();
       button(app.root, 'Editar mis datos').click();
       await app.settle();
-      fillForm(app.root, { 'Modelo (año)': '2015' });
+      await fillForm(app.root, { 'Modelo (año)': '2015' });
       button(app.root, 'Continuar').click();
       await app.settle();
       expect(app.path()).toBe('/co/planes');
@@ -1245,7 +1256,8 @@ describe('US-03 step 3 page: the summary and the payment (component tests throug
 
     it('US-03-AC-16 the keyboard order is "Editar mis datos", "Cambiar plan", the terms region, "Acepto los términos y condiciones", the simulation group, "Pagar"', async () => {
       await openCo();
-      expect(tabStops(app.root)).toEqual(['Editar mis datos', 'Cambiar plan', 'terms region', 'checkbox', 'simulation group', 'Pagar']);
+      // US-04-AC-28: two links now lead the page, the country chip and the back link
+      expect(tabStops(app.root)).toEqual(['Cambiar país (actual: Colombia)', 'Volver a planes', 'Editar mis datos', 'Cambiar plan', 'terms region', 'checkbox', 'simulation group', 'Pagar']);
     });
 
     it('US-03-AC-17 "Tus datos", "Tu vehículo", "Plan elegido" and "Términos y condiciones" are headings of level 2, and the title of the page is the only level 1', async () => {
@@ -1300,6 +1312,141 @@ describe('US-03 step 3 page: the summary and the payment (component tests throug
       await openCo();
       expect(app.server.requestsOf('terms')).toHaveLength(1);
       expect(app.server.requestsOf('other')).toEqual([]);
+    });
+  });
+
+  // -------------------------------------------------------------------------------------------
+  // US-04: skeleton of the terms region, heading outline, icons add no accessible text
+  // -------------------------------------------------------------------------------------------
+
+  describe('US-04-AC-15 skeleton while the terms load (the live text stays)', () => {
+    const shapes = (): number =>
+      Array.from(app.root.querySelectorAll('[aria-hidden="true"]')).filter((e) => e.tagName.toLowerCase() !== 'svg' && normalise(e.textContent) === '').length;
+
+    it('US-04-AC-15 while the terms load there are skeleton shapes hidden from assistive technology and "Cargando términos y condiciones…" is still in a polite live region; when the terms arrive the shapes are replaced', async () => {
+      vi.useFakeTimers();
+      await start(wizardEntryWithPlan('CO', CO_VALID_RAW, 'total'));
+      app.server.terms['CO'] = 'hang';
+      const navigation = app.begin('/co/resumen');
+      await app.settle();
+      const loading = shapes();
+      expect(loading, 'skeleton shapes while the terms load').toBeGreaterThan(0);
+      const status = Array.from(app.root.querySelectorAll<HTMLElement>('*')).find((e) => e.children.length === 0 && normalise(e.textContent) === TERMS_LOADING);
+      expect(status && isPoliteLiveRegion(status)).toBe(true);
+      expect(status?.closest('[aria-hidden="true"]')).toBeNull();
+      expect(app.root.querySelector('[aria-busy="true"]')).not.toBeNull();
+
+      await advance(10_000);
+      await app.settle();
+      await navigation;
+      app.server.terms['CO'] = seedTermsItems('CO');
+      button(app.root, 'Reintentar').click();
+      await app.settle();
+      expect(regionNamed(app.root, CO_TERMS_TITLE)).not.toBeNull();
+      expect(shapes(), 'the skeleton is replaced by the terms').toBeLessThan(loading);
+      expect(text()).not.toContain(TERMS_LOADING);
+    });
+  });
+
+  describe('US-04-AC-20 heading outline of the summary and the confirmation (ADR-0009 levels kept)', () => {
+    const outline = (): [string, string][] =>
+      Array.from(app.root.querySelectorAll('h1, h2, h3, h4, h5, h6')).map((h): [string, string] => [h.tagName.toLowerCase(), normalise(h.textContent)]);
+
+    it('US-04-AC-20 the summary in Chile: h1 "Resumen de tu cotización"; h2 "Tus datos", "Tu vehículo", "Plan elegido", "Términos y condiciones"; h3 the terms title; the terms body from h4', async () => {
+      await openCl();
+      const all = outline();
+      expect(all.slice(0, 6)).toEqual([
+        ['h1', HEADING],
+        ['h2', 'Tus datos'],
+        ['h2', 'Tu vehículo'],
+        ['h2', 'Plan elegido'],
+        ['h2', 'Términos y condiciones'],
+        ['h3', CL_TERMS_TITLE],
+      ]);
+      for (const [level, name] of all.slice(6)) expect(Number(level.slice(1)), name).toBeGreaterThanOrEqual(4);
+      expect(app.root.querySelectorAll('main')).toHaveLength(1);
+    });
+
+    it('US-04-AC-20 the confirmation is exactly one heading: h1 "Pago confirmado"', async () => {
+      await openCo();
+      await accept();
+      await clickPay();
+      gateway.settle({ status: 'approved' });
+      await flush();
+      expect(outline()).toEqual([['h1', CONFIRMED]]);
+    });
+  });
+
+  describe('US-04-AC-04 icons add no accessible text to the buttons of step 3', () => {
+    it('US-04-AC-04 "Editar mis datos", "Cambiar plan" and "Pagar" keep their text, and every icon of the page is hidden from assistive technology', async () => {
+      await openCo();
+      expect(normalise(button(app.root, 'Editar mis datos').textContent)).toBe('Editar mis datos');
+      expect(normalise(button(app.root, 'Cambiar plan').textContent)).toBe('Cambiar plan');
+      expect(normalise(pay().textContent)).toBe('Pagar');
+      for (const icon of Array.from(app.root.querySelectorAll('svg'))) expect(icon.getAttribute('aria-hidden')).toBe('true');
+    });
+
+    it('US-04-AC-04 "Nueva cotización" on the confirmation keeps its text, and the confirmation icon is hidden from assistive technology', async () => {
+      await openCo();
+      await accept();
+      await clickPay();
+      gateway.settle({ status: 'approved' });
+      await flush();
+      expect(normalise(button(app.root, 'Nueva cotización').textContent)).toBe('Nueva cotización');
+      const icons = Array.from(app.root.querySelectorAll('svg'));
+      expect(icons.length).toBeGreaterThan(0);
+      for (const icon of icons) expect(icon.getAttribute('aria-hidden')).toBe('true');
+    });
+  });
+
+  describe('US-04-AC-13 the step indicator on the confirmation', () => {
+    it('US-04-AC-13 when the payment is confirmed all three steps are marked "completado" and none has aria-current', async () => {
+      await openCo();
+      expect(stepIndicator(app.root)?.querySelector('[aria-current="step"]')).not.toBeNull();
+      await accept();
+      await clickPay();
+      gateway.settle({ status: 'approved' });
+      await flush();
+      expect(normalise(h1().textContent)).toBe(CONFIRMED);
+      const indicator = stepIndicator(app.root) as HTMLElement;
+      expect(indicator, 'the indicator is still shown on the confirmation').not.toBeNull();
+      const items = indicatorItems(indicator);
+      expect(items).toHaveLength(3);
+      items.forEach((item, i) => {
+        expect(normalise(item.textContent)).toContain(STEP_LABELS[i]);
+        expect(normalise(item.textContent), STEP_LABELS[i]).toContain('completado');
+      });
+      expect(indicator.querySelectorAll('[aria-current]')).toHaveLength(0);
+    });
+  });
+
+  describe('US-04-AC-28 the confirmation has no back link, and the header chip links to the chooser', () => {
+    const approve = async (): Promise<void> => {
+      await accept();
+      await clickPay();
+      gateway.settle({ status: 'approved' });
+      await flush();
+    };
+
+    it('US-04-AC-28 the payment confirmation in Colombia has no link named "Cambiar país", "Volver a tus datos" or "Volver a planes" (nothing to go back to once the quote is closed)', async () => {
+      await openCo();
+      expect(backLinksIn(app.root), 'control: step 3 has its back link').toEqual(['Volver a planes']);
+      await approve();
+      expect(normalise(h1().textContent)).toBe(CONFIRMED);
+      expect(backLinksIn(app.root)).toEqual([]);
+    });
+
+    it('US-04-AC-28 the payment confirmation in Chile has a header with exactly one link, named "Cambiar país (actual: Chile)", with the address "/", the text "Chile" and the flag hidden from assistive technology', async () => {
+      await openCl();
+      await approve();
+      expect(normalise(h1().textContent)).toBe(CONFIRMED);
+      const links = Array.from((wizardHeader(app.root) as HTMLElement).querySelectorAll('a'));
+      expect(links).toHaveLength(1);
+      expect(nameOf(links[0])).toBe('Cambiar país (actual: Chile)');
+      expect(links[0].getAttribute('href')).toBe('/');
+      expect(normalise(links[0].textContent)).toContain('Chile');
+      expect(links[0].querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+      expect(backLinksIn(app.root)).toEqual([]);
     });
   });
 });

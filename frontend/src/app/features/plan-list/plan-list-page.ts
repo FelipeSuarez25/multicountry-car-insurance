@@ -6,6 +6,8 @@ import { FormFieldStore } from '../../core/form-field-store';
 import { PlanStore } from '../../core/plan-store';
 import { QuoteStore } from '../../core/quote-store';
 import type { Country } from '../../shared/country.model';
+import { LucideCircleCheck } from '@lucide/angular';
+import { BackLink } from '../../shared/back-link';
 import { LoadError } from '../../shared/load-error';
 import { formatMoney } from '../../shared/money-format';
 import { recommendedPlanKey } from '../../shared/plan';
@@ -27,7 +29,7 @@ interface PlanItem {
  */
 @Component({
   selector: 'app-plan-list-page',
-  imports: [LoadError],
+  imports: [BackLink, LoadError, LucideCircleCheck],
   templateUrl: './plan-list-page.html',
   styleUrl: './plan-list-page.css',
 })
@@ -48,6 +50,8 @@ export class PlanListPage {
   protected readonly chosenKey = computed(() => this.quote.plan()?.key ?? null);
   protected readonly recommendedKey = computed(() => recommendedPlanKey(this.items().map((i) => i.plan)));
   private readonly country: Country | undefined = this.countries.find(this.route.snapshot.paramMap.get('country') ?? '');
+  /** The back link of step 2 (US-04-BR-21). */
+  protected readonly toData = ['/', this.countryPath(), 'datos'];
 
   constructor() {
     void this.load();

@@ -1,15 +1,22 @@
-<main class="page" [attr.aria-busy]="status() === 'loading' ? 'true' : null">
+<main class="page" animate.enter="page-enter" [attr.aria-busy]="status() === 'loading' ? 'true' : null">
+  <app-back-link link="/" label="Cambiar país" />
   <h1 #heading tabindex="-1">Tus datos y los de tu vehículo</h1>
   @switch (status()) {
     @case ('loading') {
-      <p role="status">Cargando formulario…</p>
+      <p role="status" class="visually-hidden">Cargando formulario…</p>
+      <div class="skeletons" aria-hidden="true">
+        @for (row of skeletonRows; track row) {
+          <span class="skeleton skeleton--line" aria-hidden="true"></span>
+          <span class="skeleton skeleton--field" aria-hidden="true"></span>
+        }
+      </div>
     }
     @case ('error') {
       <app-load-error message="No pudimos cargar el formulario. Intenta de nuevo." (retry)="load()" />
     }
     @case ('ready') {
       @if (country) {
-        <app-quote-form [configs]="configs()" [countryCode]="country.code" />
+        <app-quote-form [configs]="configs()" [countryCode]="country.code" [localeTag]="country.locale" />
       }
     }
   }

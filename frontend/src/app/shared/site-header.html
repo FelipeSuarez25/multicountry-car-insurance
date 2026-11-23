@@ -1,0 +1,24 @@
+<header class="header">
+  <div class="header__inner">
+    <div class="header__brand">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="brand-mark-fill" x1="0" y1="0" x2="1" y2="1">
+            <stop class="mark__from" offset="0" />
+            <stop class="mark__to" offset="1" />
+          </linearGradient>
+        </defs>
+        <rect width="32" height="32" rx="9" fill="url(#brand-mark-fill)" />
+        <path class="mark__shield" d="M16 5.5 25 9v6.6c0 5-3.6 8.6-9 10.9-5.4-2.3-9-5.9-9-10.9V9z" />
+        <path class="mark__check" stroke-width="2.6" d="m11.6 15.9 3 3 5.8-6.2" />
+      </svg>
+      <p class="header__product">Cotizador de seguro de auto</p>
+    </div>
+    @if (country(); as current) {
+      <a class="chip" routerLink="/" [attr.aria-label]="'Cambiar país (actual: ' + current.name + ')'">
+        <app-country-flag [code]="current.code" [accentRing]="true" />
+        <span>{{ current.name }}</span>
+      </a>
+    }
+  </div>
+</header>

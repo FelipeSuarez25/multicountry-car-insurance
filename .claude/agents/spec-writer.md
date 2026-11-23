@@ -7,6 +7,7 @@ model: opus
 color: blue
 skills:
   - sdd-spec
+  - frontend-design
 hooks:
   PreToolUse:
     - matcher: "Write|Edit|NotebookEdit"

@@ -70,6 +70,19 @@ These rules override the vendored `angular-developer` skill (see
   The skill's ARIA guidance is supplementary.
 - Reads of `angular.dev` are allowed as a reference, but any decision based on them must be
   written into a spec or ADR.
+These rules override the vendored `frontend-design` skill (EVAL-005, human decision 2026-11-21):
+
+- **No memory.** The skill says to use "information in your memory about the client" and to keep
+  notes between passes. Use only the repository's artifacts (§3; story, spec, ADRs, `tasks.md`).
+- **The brief is the approved spec and ADRs.** "Confirm with the client" means a spec question
+  (`US-NN-Q-NN`) answered at HC1/HC2, never an assumption. The skill's own rule applies: the
+  brief's words win, including when the approved direction matches one of the skill's "generated
+  defaults" (for example a dark background with one accent, or cards with gradients).
+- **No aesthetic risk beyond the accepted ADR.** The wizard is a task flow, not a landing page: no
+  hero, no extra sections, no decoration the spec does not ask for. Accessibility, the
+  `review-checklist` skill and the accepted ADRs come first.
+- **Copy.** Only interface microcopy, in Spanish, code-owned (spec §8.1 of each story). Business
+  content from Strapi is never rewritten or invented.
 - Never edit vendored skill files. Overrides go here.
 
 ## 6. Naming conventions

@@ -1,118 +1,164 @@
-.page {
-  max-width: 72rem;
-  margin: 0 auto;
-  padding: 1.5rem 1rem 3rem;
-}
-h1 {
-  margin: 0 0 1rem;
-  font-size: 1.5rem;
-  line-height: 1.3;
-}
-h1:focus:not(:focus-visible) {
-  outline: none;
+.page--plans {
+  max-width: var(--size-content-max);
 }
 .plans {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
-  gap: 1rem;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
 }
 .plan {
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 1rem;
-  border: 2px solid var(--color-border);
-  border-radius: 0.75rem;
-  background: var(--color-surface);
-}
-.plan:hover {
-  background: var(--color-surface-hover);
-}
-.plan--recommended {
-  border-color: var(--color-border-strong);
+  padding: var(--space-5);
+  border: var(--border-width-hairline) solid var(--component-plan-border);
+  border-radius: var(--radius-card);
+  background: var(--component-plan-bg);
+  cursor: pointer;
 }
 .plan--chosen {
-  border-color: var(--color-link);
-  box-shadow: 0 0 0 2px var(--color-link);
+  border-color: var(--color-brand);
+  box-shadow: var(--shadow-selected);
+}
+.plan--recommended {
+  border-color: var(--component-plan-recommended-border);
+  border-radius: var(--radius-feature);
+  background: var(--component-plan-recommended-bg);
+  color: var(--component-plan-recommended-text);
+  box-shadow: var(--shadow-glow-brand);
+}
+.plan--recommended.plan--chosen {
+  box-shadow:
+    var(--shadow-selected),
+    var(--shadow-glow-brand);
 }
 .plan__header {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
+/* The radio stays a native input (keyboard and semantics) but is drawn from tokens: a ring that holds 3:1 on every plan surface, and a filled disc when checked. */
 .plan__radio {
+  appearance: none;
   flex: none;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: var(--size-icon);
+  height: var(--size-icon);
   margin: 0;
-  /* Above the stretched label, so a pointer click on the radio itself reaches it. */
-  position: relative;
-  z-index: 1;
+  border: var(--border-width-selected) solid var(--component-plan-radio-border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  cursor: pointer;
+}
+.plan__radio:checked {
+  border-color: var(--component-plan-radio-border);
+  background: var(--component-plan-radio-dot);
 }
 .plan__name {
   flex: 1 1 auto;
-  margin: 0;
-  font-size: 1.125rem;
+  font-size: var(--text-heading);
 }
-/* The label stretches over the whole card so a click anywhere chooses the plan. */
-.plan__name label::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 0.75rem;
+.plan__label {
+  display: flex;
+  align-items: center;
+  min-height: var(--size-target-min);
   cursor: pointer;
 }
 .plan__badge {
-  padding: 0.125rem 0.5rem;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 999px;
-  font-size: 0.875rem;
-  font-weight: 600;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--component-badge-bg);
+  color: var(--component-badge-text);
+  font-size: var(--text-small);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-small);
 }
 .plan__badge--chosen {
-  border-color: var(--color-link);
-  background: var(--color-link);
-  color: var(--color-button-text);
+  background: var(--color-brand);
+  color: var(--color-text-on-brand);
 }
 .plan__description {
-  margin: 0.75rem 0 0;
-  color: var(--color-muted);
+  margin-top: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-lead);
+  line-height: var(--leading-lead);
+}
+.plan--recommended .plan__description,
+.plan--recommended .caption {
+  color: var(--component-plan-recommended-muted);
 }
 .plan__price {
-  margin: 0.75rem 0 0;
-}
-.plan__amount {
-  display: block;
-  font-size: 1.5rem;
-  font-weight: 700;
-  overflow-wrap: anywhere;
-}
-.plan__caption {
-  color: var(--color-muted);
-  font-size: 0.875rem;
+  margin-top: var(--space-4);
 }
 .plan__list-heading {
-  margin: 1rem 0 0.25rem;
-  font-size: 1rem;
+  margin: var(--space-5) 0 var(--space-2);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
 }
 .plan__list {
+  display: grid;
+  gap: var(--space-2);
   margin: 0;
-  padding-left: 1.25rem;
+  padding: 0;
+  list-style: none;
+}
+.plan__list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+.plan__list .lucide {
+  margin-top: var(--space-1);
+  color: var(--color-success);
+}
+.plan--recommended .plan__list .lucide {
+  color: var(--component-plan-recommended-check);
 }
 .choose-message {
-  margin: 1rem 0 0;
-  color: var(--color-error);
-  font-weight: 600;
+  margin-top: var(--space-4);
 }
 .actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
+  margin-top: var(--space-6);
 }
-.secondary {
-  border: 2px solid var(--color-button);
-  background: var(--color-surface);
-  color: var(--color-button);
+@media (min-width: 37.5em) {
+  .plans {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 64em) {
+  .plans {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (forced-colors: active) {
+  .plan__radio {
+    border-color: ButtonText;
+  }
+  .plan__radio:checked {
+    background: Highlight;
+  }
+  .plan {
+    border-color: CanvasText;
+  }
+  .plan--chosen {
+    border-color: Highlight;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .plan {
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-base) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-out);
+  }
+}
+@media (hover: hover) {
+  .plan:hover {
+    border-color: var(--color-brand);
+  }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .plan:hover {
+    transform: translateY(calc(-1 * var(--motion-lift)));
+  }
 }

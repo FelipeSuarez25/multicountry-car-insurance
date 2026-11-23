@@ -1,6 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CountryStore } from '../../core/country-store';
+import { LucideChevronRight } from '@lucide/angular';
+import { CountryFlag } from '../../shared/country-flag';
 import { LoadError } from '../../shared/load-error';
 
 /**
@@ -9,7 +11,7 @@ import { LoadError } from '../../shared/load-error';
  */
 @Component({
   selector: 'app-unknown-country-page',
-  imports: [RouterLink, LoadError],
+  imports: [RouterLink, LoadError, CountryFlag, LucideChevronRight],
   templateUrl: './unknown-country-page.html',
   styleUrl: './country-page.css',
 })

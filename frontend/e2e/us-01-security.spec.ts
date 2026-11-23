@@ -43,7 +43,7 @@ test.describe('US-01-AC-27 read-only content access, data stays in the browser',
     expect(carrying).toEqual([]);
 
     // No request, to any address, contains a value entered in step 1 (URL, query or body).
-    const entered = ['Ana Prueba Ficticia', '1012345678', 'ABC123', '3 Touring', '1990-05-15', 'Medellín'];
+    const entered = ['Ana Prueba Ficticia', '1012345678', 'ABC123', '3 Touring', '1990-05-15', '15/05/1990', 'Medellín'];
     const leaks: string[] = [];
     for (const request of requests) {
       const haystack = [request.url(), decodeURIComponent(request.url()), request.postData() ?? ''].join('\n').toLowerCase();

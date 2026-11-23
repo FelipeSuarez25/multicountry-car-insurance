@@ -16,6 +16,9 @@ export type StrapiItem = Record<string, unknown>;
 const REQUIRED_CONSENT_CO = 'Autorizo el tratamiento de mis datos personales.';
 const REQUIRED_CONSENT_CL = 'Acepto el tratamiento de mis datos personales.';
 
+/** US-04-BR-19 / spec 7.1 (US-04-Q-27): the seed `fullName` pattern, an explicit class because seed patterns compile without the `u` flag. */
+export const FULL_NAME_PATTERN = "^[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ '.-]*$";
+
 function options(...pairs: [string, string][]): FieldConfig['options'] {
   return pairs.map(([value, label], i) => ({ value, label, sortOrder: (i + 1) * 10 }));
 }
@@ -41,7 +44,10 @@ function seedCo(): FieldConfig[] {
       helpText: 'Sin puntos ni espacios.',
       errorMessage: 'Ingresa un número de documento válido (solo números, de 6 a 10 dígitos).',
       requiredMessage: 'Ingresa tu número de documento.',
-      rules: [{ kind: 'pattern', value: '^[0-9]{6,10}$' }],
+      rules: [
+        { kind: 'pattern', value: '^[0-9]{6,10}$' },
+        { kind: 'maxLength', value: 10 },
+      ],
     },
     {
       key: 'fullName',
@@ -49,10 +55,11 @@ function seedCo(): FieldConfig[] {
       label: 'Nombre completo',
       isRequired: true,
       sortOrder: 30,
-      errorMessage: 'Ingresa tu nombre completo (entre 3 y 80 caracteres).',
+      errorMessage: 'Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres).',
       rules: [
         { kind: 'minLength', value: 3 },
         { kind: 'maxLength', value: 80 },
+        { kind: 'pattern', value: FULL_NAME_PATTERN },
       ],
     },
     {
@@ -83,7 +90,10 @@ function seedCo(): FieldConfig[] {
       sortOrder: 60,
       helpText: 'Ejemplo: ABC123.',
       errorMessage: 'Ingresa una placa válida: 3 letras y 3 números (por ejemplo, ABC123).',
-      rules: [{ kind: 'pattern', value: '^[A-Za-z]{3}[0-9]{3}$' }],
+      rules: [
+        { kind: 'pattern', value: '^[A-Za-z]{3}[0-9]{3}$' },
+        { kind: 'maxLength', value: 6 },
+      ],
     },
     {
       key: 'make',
@@ -147,6 +157,7 @@ function seedCl(): FieldConfig[] {
       rules: [
         { kind: 'pattern', value: '^[0-9]{1,2}\\.?[0-9]{3}\\.?[0-9]{3}-?[0-9kK]$' },
         { kind: 'rutCheckDigit' },
+        { kind: 'maxLength', value: 12 },
       ],
     },
     {
@@ -155,10 +166,11 @@ function seedCl(): FieldConfig[] {
       label: 'Nombre completo',
       isRequired: true,
       sortOrder: 20,
-      errorMessage: 'Ingresa tu nombre completo (entre 3 y 80 caracteres).',
+      errorMessage: 'Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres).',
       rules: [
         { kind: 'minLength', value: 3 },
         { kind: 'maxLength', value: 80 },
+        { kind: 'pattern', value: FULL_NAME_PATTERN },
       ],
     },
     {
@@ -194,7 +206,10 @@ function seedCl(): FieldConfig[] {
       sortOrder: 50,
       helpText: 'Ejemplo: BCDF12 o AB1234.',
       errorMessage: 'Ingresa una patente válida (por ejemplo, BCDF12 o AB1234).',
-      rules: [{ kind: 'pattern', value: '^([A-Za-z]{2}[0-9]{4}|[A-Za-z]{4}[0-9]{2})$' }],
+      rules: [
+        { kind: 'pattern', value: '^([A-Za-z]{2}[0-9]{4}|[A-Za-z]{4}[0-9]{2})$' },
+        { kind: 'maxLength', value: 6 },
+      ],
     },
     {
       key: 'make',
@@ -343,12 +358,15 @@ export function seedCountryItems(): StrapiItem[] {
 // Values a person types (labels and visible option texts, as a user sees them)
 // ---------------------------------------------------------------------------------------------
 
-/** AC-04 / AC-18 values for Colombia, keyed by the visible label. Selects use the option text. */
+/**
+ * AC-04 / AC-18 values for Colombia, keyed by the visible label. Selects use the option text; the
+ * date is what a person types and sees, dd/mm/aaaa (US-04-Q-05), and is stored as 1990-05-15.
+ */
 export const CO_VALID_INPUT: Record<string, string | boolean> = {
   'Tipo de documento': 'Cédula de ciudadanía',
   'Número de documento': '1012345678',
   'Nombre completo': 'Ana Prueba Ficticia',
-  'Fecha de nacimiento': '1990-05-15',
+  'Fecha de nacimiento': '15/05/1990',
   Ciudad: 'Medellín',
   Placa: 'ABC123',
   Marca: 'Mazda',
@@ -391,7 +409,7 @@ export const CO_EXPECTED_OUTPUT = {
 export const CL_VALID_INPUT: Record<string, string | boolean> = {
   RUT: '12.345.678-5',
   'Nombre completo': 'Pedro Prueba Ficticio',
-  'Fecha de nacimiento': '1985-03-20',
+  'Fecha de nacimiento': '20/03/1985',
   Ciudad: 'Santiago',
   Patente: 'BCDF12',
   Marca: 'Suzuki',

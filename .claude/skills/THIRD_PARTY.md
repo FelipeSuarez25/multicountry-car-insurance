@@ -63,3 +63,23 @@ THE SOFTWARE.
 - The file naming convention is defined in `CLAUDE.md`.
 - Keyboard accessibility of the wizard is enforced by the `review-checklist` skill.
 - Playwright is set up with `@playwright/test`, not `playwright-ng-schematics`.
+
+## frontend-design
+
+| Field | Value |
+|---|---|
+| Skill | `frontend-design` |
+| Installed at | `.claude/skills/frontend-design/` |
+| Source URL | https://github.com/anthropics/skills/tree/41bbe19d1a1a7eaab5e7bb9050a417e5c6cffc8f/skills/frontend-design |
+| Commit | `41bbe19d1a1a7eaab5e7bb9050a417e5c6cffc8f` (2026-09-03); unchanged at upstream HEAD on 2026-11-21 |
+| Installation date | 2026-11-21 |
+| Installation method | `git archive` of the exact commit (not `npx skills add`, which installs HEAD) |
+| Integrity | Upstream tree `d79e2a5bb4df4a386c2adcdd9ab8709bba28c3f6` (2 files); every vendored blob equals upstream |
+| Author | Anthropic |
+| License | Apache-2.0 (`LICENSE.txt` inside the skill folder; the repository has no root license) |
+| Evaluation | [EVAL-005](../../docs/skills/third-party-evaluation.md#eval-005-frontend-design-from-anthropicsskills) — ADOPT WITH ADJUSTMENTS, approved by Felipe Sabogal on 2026-11-21. Rejected in the same round: EVAL-003 `ui-ux-pro-max`, EVAL-004 `impeccable` |
+
+### License notice
+
+The full Apache-2.0 text ships with the skill in `.claude/skills/frontend-design/LICENSE.txt`
+(unmodified). It is not repeated here.

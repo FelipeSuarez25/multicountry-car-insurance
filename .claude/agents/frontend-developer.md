@@ -8,6 +8,7 @@ color: cyan
 skills:
   - dynamic-form-fields
   - angular-developer
+  - frontend-design
 hooks:
   PreToolUse:
     - matcher: "Write|Edit|NotebookEdit"

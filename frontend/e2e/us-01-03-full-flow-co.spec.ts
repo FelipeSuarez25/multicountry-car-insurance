@@ -1,6 +1,6 @@
 import { expect, test, type Page, type Request } from '@playwright/test';
 import { BASE_URL, STRAPI_URL } from './support/env';
-import { CO_CONSENT, CO_VALID, continuar, field, fillColombia } from './support/form';
+import { CO_CONSENT, CO_VALID, continuar, expectFieldEmpty, field, fillColombia } from './support/form';
 import {
   CL_VALID,
   CO_HIDDEN_NAMES,
@@ -221,8 +221,8 @@ test.describe('US-02-AC-13 / US-01-AC-21 a reload on step 2 in Chile (first scen
 });
 
 test.describe('US-02-AC-16 / US-01-AC-24 keyboard-only plan choice (Colombia, desktop)', () => {
-  // The date control reads typed digits in the browser locale; the first segment is the month in en-US.
-  test.use({ locale: 'en-US', viewport: { width: 1280, height: 800 } });
+  // US-04 spec 11.1: no locale override (the date is dd/mm/aaaa whatever the browser locale).
+  test.use({ viewport: { width: 1280, height: 800 } });
 
   /** The description of what has focus: a button by its text, a plan option as "plan group". */
   async function focused(page: Page): Promise<string> {
@@ -261,6 +261,8 @@ test.describe('US-02-AC-16 / US-01-AC-24 keyboard-only plan choice (Colombia, de
 
     // Arrival: the keyboard focus is on the step heading, and the document title (also US-01-AC-24).
     await expect(HEADING_LOCATOR(page)).toBeFocused();
+    // The heading has the focus on arrival, before the plans load; Tab is pressed once the plans are shown (US-04-R1-F04).
+    await expect(plans(page)).toHaveCount(3);
     await expect(page).toHaveTitle(TITLE);
 
     // Tab: the plan group, on its first plan.
@@ -301,6 +303,8 @@ test.describe('US-02-AC-16 / US-01-AC-24 keyboard-only plan choice (Colombia, de
     await page.keyboard.press('Tab');
     await page.keyboard.press('Enter');
     await expect(HEADING_LOCATOR(page)).toBeFocused();
+    // The heading has the focus on arrival, before the plans load; Tab is pressed once the plans are shown (US-04-R1-F04).
+    await expect(plans(page)).toHaveCount(3);
 
     // Tab to "Continuar" without choosing: the group, "Atrás", "Continuar".
     for (let i = 0; i < 6 && (await focused(page)) !== 'Continuar'; i++) await page.keyboard.press('Tab');
@@ -338,7 +342,7 @@ test.describe('US-02-AC-19 no step 1 data leaves the browser on step 2', () => {
     }
     expect(carrying).toEqual([]);
 
-    const entered = ['Ana Prueba Ficticia', '1012345678', 'ABC123', '3 Touring', '1990-05-15', 'Medellín'];
+    const entered = ['Ana Prueba Ficticia', '1012345678', 'ABC123', '3 Touring', '1990-05-15', '15/05/1990', 'Medellín'];
     const leaks: string[] = [];
     for (const request of requests) {
       const haystack = [request.url(), decodeURIComponent(request.url()), request.postData() ?? ''].join('\n').toLowerCase();
@@ -547,8 +551,9 @@ test.describe('US-03-AC-03 / US-03-AC-09 / US-03-AC-10 / US-03-AC-11 / US-03-AC-
     await page.getByRole('button', { name: 'Nueva cotización' }).click();
     await expect(page).toHaveURL(/\/co\/datos$/);
     await expect(field(page, 'Placa')).toBeVisible();
+    // US-04 spec 11.1: text boxes and the date box are '', the selects show the prompt.
     for (const label of ['Tipo de documento', 'Número de documento', 'Nombre completo', 'Fecha de nacimiento', 'Ciudad', 'Placa', 'Marca', 'Línea', 'Modelo (año)']) {
-      await expect(field(page, label), label).toHaveValue('');
+      await expectFieldEmpty(page, label);
     }
     await expect(field(page, CO_CONSENT)).not.toBeChecked();
   });
@@ -624,8 +629,8 @@ test.describe('US-03-AC-07 edit my data or change the plan (Colombia)', () => {
 });
 
 test.describe('US-03-AC-16 keyboard-only: the whole flow of Colombia to the confirmation (desktop)', () => {
-  // The date control reads typed digits in the browser locale; the first segment is the month in en-US.
-  test.use({ locale: 'en-US', viewport: { width: 1280, height: 800 } });
+  // US-04 spec 11.1: no locale override (the date is dd/mm/aaaa whatever the browser locale).
+  test.use({ viewport: { width: 1280, height: 800 } });
 
   test('US-03-AC-16 step 1 values are filled, then only the keyboard: Plan Total with the arrow keys, the summary heading has the focus, Tab order, the terms checkbox with Space, "Pagar" with Enter, the confirmation has the focus', async ({ page }) => {
     await page.clock.setFixedTime(TODAY);
@@ -639,6 +644,8 @@ test.describe('US-03-AC-16 keyboard-only: the whole flow of Colombia to the conf
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/co\/planes$/);
     await expect(HEADING_LOCATOR(page)).toBeFocused();
+    // The heading has the focus on arrival, before the plans load; Tab is pressed once the plans are shown (US-04-R1-F04).
+    await expect(plans(page)).toHaveCount(3);
 
     // Step 2: the plan group, the arrow keys choose "Plan Total", Tab to "Continuar", Enter.
     await page.keyboard.press('Tab');
@@ -719,7 +726,7 @@ test.describe('US-03-AC-19 no personal data leaves the browser on the summary an
     }
     expect(carrying).toEqual([]);
 
-    const entered = ['Ana Prueba Ficticia', '1012345678', 'ABC123', '3 Touring', '1990-05-15', 'Medellín', number];
+    const entered = ['Ana Prueba Ficticia', '1012345678', 'ABC123', '3 Touring', '1990-05-15', '15/05/1990', 'Medellín', number];
     const leaks: string[] = [];
     for (const request of requests) {
       const haystack = [request.url(), decodeURIComponent(request.url()), request.postData() ?? ''].join('\n').toLowerCase();

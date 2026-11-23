@@ -5,6 +5,7 @@ import { FormFieldStore } from '../../core/form-field-store';
 import { QuoteStore } from '../../core/quote-store';
 import type { Country } from '../../shared/country.model';
 import type { FieldConfig } from '../../shared/field-config.model';
+import { BackLink } from '../../shared/back-link';
 import { LoadError } from '../../shared/load-error';
 import { QuoteForm } from './quote-form';
 
@@ -16,7 +17,7 @@ type PageStatus = 'loading' | 'error' | 'ready';
  */
 @Component({
   selector: 'app-quote-form-page',
-  imports: [QuoteForm, LoadError],
+  imports: [QuoteForm, LoadError, BackLink],
   templateUrl: './quote-form-page.html',
   styleUrl: './quote-form-page.css',
 })
@@ -27,6 +28,8 @@ export class QuoteFormPage {
   private readonly quote = inject(QuoteStore);
   private readonly heading = viewChild.required<ElementRef<HTMLHeadingElement>>('heading');
 
+  /** The field-shaped blocks of the loading skeleton: a label line and a control, per row. */
+  protected readonly skeletonRows = [1, 2, 3, 4, 5, 6];
   protected readonly status = signal<PageStatus>('loading');
   protected readonly configs = signal<FieldConfig[]>([]);
   protected readonly country: Country | undefined = this.countries.find(this.route.snapshot.paramMap.get('country') ?? '');

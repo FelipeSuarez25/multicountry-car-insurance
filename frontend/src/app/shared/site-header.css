@@ -1,0 +1,126 @@
+:host {
+  /* The sticky header sticks within the page, not within this host. */
+  display: contents;
+}
+/*
+ * US-04-BR-22: a translucent violet layer over the page gradient. Where the browser cannot blur
+ * behind it, and when the user asks for less transparency, the background is the opaque token.
+ * The 1px bottom edge is a gradient border image (the country accent is its middle stop in the
+ * wizard); there is no animation.
+ */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  border-bottom: var(--border-width-hairline) solid transparent;
+  border-image: var(--gradient-header-edge) 1;
+  background: var(--component-header-bg-solid);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .header {
+    background: var(--component-header-bg);
+    backdrop-filter: var(--component-header-backdrop);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .header {
+    background: var(--component-header-bg-solid);
+    backdrop-filter: none;
+  }
+}
+.header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: calc(var(--size-header-height) - var(--border-width-hairline));
+  max-width: var(--size-content-max);
+  margin: 0 auto;
+  padding: var(--space-2) var(--space-4);
+}
+.header__brand {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-3);
+}
+.mark {
+  flex: none;
+  width: var(--size-brand-mark);
+  height: var(--size-brand-mark);
+}
+.mark__from {
+  stop-color: var(--component-brand-mark-from);
+}
+.mark__to {
+  stop-color: var(--component-brand-mark-to);
+}
+.mark__shield {
+  fill: var(--component-brand-mark-glyph);
+}
+.mark__check {
+  fill: none;
+  stroke: var(--component-brand-mark-check);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.header__product {
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-small);
+  font-weight: var(--weight-heavy);
+  font-stretch: var(--text-subheading-stretch);
+  line-height: var(--leading-small);
+  letter-spacing: var(--tracking-small);
+  background-image: var(--gradient-display-text);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+.chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--size-target-min);
+  padding: var(--space-1) var(--space-4) var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-chip-glow);
+  color: var(--color-text);
+  font-size: var(--text-small);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-small);
+  text-decoration: none;
+}
+@media (hover: hover) {
+  .chip:hover {
+    background: var(--color-surface-hover);
+  }
+}
+@media (min-width: 37.5em) {
+  .header__inner {
+    padding-inline: var(--space-5);
+  }
+  .header__product {
+    font-size: var(--text-body);
+  }
+}
+/* The system draws its own colours: solid Canvas, a visible CanvasText edge, plain text. */
+@media (forced-colors: active) {
+  .header {
+    border-bottom-color: CanvasText;
+    border-image: none;
+    background: Canvas;
+    backdrop-filter: none;
+  }
+  .header__product {
+    background-image: none;
+    color: CanvasText;
+    -webkit-text-fill-color: currentColor;
+  }
+  .chip {
+    border: var(--border-width-hairline) solid CanvasText;
+    box-shadow: none;
+  }
+}
