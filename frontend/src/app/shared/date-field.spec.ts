@@ -294,6 +294,135 @@ describe('US-04 date field and calendar (component tests through the real routes
   });
 
   // -------------------------------------------------------------------------------------------
+  // US-04-R3-F01: edits away from the end of the text. A browser edit is simulated the way it reaches
+  // the page: `beforeinput` (cancelable, with the edit kind and the caret before it), then the
+  // browser changes the value and the caret, then `input` with the same `inputType` and `data`.
+  // -------------------------------------------------------------------------------------------
+  describe('US-04-R3-F01 typed date: edits in the middle of the text (Colombia)', () => {
+    interface Edit {
+      /** The caret (or the selection) before the edit. */
+      select: [number, number];
+      /** What the browser leaves in the box after the edit, and the caret it puts. */
+      after: string;
+      caret: number;
+      inputType: string;
+      data?: string;
+    }
+
+    /** Shows `text` as typed from the keyboard (caret at the end), then applies one browser edit. */
+    async function editFrom(text: string, edit: Edit): Promise<HTMLInputElement> {
+      await start('/co/datos');
+      const box = date();
+      await typeKeys(box, text);
+      expect(box.value, 'the starting text').toBe(text);
+      box.setSelectionRange(edit.select[0], edit.select[1]);
+      box.dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, inputType: edit.inputType, data: edit.data ?? null }));
+      box.value = edit.after;
+      box.setSelectionRange(edit.caret, edit.caret);
+      box.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: edit.inputType, data: edit.data ?? null }));
+      await settleUi();
+      return box;
+    }
+    const backspace = (select: number, after: string, caret: number): Edit => ({ select: [select, select], after, caret, inputType: 'deleteContentBackward' });
+
+    it('US-04-R3-F01 Backspace on the month\'s 5 ("15/05/1990", caret after it) re-flows the digits: "15/01/990", caret after the 0', async () => {
+      const box = await editFrom('15/05/1990', backspace(5, '15/0/1990', 4));
+      expect(box.value).toBe('15/01/990');
+      expect(box.selectionStart).toBe(4);
+      expect(box.selectionEnd).toBe(4);
+    });
+
+    it('US-04-R3-F01 Backspace on the day\'s 5 ("15/05/1990", caret 2) re-flows the digits: "10/51/990", caret 1', async () => {
+      const box = await editFrom('15/05/1990', backspace(2, '1/05/1990', 1));
+      expect(box.value).toBe('10/51/990');
+      expect(box.selectionStart).toBe(1);
+    });
+
+    it('US-04-R3-F01 Backspace right after the first "/" ("15/05/1990", caret 3) removes the digit before it, not only the "/": "10/51/990"', async () => {
+      const box = await editFrom('15/05/1990', backspace(3, '1505/1990', 2));
+      expect(box.value).toBe('10/51/990');
+      expect(box.selectionStart).toBe(1);
+    });
+
+    it('US-04-R3-F01 Backspace right after the second "/" ("15/05/1990", caret 6) removes the month\'s last digit: "15/01/990"', async () => {
+      const box = await editFrom('15/05/1990', backspace(6, '15/051990', 5));
+      expect(box.value).toBe('15/01/990');
+      expect(box.selectionStart).toBe(4);
+    });
+
+    it('US-04-R3-F01 after the day\'s digit is deleted the text is not a different complete valid date: leaving shows the invalid-date message and stores ""', async () => {
+      const box = await editFrom('15/05/1990', backspace(2, '1/05/1990', 1));
+      await leaveDate();
+      expect(box.getAttribute('aria-invalid')).toBe('true');
+      expect(describedText(box)).toContain(UNREADABLE);
+      expect(stored('birthDate')).toBe('');
+    });
+
+    it('US-04-R3-F01 after the month\'s digit is deleted leaving shows the invalid-date message and stores ""', async () => {
+      const box = await editFrom('15/05/1990', backspace(5, '15/0/1990', 4));
+      await leaveDate();
+      expect(box.getAttribute('aria-invalid')).toBe('true');
+      expect(describedText(box)).toContain(UNREADABLE);
+      expect(stored('birthDate')).toBe('');
+    });
+
+    it('US-04-R3-F01 a digit typed into the day of a full text is ignored: "01/05/1990", caret 1, never "06/01/0519"', async () => {
+      const box = await editFrom('01/05/1990', { select: [1, 1], after: '061/05/1990', caret: 2, inputType: 'insertText', data: '6' });
+      expect(box.value).toBe('01/05/1990');
+      expect(box.selectionStart).toBe(1);
+      await leaveDate();
+      expect(stored('birthDate')).toBe('1990-05-01');
+    });
+
+    it('US-04-R3-F01 a digit typed into the month of a full text is ignored: "15/05/1990"', async () => {
+      const box = await editFrom('15/05/1990', { select: [4, 4], after: '15/005/1990', caret: 5, inputType: 'insertText', data: '0' });
+      expect(box.value).toBe('15/05/1990');
+    });
+
+    it('US-04-R3-F01 after deleting a digit the person can type again: the text is shorter than maxlength and the next digits re-flow ("10/51/990" + "0" -> "10/51/9900")', async () => {
+      const box = await editFrom('15/05/1990', backspace(2, '1/05/1990', 1));
+      expect(box.value.length).toBeLessThan(Number(box.getAttribute('maxlength')));
+      await typeKeys(box, '0');
+      expect(box.value).toBe('10/51/9900');
+    });
+
+    it('US-04-R3-F01 select the day and type "1": "10/51/990" (9 characters, under maxlength 10), then type "6" after the 1: "16/05/1990"', async () => {
+      const box = await editFrom('15/05/1990', { select: [0, 2], after: '1/05/1990', caret: 1, inputType: 'insertText', data: '1' });
+      expect(box.value).toBe('10/51/990');
+      expect(box.value.length).toBeLessThan(Number(box.getAttribute('maxlength')));
+      box.setSelectionRange(1, 1);
+      box.dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, inputType: 'insertText', data: '6' }));
+      box.value = '160/51/990';
+      box.setSelectionRange(2, 2);
+      box.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: '6' }));
+      await settleUi();
+      // the typed 6 lands before the 0: digits 1,6,0,5,1,9,9,0
+      expect(box.value).toBe('16/05/1990');
+      await leaveDate();
+      expect(stored('birthDate')).toBe('1990-05-16');
+    });
+
+    it('US-04-R3-F01 select all and type "2" replaces the whole text with "2", and typing goes on from there', async () => {
+      const box = await editFrom('15/05/1990', { select: [0, 10], after: '2', caret: 1, inputType: 'insertText', data: '2' });
+      expect(box.value).toBe('2');
+      await typeKeys(box, '2');
+      expect(box.value).toBe('22');
+    });
+
+    it('US-04-R3-F01 select all and paste "20/01/2000" replaces the whole text', async () => {
+      const box = await editFrom('15/05/1990', { select: [0, 10], after: '20/01/2000', caret: 10, inputType: 'insertFromPaste' });
+      expect(box.value).toBe('20/01/2000');
+      await leaveDate();
+      expect(stored('birthDate')).toBe('2000-01-20');
+    });
+
+    it('US-04-R3-F01 Backspace at the end still removes one character at a time (the end-of-text rows are unchanged)', async () => {
+      const box = await editFrom('15/05/1990', backspace(10, '15/05/199', 9));
+      expect(box.value).toBe('15/05/199');
+    });
+  });
+
+  // -------------------------------------------------------------------------------------------
   describe('US-04-AC-09 calendar: choose a birth date (Chile, today 2026-11-21)', () => {
     it('US-04-AC-09 "Elegir fecha" opens a modal dialog named by its visible month and year "noviembre de 2008", with the focus on 21 de noviembre de 2008 (the latest selectable day)', async () => {
       await start('/cl/datos');

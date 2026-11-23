@@ -218,10 +218,11 @@ describe('US-04-AC-25 the caret follows the digits', () => {
   });
 
   it('US-04-AC-25 elsewhere the caret stays right after the same number of digits it followed', () => {
-    // "15/05/1990" with a 9 typed after "15/0": raw "15/095/1990", caret 5 (after the 9, 4 digits before it)
+    // US-04-R3-F01 supersedes the former expectation ("15/095/1990" -> "15/09/5199", a shifted year): a 9 typed
+    // after "15/0" of a full text (8 digits) is ignored, so the date does not change and the caret stays after the 0.
     const out = maskDateDigits('15/095/1990', 5);
-    expect(out.text).toBe('15/09/5199');
-    expect(out.caret).toBe(5);
+    expect(out.text).toBe('15/05/1990');
+    expect(out.caret).toBe(4);
     expect(maskDateDigits('1505', 1)).toEqual({ text: '15/05', caret: 1 });
     expect(maskDateDigits('1505', 0)).toEqual({ text: '15/05', caret: 0 });
   });
@@ -248,5 +249,62 @@ describe('US-04-AC-25 the message for an unreadable date is code-owned copy (spe
       expect(masked, keys).toBe(shown);
       expect(parseDateText(masked), keys).toBe(iso);
     }
+  });
+});
+
+/**
+ * US-04-R3-F01 (review round 3): edits away from the end of the text. The contract of
+ * `maskDateDigits(raw, caret)` when `caret < raw.length` (an edit in place, not typing or pasting at
+ * the end): the digits are re-flowed in order into dd/mm/aaaa. A `/` that is already shown never pads
+ * a group (only a separator typed at the end of the text pads, "5/" -> "05/"), so no digit is
+ * invented, no group becomes "0d" and the year never shifts into a different valid date. Rules of the
+ * main session for this fix where BR-18 / Q-23 / ADR-0014 section 2 are silent.
+ * The Backspace-over-a-separator and select-and-type cases need the edit kind, so they are
+ * component tests in `date-field.spec.ts`.
+ */
+describe('US-04-R3-F01 maskDateDigits: edits in the middle of the text re-flow the digits in order', () => {
+  it('US-04-R3-F01 Backspace on the month\'s 5 ("15/0/1990", caret 4) shows "15/01/990" with the caret after the 0', () => {
+    expect(maskDateDigits('15/0/1990', 4)).toEqual({ text: '15/01/990', caret: 4 });
+  });
+
+  it('US-04-R3-F01 Backspace on the day\'s 5 ("1/05/1990", caret 1) shows "10/51/990" with the caret after the 1', () => {
+    expect(maskDateDigits('1/05/1990', 1)).toEqual({ text: '10/51/990', caret: 1 });
+  });
+
+  it('US-04-R3-F01 Backspace on the month\'s 0 ("15/5/1990", caret 3) removes the 0 and does not leave the text unchanged: "15/51/990"', () => {
+    expect(maskDateDigits('15/5/1990', 3).text).toBe('15/51/990');
+  });
+
+  it('US-04-R3-F01 a second Backspace inside the month still removes a digit: "15/1/990" (caret 3) gives "15/19/90"', () => {
+    // from "15/01/990" with the caret after the 0, the browser leaves "15/1/990"; the month can be cleared from the middle
+    expect(maskDateDigits('15/1/990', 3).text).toBe('15/19/90');
+  });
+
+  it('US-04-R3-F01 a digit inserted inside the day of a full text ("061/05/1990", caret 2) is ignored: "01/05/1990", caret 1', () => {
+    expect(maskDateDigits('061/05/1990', 2)).toEqual({ text: '01/05/1990', caret: 1 });
+  });
+
+  it('US-04-R3-F01 a digit inserted inside the month of a full text ("15/005/1990", caret 5) is ignored: "15/05/1990", caret 4', () => {
+    expect(maskDateDigits('15/005/1990', 5)).toEqual({ text: '15/05/1990', caret: 4 });
+  });
+
+  it('US-04-R3-F01 a digit inserted into a text with room re-flows in order: "1/05/199" with a 6 typed at caret 1 ("16/05/199", caret 2) stays "16/05/199"', () => {
+    expect(maskDateDigits('16/05/199', 2)).toEqual({ text: '16/05/199', caret: 2 });
+  });
+
+  it('US-04-R3-F01 an edit in the middle never produces a different complete valid date (no "06/01/0519"): the 7-digit results are incomplete', () => {
+    for (const [raw, caret] of [['1/05/1990', 1], ['15/0/1990', 4], ['15/5/1990', 3]] as const) {
+      expect(parseDateText(maskDateDigits(raw, caret).text), raw).toBeNull();
+    }
+    expect(parseDateText(maskDateDigits('061/05/1990', 2).text)).toBe('1990-05-01');
+  });
+
+  it('US-04-R3-F01 typing a separator at the END still pads (the existing rows keep working): "5/" -> "05", "15/5/" -> "15/05"', () => {
+    expect(maskDateDigits('5/', 2).text).toBe('05');
+    expect(maskDateDigits('15/5/', 5).text).toBe('15/05');
+  });
+
+  it('US-04-R3-F01 a pasted text is not an edit in place: "5/5/1990" with the caret at its end still gives "05/05/1990"', () => {
+    expect(maskDateDigits('5/5/1990', 8)).toEqual({ text: '05/05/1990', caret: 10 });
   });
 });

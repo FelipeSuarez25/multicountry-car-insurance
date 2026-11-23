@@ -1283,6 +1283,65 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       expect(entry.step1.values.fullName).toBe('Ana ');
     });
 
+    /**
+     * US-04-R3-F02: IME composition. A composition is `compositionstart`, `input` events with
+     * `isComposing: true` (the box holds the composing text), then `compositionend`. The filter must
+     * not rewrite the value while composing (the browser would cancel or duplicate the composition)
+     * and sanitises once on `compositionend`.
+     */
+    async function compose(el: HTMLInputElement, steps: string[], final: string): Promise<string[]> {
+      el.focus();
+      el.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, data: '' }));
+      const seen: string[] = [];
+      for (const step of steps) {
+        el.value = step;
+        el.setSelectionRange(step.length, step.length);
+        el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertCompositionText', data: step, isComposing: true }));
+        seen.push(el.value);
+      }
+      el.value = final;
+      el.setSelectionRange(final.length, final.length);
+      el.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: final }));
+      await app.settle();
+      return seen;
+    }
+
+    it('US-04-R3-F02 "Placa": composing "a", "ab", "abc" leaves the box as composed during the composition, and "ABC" after compositionend (not "AABABCABC")', async () => {
+      await start();
+      await app.open('/co/datos');
+      const seen = await compose(input('Placa'), ['a', 'ab', 'abc'], 'abc');
+      expect(seen, 'the value is not rewritten while composing').toEqual(['a', 'ab', 'abc']);
+      expect(input('Placa').value).toBe('ABC');
+      expect(input('Placa').selectionStart).toBe(3);
+      expect(store().values()['plate']).toBe('ABC');
+    });
+
+    it('US-04-R3-F02 "Placa": a composition that commits characters outside the profile ("ab-1") ends filtered and uppercase: "AB1"', async () => {
+      await start();
+      await app.open('/co/datos');
+      const seen = await compose(input('Placa'), ['a', 'ab', 'ab-', 'ab-1'], 'ab-1');
+      expect(seen).toEqual(['a', 'ab', 'ab-', 'ab-1']);
+      expect(input('Placa').value).toBe('AB1');
+      expect(store().values()['plate']).toBe('AB1');
+    });
+
+    it('US-04-R3-F02 "Nombre completo": a composition of "Ana 2" is left alone while composing and ends as "Ana " after compositionend', async () => {
+      await start();
+      await app.open('/co/datos');
+      const seen = await compose(input('Nombre completo'), ['A', 'An', 'Ana', 'Ana 2'], 'Ana 2');
+      expect(seen).toEqual(['A', 'An', 'Ana', 'Ana 2']);
+      expect(input('Nombre completo').value).toBe('Ana ');
+      expect(store().values()['fullName']).toBe('Ana ');
+    });
+
+    it('US-04-R3-F02 outside a composition the filter still rewrites on every input event (isComposing false): "abc" typed at once into "Placa" is "ABC"', async () => {
+      await start();
+      await app.open('/co/datos');
+      typeInto(input('Placa'), 'abc');
+      await app.settle();
+      expect(input('Placa').value).toBe('ABC');
+    });
+
     it('US-04-AC-26 the maximum length comes from the Strapi maxLength rule when there is one (a rule of 50 on fullName gives maxlength 50, not the profile 80)', async () => {
       await start();
       app.server.fields['CO'] = seedStrapiItems('CO').map((i) =>
