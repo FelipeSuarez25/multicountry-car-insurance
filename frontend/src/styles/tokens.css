@@ -151,6 +151,7 @@
   --size-calendar-max-height: 27rem;
   --size-calendar-weekday: 1.75rem;
   --size-header-height: 4.25rem;
+  --size-brand-mark: 2rem;
   --size-page-gradient: 40rem;
   --size-choice-min: 7rem;
   --size-sheet-max-height: 85dvh;
@@ -181,6 +182,9 @@
   --gradient-display-text: linear-gradient(180deg, var(--primitive-ink-50) 0%, var(--primitive-violet-300) 100%);
   --gradient-skeleton: linear-gradient(90deg, var(--primitive-ink-850) 0%, var(--primitive-ink-800) 50%, var(--primitive-ink-850) 100%);
   --gradient-page: linear-gradient(180deg, var(--primitive-violet-950) 0%, var(--primitive-ink-925) 100%);
+  /* The header's 1px bottom edge (US-04-BR-22). The wizard element redeclares it below, so the country accent is the middle stop there. */
+  --gradient-header-edge: linear-gradient(90deg, var(--primitive-violet-400) 0%, var(--color-country-accent) 45%, transparent 100%);
+  --shadow-chip-glow: inset 0 0 0 1px color-mix(in srgb, var(--color-country-accent) 55%, transparent), 0 0 0.75rem color-mix(in srgb, var(--color-country-accent) 30%, transparent);
   --texture-dots: radial-gradient(circle, color-mix(in srgb, var(--primitive-white) 7%, transparent) 1px, transparent 1.5px);
   --texture-dots-gap: 1.5rem;
   --color-backdrop: color-mix(in srgb, var(--primitive-ink-950) 72%, transparent);
@@ -238,6 +242,14 @@
   --component-flag-cl-blue: var(--primitive-flag-cl-blue);
   --component-flag-cl-red: var(--primitive-flag-cl-red);
   --component-flag-cl-white: var(--primitive-flag-cl-white);
+  /* App header (US-04-BR-22): translucent violet over the page gradient, solid where it cannot blur. */
+  --component-header-bg: color-mix(in srgb, var(--primitive-violet-950) 82%, transparent);
+  --component-header-bg-solid: var(--primitive-violet-950);
+  --component-header-backdrop: blur(0.75rem) saturate(1.6);
+  --component-brand-mark-from: var(--primitive-violet-400);
+  --component-brand-mark-to: var(--primitive-violet-700);
+  --component-brand-mark-glyph: var(--primitive-white);
+  --component-brand-mark-check: var(--primitive-violet-700);
 }
 
 /* Country accents (ADR-0011): the colour values live here and nowhere else. */
@@ -247,6 +259,16 @@
 
 [data-country-accent='cl'] {
   --color-country-accent: var(--primitive-accent-cl);
+}
+
+/*
+ * A custom property that reads --color-country-accent resolves where it is declared, so the two
+ * values that carry the accent into the header (US-04-BR-22) are declared again on the wizard
+ * element, where the accent is set.
+ */
+[data-country-accent] {
+  --gradient-header-edge: linear-gradient(90deg, var(--primitive-violet-400) 0%, var(--color-country-accent) 45%, transparent 100%);
+  --shadow-chip-glow: inset 0 0 0 1px color-mix(in srgb, var(--color-country-accent) 55%, transparent), 0 0 0.75rem color-mix(in srgb, var(--color-country-accent) 30%, transparent);
 }
 
 /* The same accents for the country links of the chooser, which is not a wizard page (US-04-AC-29). */
