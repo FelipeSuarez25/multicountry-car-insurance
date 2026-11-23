@@ -47,8 +47,24 @@ async function boxOf(locator: Locator): Promise<Box> {
   return { left: b.x, right: b.x + b.width, top: b.y, bottom: b.y + b.height, width: b.width, height: b.height };
 }
 
-const header = (page: Page): Locator => page.getByRole('banner');
+// includeHidden: an open modal dialog sets aria-hidden on the page behind it (US-04-AC-09), and the sticky header is part of it.
+const header = (page: Page): Locator => page.getByRole('banner', { includeHidden: true });
 const backLink = (page: Page, name: string): Locator => page.getByRole('link', { name, exact: true });
+/**
+ * "Press Tab from the top of the document": Chromium starts sequential navigation from the last focused element (or
+ * the click point) even after blur(), so a throwaway element is put first in the body, focused, and removed: the next
+ * Tab then starts at the very top.
+ */
+async function fromTopOfDocument(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const start = document.createElement('div');
+    start.tabIndex = -1;
+    document.body.insertBefore(start, document.body.firstChild);
+    start.focus();
+    start.remove();
+  });
+}
+
 const BACK_LINKS = ['Cambiar país', 'Volver a tus datos', 'Volver a planes'];
 
 async function expectNoBackLinks(page: Page, where: string): Promise<void> {
@@ -69,6 +85,7 @@ test.describe('US-04-AC-24 the calendar opens below the date field, compact', ()
    * "the field starts low on the page" to be reachable at 1280 x 800).
    */
   async function placeFieldLow(page: Page, gap: number): Promise<void> {
+    await settleAnimations(page); // the page enter animation moves boxes: measure at rest
     await field(page, BIRTH).evaluate((el, g) => {
       const wanted = window.innerHeight - g;
       const delta = el.getBoundingClientRect().bottom - wanted;
@@ -228,7 +245,9 @@ test.describe('US-04-AC-25 the typed date: mask and a clear message', () => {
       await date.pressSequentially(typed);
       await field(page, 'Placa').focus();
       await expect(date).toHaveValue(shown);
-      await expect.poll(() => storedValue(page, 'birthDate')).toBe(stored);
+      // "stores ''" is the model value: a key that was never given a value is not written (an all-empty state has no
+      // `quote-wizard` entry, ADR-0003), so an absent key counts as ''.
+      await expect.poll(async () => ((await storedValue(page, 'birthDate')) as string | undefined) ?? '').toBe(stored);
       if (message === null) {
         await expect(date).not.toHaveAttribute('aria-invalid', 'true');
       } else {
@@ -528,7 +547,9 @@ test.describe('US-04-AC-28 back links, the country chip link and the change of c
     for (const [address, link, reach] of rows) {
       test(`US-04-AC-28 at ${address} the first Tab stop is the country chip link and the second is "${link}", each with a visible focus indicator and a hit box of at least 44 x 44`, async ({ page }) => {
         await reach(page);
-        await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+        // steps 2 and 3 move the focus to the h1 on arrival (US-02, US-03 section 8): wait for it, so it cannot steal the reset
+        if (address !== '/co/datos') await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+        await fromTopOfDocument(page);
         await page.keyboard.press('Tab');
         const chip = header(page).getByRole('link', { name: CHIP_CO, exact: true });
         await expect(chip).toBeFocused();
@@ -601,7 +622,7 @@ test.describe('US-04-AC-29 a richer country chooser', () => {
   test('US-04-AC-29 pressing Tab from the top of the chooser reaches "Colombia" and then "Chile", and nothing else of the page', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('link', { name: 'Colombia', exact: true })).toBeVisible();
-    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await fromTopOfDocument(page);
     await page.keyboard.press('Tab');
     await expect(page.getByRole('link', { name: 'Colombia', exact: true })).toBeFocused();
     await page.keyboard.press('Tab');
