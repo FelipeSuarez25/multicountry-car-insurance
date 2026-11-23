@@ -1,11 +1,12 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CountryStore } from '../../core/country-store';
-import { LucideChevronRight, LucideReceipt, LucideShieldCheck, LucideUserRound } from '@lucide/angular';
+import { LucideChevronRight } from '@lucide/angular';
 import { CountryFlag } from '../../shared/country-flag';
 import { countryVisuals } from '../../shared/country-visuals';
 import { LoadError } from '../../shared/load-error';
 import { SiteHeader } from '../../shared/site-header';
+import { StepIcon } from '../../shared/step-icon';
 import { WIZARD_STEPS } from '../../shared/step-indicator';
 
 /** What each wizard step is about (spec 8.1, US-04-AC-29); the names come from the step indicator. */
@@ -17,7 +18,7 @@ const STEP_DESCRIPTIONS = ['Cuéntanos sobre ti y tu vehículo.', 'Compara cober
  */
 @Component({
   selector: 'app-country-chooser-page',
-  imports: [RouterLink, LoadError, CountryFlag, SiteHeader, LucideChevronRight, LucideUserRound, LucideShieldCheck, LucideReceipt],
+  imports: [RouterLink, LoadError, CountryFlag, SiteHeader, LucideChevronRight, StepIcon],
   templateUrl: './country-chooser-page.html',
   styleUrl: './country-page.css',
 })

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { LucideCheck, LucideReceipt, LucideShieldCheck, LucideUserRound } from '@lucide/angular';
+import { LucideCheck } from '@lucide/angular';
+import { StepIcon } from './step-icon';
 
 export interface Step {
   n: 1 | 2 | 3;
@@ -20,7 +21,7 @@ export const WIZARD_STEPS: readonly Step[] = [
  */
 @Component({
   selector: 'app-step-indicator',
-  imports: [LucideCheck, LucideUserRound, LucideShieldCheck, LucideReceipt],
+  imports: [LucideCheck, StepIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './step-indicator.css',
   templateUrl: './step-indicator.html',

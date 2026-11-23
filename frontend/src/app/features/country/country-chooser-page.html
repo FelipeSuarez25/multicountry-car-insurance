@@ -29,21 +29,11 @@
   }
   <section class="how">
     <h2>Cómo funciona</h2>
-    <ol class="how__steps">
+    <ol class="how__steps" role="list">
       @for (step of steps; track step.n) {
         <li class="how__step">
           <span class="how__icon" aria-hidden="true">
-            @switch (step.n) {
-              @case (1) {
-                <svg lucideUserRound></svg>
-              }
-              @case (2) {
-                <svg lucideShieldCheck></svg>
-              }
-              @default {
-                <svg lucideReceipt></svg>
-              }
-            }
+            <app-step-icon [step]="step.n" />
           </span>
           <span class="how__text">
             <strong class="how__name">{{ step.label }}</strong>

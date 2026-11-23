@@ -7,17 +7,7 @@
           @if (step.done) {
             <svg lucideCheck></svg>
           } @else {
-            @switch (step.n) {
-              @case (1) {
-                <svg lucideUserRound></svg>
-              }
-              @case (2) {
-                <svg lucideShieldCheck></svg>
-              }
-              @default {
-                <svg lucideReceipt></svg>
-              }
-            }
+            <app-step-icon [step]="step.n" [small]="true" />
           }
         </span>
         <span class="label">{{ step.label }}</span>

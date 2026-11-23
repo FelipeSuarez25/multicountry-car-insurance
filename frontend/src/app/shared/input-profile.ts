@@ -25,7 +25,8 @@ export class InputProfile {
   private readonly el = inject<ElementRef<HTMLInputElement>>(ElementRef).nativeElement;
 
   constructor() {
-    const onInput = (): void => {
+    let composing = false;
+    const sanitize = (): void => {
       const raw = this.el.value;
       const { text, caret } = sanitizeInput(raw, this.el.selectionStart ?? raw.length, this.appInputProfile());
       const max = this.appInputProfileMax();
@@ -35,7 +36,27 @@ export class InputProfile {
       const at = Math.min(caret, clamped.length);
       this.el.setSelectionRange(at, at);
     };
+    // Not while an IME composition is active: rewriting the value would cancel or duplicate it.
+    const onInput = (event: Event): void => {
+      if (composing || (event as InputEvent).isComposing) return;
+      sanitize();
+    };
+    const onCompositionStart = (): void => {
+      composing = true;
+    };
+    const onCompositionEnd = (): void => {
+      composing = false;
+      sanitize();
+      // The model reads the cleaned value (Chromium fires `input` before `compositionend`).
+      this.el.dispatchEvent(new Event('input', { bubbles: true }));
+    };
     this.el.addEventListener('input', onInput, { capture: true });
-    inject(DestroyRef).onDestroy(() => this.el.removeEventListener('input', onInput, { capture: true }));
+    this.el.addEventListener('compositionstart', onCompositionStart);
+    this.el.addEventListener('compositionend', onCompositionEnd);
+    inject(DestroyRef).onDestroy(() => {
+      this.el.removeEventListener('input', onInput, { capture: true });
+      this.el.removeEventListener('compositionstart', onCompositionStart);
+      this.el.removeEventListener('compositionend', onCompositionEnd);
+    });
   }
 }

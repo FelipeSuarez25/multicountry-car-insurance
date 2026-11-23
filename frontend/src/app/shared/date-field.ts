@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, Injector, inject, input
 import { transformedValue, type FormValueControl } from '@angular/forms/signals';
 import { LucideCalendarDays } from '@lucide/angular';
 import { Calendar, type CalendarData } from './calendar';
-import { DATE_TEXT_ERROR, formatDateText, maskDateDigits, parseDateText } from './date-text';
+import { DATE_TEXT_ERROR, dateDigits, formatDateText, maskDateDigits, parseDateText } from './date-text';
 import type { FieldConfig } from './field-config.model';
 import { isWideViewport, panelPositionStrategy, revealRoomBelow } from './panel-position';
 import { CLOCK } from '../core/clock';
@@ -64,12 +64,25 @@ export class DateField implements FormValueControl<string> {
   /** The mask (ADR-0014 section 2): digits with `/` after the day and the month; the caret follows the digits. */
   protected onInput(event: Event): void {
     const el = event.target as HTMLInputElement;
-    const raw = el.value;
-    const { text, caret } = maskDateDigits(raw, el.selectionStart ?? raw.length);
-    if (text !== raw) {
-      el.value = text;
-      el.setSelectionRange(caret, caret);
+    if ((event as InputEvent).isComposing) return;
+    const inputType = (event as InputEvent).inputType ?? '';
+    const previous = this.text();
+    let raw = el.value;
+    let at = el.selectionStart ?? raw.length;
+    if (dateDigits(raw).length === dateDigits(previous).length && raw.length < previous.length) {
+      // Backspace or Delete over a `/` removes the digit next to it instead.
+      if (inputType === 'deleteContentBackward' && at > 0) {
+        raw = raw.slice(0, at - 1) + raw.slice(at);
+        at -= 1;
+      } else if (inputType === 'deleteContentForward') {
+        raw = raw.slice(0, at) + raw.slice(at + 1);
+      }
     }
+    const { text, caret } = maskDateDigits(raw, at);
+    if (text !== el.value) {
+      el.value = text;
+    }
+    el.setSelectionRange(caret, caret);
     this.text.set(text);
   }
 

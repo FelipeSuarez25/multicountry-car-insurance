@@ -13,6 +13,7 @@
   [attr.aria-invalid]="ariaInvalid() ? 'true' : null"
   [attr.aria-describedby]="ariaDescribedby()"
   (input)="onInput($event)"
+  (compositionend)="onInput($event)"
   (blur)="onBlur()"
 />
 <button #opener type="button" class="secondary opener" [attr.aria-label]="'Elegir fecha: ' + config().label" (click)="open()">
