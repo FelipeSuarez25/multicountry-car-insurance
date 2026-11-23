@@ -80,10 +80,14 @@ describe('US-04-AC-26 seed content: maximum lengths from Strapi', () => {
     expect((field('CL', 'plate').rules ?? []).map((r) => r.kind)).toEqual(['pattern', 'maxLength']);
   });
 
-  it('US-04-AC-26 the maxLength rules do not make a valid value invalid: the longest valid documents and plates fit', () => {
-    expect('1012345678'.length).toBeLessThanOrEqual(10);
-    expect('12.345.678-5'.length).toBeLessThanOrEqual(12);
-    expect('ABC123'.length).toBeLessThanOrEqual(6);
-    expect('BCDF12'.length).toBeLessThanOrEqual(6);
+  it.each([
+    ['CO', 'documentNumber', '1012345678'],
+    ['CL', 'documentNumber', '12.345.678-5'],
+    ['CO', 'plate', 'ABC123'],
+    ['CL', 'plate', 'BCDF12'],
+  ] as const)('US-04-AC-26 the maxLength rule of %s "%s" does not make a valid value invalid: "%s" fits', (country, key, longestValid) => {
+    const rule = rulesOf(country, key, 'maxLength')[0];
+    if (!rule || rule.kind !== 'maxLength') throw new Error(`${country} ${key} has no maxLength rule`);
+    expect(longestValid.length).toBeLessThanOrEqual(rule.value);
   });
 });

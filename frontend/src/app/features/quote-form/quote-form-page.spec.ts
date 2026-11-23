@@ -1306,7 +1306,7 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       return seen;
     }
 
-    it('US-04-R3-F02 "Placa": composing "a", "ab", "abc" leaves the box as composed during the composition, and "ABC" after compositionend (not "AABABCABC")', async () => {
+    it('US-04-AC-26 R3-F02 "Placa": composing "a", "ab", "abc" leaves the box as composed during the composition, and "ABC" after compositionend (not "AABABCABC")', async () => {
       await start();
       await app.open('/co/datos');
       const seen = await compose(input('Placa'), ['a', 'ab', 'abc'], 'abc');
@@ -1316,7 +1316,7 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       expect(store().values()['plate']).toBe('ABC');
     });
 
-    it('US-04-R3-F02 "Placa": a composition that commits characters outside the profile ("ab-1") ends filtered and uppercase: "AB1"', async () => {
+    it('US-04-AC-26 R3-F02 "Placa": a composition that commits characters outside the profile ("ab-1") ends filtered and uppercase: "AB1"', async () => {
       await start();
       await app.open('/co/datos');
       const seen = await compose(input('Placa'), ['a', 'ab', 'ab-', 'ab-1'], 'ab-1');
@@ -1325,7 +1325,7 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       expect(store().values()['plate']).toBe('AB1');
     });
 
-    it('US-04-R3-F02 "Nombre completo": a composition of "Ana 2" is left alone while composing and ends as "Ana " after compositionend', async () => {
+    it('US-04-AC-26 R3-F02 "Nombre completo": a composition of "Ana 2" is left alone while composing and ends as "Ana " after compositionend', async () => {
       await start();
       await app.open('/co/datos');
       const seen = await compose(input('Nombre completo'), ['A', 'An', 'Ana', 'Ana 2'], 'Ana 2');
@@ -1334,7 +1334,7 @@ describe('US-01 step 1 page (component tests through the real routes)', () => {
       expect(store().values()['fullName']).toBe('Ana ');
     });
 
-    it('US-04-R3-F02 outside a composition the filter still rewrites on every input event (isComposing false): "abc" typed at once into "Placa" is "ABC"', async () => {
+    it('US-04-AC-26 R3-F02 outside a composition the filter still rewrites on every input event (isComposing false): "abc" typed at once into "Placa" is "ABC"', async () => {
       await start();
       await app.open('/co/datos');
       typeInto(input('Placa'), 'abc');

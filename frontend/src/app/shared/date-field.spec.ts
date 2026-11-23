@@ -298,7 +298,7 @@ describe('US-04 date field and calendar (component tests through the real routes
   // the page: `beforeinput` (cancelable, with the edit kind and the caret before it), then the
   // browser changes the value and the caret, then `input` with the same `inputType` and `data`.
   // -------------------------------------------------------------------------------------------
-  describe('US-04-R3-F01 typed date: edits in the middle of the text (Colombia)', () => {
+  describe('US-04-AC-25 R3-F01 typed date: edits in the middle of the text (Colombia)', () => {
     interface Edit {
       /** The caret (or the selection) before the edit. */
       select: [number, number];
@@ -325,32 +325,32 @@ describe('US-04 date field and calendar (component tests through the real routes
     }
     const backspace = (select: number, after: string, caret: number): Edit => ({ select: [select, select], after, caret, inputType: 'deleteContentBackward' });
 
-    it('US-04-R3-F01 Backspace on the month\'s 5 ("15/05/1990", caret after it) re-flows the digits: "15/01/990", caret after the 0', async () => {
+    it('US-04-AC-25 R3-F01 Backspace on the month\'s 5 ("15/05/1990", caret after it) re-flows the digits: "15/01/990", caret after the 0', async () => {
       const box = await editFrom('15/05/1990', backspace(5, '15/0/1990', 4));
       expect(box.value).toBe('15/01/990');
       expect(box.selectionStart).toBe(4);
       expect(box.selectionEnd).toBe(4);
     });
 
-    it('US-04-R3-F01 Backspace on the day\'s 5 ("15/05/1990", caret 2) re-flows the digits: "10/51/990", caret 1', async () => {
+    it('US-04-AC-25 R3-F01 Backspace on the day\'s 5 ("15/05/1990", caret 2) re-flows the digits: "10/51/990", caret 1', async () => {
       const box = await editFrom('15/05/1990', backspace(2, '1/05/1990', 1));
       expect(box.value).toBe('10/51/990');
       expect(box.selectionStart).toBe(1);
     });
 
-    it('US-04-R3-F01 Backspace right after the first "/" ("15/05/1990", caret 3) removes the digit before it, not only the "/": "10/51/990"', async () => {
+    it('US-04-AC-25 R3-F01 Backspace right after the first "/" ("15/05/1990", caret 3) removes the digit before it, not only the "/": "10/51/990"', async () => {
       const box = await editFrom('15/05/1990', backspace(3, '1505/1990', 2));
       expect(box.value).toBe('10/51/990');
       expect(box.selectionStart).toBe(1);
     });
 
-    it('US-04-R3-F01 Backspace right after the second "/" ("15/05/1990", caret 6) removes the month\'s last digit: "15/01/990"', async () => {
+    it('US-04-AC-25 R3-F01 Backspace right after the second "/" ("15/05/1990", caret 6) removes the month\'s last digit: "15/01/990"', async () => {
       const box = await editFrom('15/05/1990', backspace(6, '15/051990', 5));
       expect(box.value).toBe('15/01/990');
       expect(box.selectionStart).toBe(4);
     });
 
-    it('US-04-R3-F01 after the day\'s digit is deleted the text is not a different complete valid date: leaving shows the invalid-date message and stores ""', async () => {
+    it('US-04-AC-25 R3-F01 after the day\'s digit is deleted the text is not a different complete valid date: leaving shows the invalid-date message and stores ""', async () => {
       const box = await editFrom('15/05/1990', backspace(2, '1/05/1990', 1));
       await leaveDate();
       expect(box.getAttribute('aria-invalid')).toBe('true');
@@ -358,7 +358,7 @@ describe('US-04 date field and calendar (component tests through the real routes
       expect(stored('birthDate')).toBe('');
     });
 
-    it('US-04-R3-F01 after the month\'s digit is deleted leaving shows the invalid-date message and stores ""', async () => {
+    it('US-04-AC-25 R3-F01 after the month\'s digit is deleted leaving shows the invalid-date message and stores ""', async () => {
       const box = await editFrom('15/05/1990', backspace(5, '15/0/1990', 4));
       await leaveDate();
       expect(box.getAttribute('aria-invalid')).toBe('true');
@@ -366,7 +366,7 @@ describe('US-04 date field and calendar (component tests through the real routes
       expect(stored('birthDate')).toBe('');
     });
 
-    it('US-04-R3-F01 a digit typed into the day of a full text is ignored: "01/05/1990", caret 1, never "06/01/0519"', async () => {
+    it('US-04-AC-25 R3-F01 a digit typed into the day of a full text is ignored: "01/05/1990", caret 1, never "06/01/0519"', async () => {
       const box = await editFrom('01/05/1990', { select: [1, 1], after: '061/05/1990', caret: 2, inputType: 'insertText', data: '6' });
       expect(box.value).toBe('01/05/1990');
       expect(box.selectionStart).toBe(1);
@@ -374,19 +374,19 @@ describe('US-04 date field and calendar (component tests through the real routes
       expect(stored('birthDate')).toBe('1990-05-01');
     });
 
-    it('US-04-R3-F01 a digit typed into the month of a full text is ignored: "15/05/1990"', async () => {
+    it('US-04-AC-25 R3-F01 a digit typed into the month of a full text is ignored: "15/05/1990"', async () => {
       const box = await editFrom('15/05/1990', { select: [4, 4], after: '15/005/1990', caret: 5, inputType: 'insertText', data: '0' });
       expect(box.value).toBe('15/05/1990');
     });
 
-    it('US-04-R3-F01 after deleting a digit the person can type again: the text is shorter than maxlength and the next digits re-flow ("10/51/990" + "0" -> "10/51/9900")', async () => {
+    it('US-04-AC-25 R3-F01 after deleting a digit the person can type again: the text is shorter than maxlength and the next digits re-flow ("10/51/990" + "0" -> "10/51/9900")', async () => {
       const box = await editFrom('15/05/1990', backspace(2, '1/05/1990', 1));
       expect(box.value.length).toBeLessThan(Number(box.getAttribute('maxlength')));
       await typeKeys(box, '0');
       expect(box.value).toBe('10/51/9900');
     });
 
-    it('US-04-R3-F01 select the day and type "1": "10/51/990" (9 characters, under maxlength 10), then type "6" after the 1: "16/05/1990"', async () => {
+    it('US-04-AC-25 R3-F01 select the day and type "1": "10/51/990" (9 characters, under maxlength 10), then type "6" after the 1: "16/05/1990"', async () => {
       const box = await editFrom('15/05/1990', { select: [0, 2], after: '1/05/1990', caret: 1, inputType: 'insertText', data: '1' });
       expect(box.value).toBe('10/51/990');
       expect(box.value.length).toBeLessThan(Number(box.getAttribute('maxlength')));
@@ -402,27 +402,64 @@ describe('US-04 date field and calendar (component tests through the real routes
       expect(stored('birthDate')).toBe('1990-05-16');
     });
 
-    it('US-04-R3-F01 select all and type "2" replaces the whole text with "2", and typing goes on from there', async () => {
+    it('US-04-AC-25 R3-F01 select all and type "2" replaces the whole text with "2", and typing goes on from there', async () => {
       const box = await editFrom('15/05/1990', { select: [0, 10], after: '2', caret: 1, inputType: 'insertText', data: '2' });
       expect(box.value).toBe('2');
       await typeKeys(box, '2');
       expect(box.value).toBe('22');
     });
 
-    it('US-04-R3-F01 select all and paste "20/01/2000" replaces the whole text', async () => {
+    it('US-04-AC-25 R3-F01 select all and paste "20/01/2000" replaces the whole text', async () => {
       const box = await editFrom('15/05/1990', { select: [0, 10], after: '20/01/2000', caret: 10, inputType: 'insertFromPaste' });
       expect(box.value).toBe('20/01/2000');
       await leaveDate();
       expect(stored('birthDate')).toBe('2000-01-20');
     });
 
-    it('US-04-R3-F01 Backspace at the end still removes one character at a time (the end-of-text rows are unchanged)', async () => {
+    it('US-04-AC-25 R3-F01 Backspace at the end still removes one character at a time (the end-of-text rows are unchanged)', async () => {
       const box = await editFrom('15/05/1990', backspace(10, '15/05/199', 9));
       expect(box.value).toBe('15/05/199');
     });
   });
 
   // -------------------------------------------------------------------------------------------
+  // IME composition on the date box (review US-04-R4-F05): the mask must not rewrite the text while a
+  // composition is active, and runs once on `compositionend`.
+  describe('US-04-AC-25 R4-F05 typed date: IME composition (Colombia)', () => {
+    async function composeDate(steps: string[], final: string): Promise<{ seen: string[]; box: HTMLInputElement }> {
+      await start('/co/datos');
+      const box = date();
+      box.focus();
+      box.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, data: '' }));
+      const seen: string[] = [];
+      for (const step of steps) {
+        box.value = step;
+        box.setSelectionRange(step.length, step.length);
+        box.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertCompositionText', data: step, isComposing: true }));
+        await settleUi();
+        seen.push(box.value);
+      }
+      box.value = final;
+      box.setSelectionRange(final.length, final.length);
+      box.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: final }));
+      await settleUi();
+      return { seen, box };
+    }
+
+    it('US-04-AC-25 R4-F05 while composing, the box keeps the composed text (no mask rewrite); on compositionend the mask runs once: "1a", "15a", "15a05" end as "15/05"', async () => {
+      const { seen, box } = await composeDate(['1a', '15a', '15a05'], '15a05');
+      expect(seen).toEqual(['1a', '15a', '15a05']);
+      expect(box.value).toBe('15/05');
+    });
+
+    it('US-04-AC-25 R4-F05 a composition committing a full date ends as "15/05/1990" and is stored after leaving the field', async () => {
+      const { box } = await composeDate(['15', '15/05'], '15051990');
+      expect(box.value).toBe('15/05/1990');
+      await leaveDate();
+      expect(stored('birthDate')).toBe('1990-05-15');
+    });
+  });
+
   describe('US-04-AC-09 calendar: choose a birth date (Chile, today 2026-11-21)', () => {
     it('US-04-AC-09 "Elegir fecha" opens a modal dialog named by its visible month and year "noviembre de 2008", with the focus on 21 de noviembre de 2008 (the latest selectable day)', async () => {
       await start('/cl/datos');

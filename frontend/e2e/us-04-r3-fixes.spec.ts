@@ -19,8 +19,22 @@ async function openCo(page: Page): Promise<void> {
   await expect(field(page, 'Placa')).toBeVisible();
 }
 
+/**
+ * Places the caret and checks it. `Home`/`End` do not move the caret in Chromium on macOS, so the
+ * position is set with `setSelectionRange` (the same on every platform) and asserted before typing.
+ */
+async function placeCaret(box: ReturnType<typeof field>, position: number): Promise<void> {
+  await box.evaluate((el: HTMLInputElement, at: number) => el.setSelectionRange(at, at), position);
+  await expect.poll(() => box.evaluate((el: HTMLInputElement) => el.selectionStart)).toBe(position);
+}
+
+/** Leaves the date field the way the AC-25 rows do: focus "Placa". A Tab would land on "Elegir fecha", still inside the field. */
+async function leaveDateField(page: Page): Promise<void> {
+  await field(page, 'Placa').focus();
+}
+
 // ---------------------------------------------------------------------------------------------
-test.describe('US-04-R3-F01 the typed date can be corrected in the middle', () => {
+test.describe('US-04-AC-25 R3-F01 the typed date can be corrected in the middle', () => {
   /** Types the full date, then moves the caret `left` positions from the end. */
   async function typedWithCaretAt(page: Page, left: number): Promise<ReturnType<typeof field>> {
     await openCo(page);
@@ -28,59 +42,60 @@ test.describe('US-04-R3-F01 the typed date can be corrected in the middle', () =
     await box.focus();
     await box.pressSequentially('15/05/1990');
     await expect(box).toHaveValue('15/05/1990');
-    for (let i = 0; i < left; i++) await page.keyboard.press('ArrowLeft');
+    await placeCaret(box, 10 - left);
     return box;
   }
 
-  test('US-04-R3-F01 Backspace on the month\'s 5 (caret after it) shows "15/01/990", and leaving shows the invalid-date message', async ({ page }) => {
+  test('US-04-AC-25 R3-F01 Backspace on the month\'s 5 (caret after it) shows "15/01/990", and leaving shows the invalid-date message', async ({ page }) => {
     const box = await typedWithCaretAt(page, 5);
     await page.keyboard.press('Backspace');
     await expect(box).toHaveValue('15/01/990');
-    await page.keyboard.press('Tab');
+    await leaveDateField(page);
     await expectDescribedBy(page, BIRTH, UNREADABLE);
     await expect(box).toHaveAttribute('aria-invalid', 'true');
   });
 
-  test('US-04-R3-F01 Backspace on the day\'s 5 (caret after it) shows "10/51/990" (digits in order, "/" after the 2nd and 4th) and leaving shows the invalid-date message', async ({ page }) => {
+  test('US-04-AC-25 R3-F01 Backspace on the day\'s 5 (caret after it) shows "10/51/990" (digits in order, "/" after the 2nd and 4th) and leaving shows the invalid-date message', async ({ page }) => {
     const box = await typedWithCaretAt(page, 8);
     await page.keyboard.press('Backspace');
     await expect(box).toHaveValue('10/51/990');
-    await page.keyboard.press('Tab');
+    await leaveDateField(page);
     await expectDescribedBy(page, BIRTH, UNREADABLE);
   });
 
-  test('US-04-R3-F01 Backspace right after a "/" removes the digit before it, not only the "/"', async ({ page }) => {
+  test('US-04-AC-25 R3-F01 Backspace right after a "/" removes the digit before it, not only the "/"', async ({ page }) => {
     const box = await typedWithCaretAt(page, 7);
     await page.keyboard.press('Backspace');
     await expect(box).toHaveValue('10/51/990');
   });
 
-  test('US-04-R3-F01 Delete on the day\'s 5 (caret before it) gives the same digits in order: "10/51/990"', async ({ page }) => {
+  test('US-04-AC-25 R3-F01 Delete on the day\'s 5 (caret before it) gives the same digits in order: "10/51/990"', async ({ page }) => {
     const box = await typedWithCaretAt(page, 9);
     await page.keyboard.press('Delete');
     await expect(box).toHaveValue('10/51/990');
   });
 
-  test('US-04-R3-F01 a digit typed into a full text is ignored (no "06/01/0519"), the date stays "01/05/1990"', async ({ page }) => {
+  test('US-04-AC-25 R3-F01 a digit typed into a full text is ignored (no "06/01/0519"), the date stays "01/05/1990"', async ({ page }) => {
     await openCo(page);
     const box = field(page, BIRTH);
     await box.focus();
     await box.pressSequentially('01/05/1990');
-    await page.keyboard.press('Home');
-    await page.keyboard.press('ArrowRight');
+    await placeCaret(box, 1);
+    // The browser's maxlength="10" already blocks this keystroke, so this row pins the user-visible result only;
+    // the mask's own "ignore an insertion into 8 digits" branch is proven by the unit and component rows.
     await page.keyboard.press('6');
     await expect(box).toHaveValue('01/05/1990');
   });
 
-  test('US-04-R3-F01 after a deletion the person can type again: "15/05/1990", Backspace on the day\'s 5, End, "0" gives "10/51/9900"', async ({ page }) => {
+  test('US-04-AC-25 R3-F01 after a deletion the person can type again: "15/05/1990", Backspace on the day\'s 5, caret at the end, "0" gives "10/51/9900"', async ({ page }) => {
     const box = await typedWithCaretAt(page, 8);
     await page.keyboard.press('Backspace');
-    await page.keyboard.press('End');
+    await placeCaret(box, '10/51/990'.length);
     await page.keyboard.press('0');
     await expect(box).toHaveValue('10/51/9900');
   });
 
-  test('US-04-R3-F01 select the day, type "1", then "6" after it: the day can be re-typed ("16/05/1990")', async ({ page }) => {
+  test('US-04-AC-25 R3-F01 select the day, type "1", then "6" after it: the day can be re-typed ("16/05/1990")', async ({ page }) => {
     const box = await typedWithCaretAt(page, 0);
     await box.evaluate((el: HTMLInputElement) => el.setSelectionRange(0, 2));
     await page.keyboard.press('1');
@@ -89,7 +104,7 @@ test.describe('US-04-R3-F01 the typed date can be corrected in the middle', () =
     await expect(box).toHaveValue('16/05/1990');
   });
 
-  test('US-04-R3-F01 select all and type "2" replaces the whole text', async ({ page }) => {
+  test('US-04-AC-25 R3-F01 select all and type "2" replaces the whole text', async ({ page }) => {
     const box = await typedWithCaretAt(page, 0);
     await box.selectText();
     await page.keyboard.press('2');
@@ -100,8 +115,8 @@ test.describe('US-04-R3-F01 the typed date can be corrected in the middle', () =
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe('US-04-R3-F02 IME composition on a profile field (CDP)', () => {
-  test('US-04-R3-F02 "Placa": composing "a", "ab", "abc" and committing "abc" ends as "ABC", not "AABABCABC"', async ({ page }) => {
+test.describe('US-04-AC-26 R3-F02 IME composition on a profile field (CDP)', () => {
+  test('US-04-AC-26 R3-F02 "Placa": composing "a", "ab", "abc" and committing "abc" ends as "ABC", not "AABABCABC"', async ({ page }) => {
     await openCo(page);
     const plate = field(page, 'Placa');
     await plate.focus();
@@ -114,7 +129,7 @@ test.describe('US-04-R3-F02 IME composition on a profile field (CDP)', () => {
     await expect.poll(async () => page.evaluate(() => JSON.parse(sessionStorage.getItem('quote-wizard') ?? '{}').step1?.values?.plate)).toBe('ABC');
   });
 
-  test('US-04-R3-F02 "Placa": a composition with characters outside the profile ("ab-1") ends as "AB1"', async ({ page }) => {
+  test('US-04-AC-26 R3-F02 "Placa": a composition with characters outside the profile ("ab-1") ends as "AB1"', async ({ page }) => {
     await openCo(page);
     const plate = field(page, 'Placa');
     await plate.focus();
@@ -126,7 +141,7 @@ test.describe('US-04-R3-F02 IME composition on a profile field (CDP)', () => {
     await expect(plate).toHaveValue('AB1');
   });
 
-  test('US-04-R3-F02 "Placa": typing after a composition goes on from the committed text ("ABC" + "1" = "ABC1")', async ({ page }) => {
+  test('US-04-AC-26 R3-F02 "Placa": typing after a composition goes on from the committed text ("ABC" + "1" = "ABC1")', async ({ page }) => {
     await openCo(page);
     const plate = field(page, 'Placa');
     await plate.focus();
@@ -139,7 +154,7 @@ test.describe('US-04-R3-F02 IME composition on a profile field (CDP)', () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-test.describe('US-04-R3-F03 the Strapi content carries the rules (the e2e maxlength rows must not pass on the front-end fallback)', () => {
+test.describe('US-04-AC-26 R3-F03 the Strapi content carries the rules (the e2e maxlength rows must not pass on the front-end fallback)', () => {
   interface Rule { kind: string; value: number | null; pattern: string | null }
   interface Item { key: string; errorMessage: string; rules: Rule[] }
 
@@ -158,13 +173,13 @@ test.describe('US-04-R3-F03 the Strapi content carries the rules (the e2e maxlen
     ['CL', 'plate', 6],
   ];
   for (const [country, key, value] of rows) {
-    test(`US-04-R3-F03 /api/form-fields ${country} "${key}" has a maxLength rule of ${value} (the source of the maxlength attribute)`, async ({ page }) => {
+    test(`US-04-AC-26 R3-F03 /api/form-fields ${country} "${key}" has a maxLength rule of ${value} (the source of the maxlength attribute)`, async ({ page }) => {
       expect(maxLengths((await seeded(page, country))[key])).toEqual([value]);
     });
   }
 
   for (const country of ['CO', 'CL'] as const) {
-    test(`US-04-R3-F03 /api/form-fields ${country} "fullName" has the Latin-1 pattern rule and the new errorMessage, and the pattern accepts "José Núñez-O'Neil Jr." and rejects "Ana 2" as the front end compiles it`, async ({ page }) => {
+    test(`US-04-AC-26 R3-F03 /api/form-fields ${country} "fullName" has the Latin-1 pattern rule and the new errorMessage, and the pattern accepts "José Núñez-O'Neil Jr." and rejects "Ana 2" as the front end compiles it`, async ({ page }) => {
       const item = (await seeded(page, country))['fullName'];
       expect(item?.errorMessage).toBe('Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres).');
       const patterns = (item?.rules ?? []).filter((r) => r.kind === 'pattern');
