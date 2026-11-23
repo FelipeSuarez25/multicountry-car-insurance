@@ -4,9 +4,9 @@
 |---|---|
 | Story | [story.md](story.md) (English translation of the human's request, not edited; the human confirms the translation at HC1) |
 | Status | Approved |
-| Version | 0.3 |
+| Version | 0.4 |
 | Author | spec-writer subagent (Claude Opus 5.5) |
-| Approved by | v0.1: Felipe Sabogal, 2026-11-21 (HC1 round 1). v0.2: applies the ADR-driven adjustments 1–14 and the week-start decision that the human approved at that same HC1 (§13); the further alignments with the accepted ADR-0010..0013 listed in the v0.2 row of §13 are for the human to confirm. v0.3: changes **directed by the human at HC3 round 1** (2026-11-22, CLAUDE.md §1): BR-17..BR-21, AC-24..AC-29 and the amendments in the v0.3 row of §13. The concrete values (sizes, profiles, max lengths, copy) are the main session's recommendation ("como lo recomiendes"); the human reviews them in the HC3 QA of this round. Status stays `Approved`. |
+| Approved by | v0.1: Felipe Sabogal, 2026-11-21 (HC1 round 1). v0.2: applies the ADR-driven adjustments 1–14 and the week-start decision that the human approved at that same HC1 (§13); the further alignments with the accepted ADR-0010..0013 listed in the v0.2 row of §13 are for the human to confirm. v0.3: changes **directed by the human at HC3 round 1** (2026-11-22, CLAUDE.md §1): BR-17..BR-21, AC-24..AC-29 and the amendments in the v0.3 row of §13. The concrete values (sizes, profiles, max lengths, copy) are the main session's recommendation ("como lo recomiendes"); the human reviews them in the HC3 QA of this round. Status stays `Approved`. v0.4: changes **directed by the human at HC3 round 2** (2026-11-22, CLAUDE.md §1): BR-22, BR-23, AC-30, AC-31, Q-28..Q-30 and the amendments in the v0.4 row of §13 (header style, favicon and app icons). The concrete values are the main session's recommendation (decisions D8, D9); the human reviews them in the HC3 QA of round 2. Status stays `Approved`. |
 | Related ADRs | [ADR-0001](../../adr/0001-multi-country-content-strategy.md) (amended by ADR-0006 and [ADR-0011](../../adr/0011-country-visuals-amends-adr-0001.md)), [ADR-0003](../../adr/0003-wizard-state-persistence.md) (stored values unchanged), [ADR-0004](../../adr/0004-forms-library.md) (amended by [ADR-0012](../../adr/0012-accessible-select-and-date-picker.md)), [ADR-0009](../../adr/0009-terms-rich-text-rendering.md) (heading hierarchy), [ADR-0010](../../adr/0010-design-tokens-and-visual-language.md) (tokens and visual language), ADR-0011 (country visuals), ADR-0012 (select and date picker, lazy step 1), [ADR-0013](../../adr/0013-motion-and-reduced-motion.md) (motion and reduced motion). All Accepted. **v0.3:** ADR-0014 "Input profiles, typed-date mask and anchored calendar; page background" (amends ADR-0012 and ADR-0010) is needed, written by the architect in parallel (§10); [Accepted](../../adr/0014-input-profiles-typed-date-and-anchored-calendar.md) by the human, 2026-11-22 (commit `6b52ac2`). |
 
 Sources cited in this spec:
@@ -41,6 +41,12 @@ gradient on every page; every wizard step has a back link and the header country
 country chooser; the chooser gets the app header, a lead text and a "Cómo funciona" list. These
 change some behaviour on purpose; BR-07 lists the exceptions.
 
+**v0.4 (HC3 round 2, directed by the human):** the app header becomes a translucent violet layer
+that continues the page gradient, with a gradient bottom edge and an original decorative brand mark
+before the product name (BR-22); the app gets its own favicon, a PNG fallback, an Apple touch icon
+and a `theme-color`, replacing the Angular default favicon (BR-23). Visual only: no behaviour,
+route, stored value, copy or Strapi content changes.
+
 ## 2. Scope
 
 **In scope**
@@ -74,6 +80,13 @@ change some behaviour on purpose; BR-07 lists the exceptions.
   schema change (BR-19, §7.1); lighter gradient page background on every page and a richer country
   chooser with the app header (BR-20); back links on the wizard steps and the header country chip as
   a link to the chooser (BR-21); refreshed after screenshots (BR-15).
+- **v0.4 (HC3 round 2):** header restyle on every page that shows the app header (chooser, three
+  wizard steps, confirmation): translucent token-built surface with `backdrop-filter`, solid,
+  reduced-transparency and forced-colors fallbacks, `--gradient-header-edge` bottom edge, decorative
+  brand mark, product name in the display family, chip kept as specified in BR-21 (BR-22); own
+  `favicon.svg`, `favicon-32.png`, `apple-touch-icon.png` and `<meta name="theme-color">` in
+  `frontend/public/` and `frontend/src/index.html`, Angular default `favicon.ico` removed (BR-23);
+  after screenshots refreshed again (BR-15).
 
 **Out of scope**
 
@@ -120,12 +133,15 @@ Terms of the US-01..US-03 glossaries keep their meaning.
 | Date mask | (v0.3) The typing behaviour of the date text box: digits only, `/` inserted after the day and the month (BR-18). |
 | Back link | (v0.3) The "Volver…"/"Cambiar país" link above the `h1` of a wizard step (BR-21). |
 | Country chip link | (v0.3) The header country chip (flag + country name) as a link to the country chooser (BR-21). |
+| App header | (v0.4) The `SiteHeader` shown on the chooser, the three wizard steps and the confirmation (not on the unknown-country page): brand mark, product name and, with a resolved country, the chip link (BR-22). "Wizard header" is the same component with the chip. |
+| Brand mark | (v0.4) Our own decorative logo mark: a rounded square with a violet gradient and a white shield-with-check glyph, inline SVG, `aria-hidden`; the same design is the favicon (BR-22, BR-23). |
+| Header solid fallback | (v0.4) The opaque token colour of the header used without `backdrop-filter` support and under `prefers-reduced-transparency: reduce`; also the `theme-color` (BR-22, BR-23). |
 
 ## 4. Business rules
 
 | ID | Original (story) | Refined (precise, testable) | Covered by |
 |---|---|---|---|
-| US-04-BR-01 | "Tokens as CSS custom properties in a single source file (color, typography, spacing, radii, shadows, gradients, animation durations and easing curves, z-index). Primitive → semantic → component tokens. No loose values in components." | Exactly one file, `frontend/src/styles/tokens.css` (ADR-0010 §1), declares custom properties and `@font-face`, in three tiers with distinct prefixes (`--primitive-`; the semantic prefixes of ADR-0010 §1; `--component-`). Every other style file (`styles.css` and every component `.css`) uses only `var(--…)` for colour, font family, font size, font weight, line height, letter spacing, spacing (margin, padding, gap), radius, border width, shadow, gradient, duration, easing and z-index. Allowed literals: `0`, `auto`, `none`, `inherit`, `initial`, `unset`, `currentColor`, `transparent`, the `forced-colors` system colours (`Canvas`, `CanvasText`, `LinkText`, `Highlight`, `HighlightText`, `ButtonText`, `ButtonFace`, `GrayText`), percentages, `fr`, unitless `1`, keyword values, and breakpoints inside `@media`/`@container` conditions (custom properties cannot be used there), each a `min-width` equal to a `--breakpoint-*` value of the token file. The only other media features allowed in conditions are `prefers-reduced-motion`, `forced-colors`, `prefers-color-scheme` and `(hover: hover)` (ADR-0010 §2, ADR-0013 §2). Component styles reference semantic or component tokens, never primitives. Enforced by a static guard with a sensitivity self-test (ADR-0010 §2). | US-04-AC-01 |
+| US-04-BR-01 | "Tokens as CSS custom properties in a single source file (color, typography, spacing, radii, shadows, gradients, animation durations and easing curves, z-index). Primitive → semantic → component tokens. No loose values in components." | Exactly one file, `frontend/src/styles/tokens.css` (ADR-0010 §1), declares custom properties and `@font-face`, in three tiers with distinct prefixes (`--primitive-`; the semantic prefixes of ADR-0010 §1; `--component-`). Every other style file (`styles.css` and every component `.css`) uses only `var(--…)` for colour, font family, font size, font weight, line height, letter spacing, spacing (margin, padding, gap), radius, border width, shadow, gradient, duration, easing and z-index. Allowed literals: `0`, `auto`, `none`, `inherit`, `initial`, `unset`, `currentColor`, `transparent`, the `forced-colors` system colours (`Canvas`, `CanvasText`, `LinkText`, `Highlight`, `HighlightText`, `ButtonText`, `ButtonFace`, `GrayText`), percentages, `fr`, unitless `1`, keyword values, and breakpoints inside `@media`/`@container` conditions (custom properties cannot be used there), each a `min-width` equal to a `--breakpoint-*` value of the token file. The only other media features allowed in conditions are `prefers-reduced-motion`, `forced-colors`, `prefers-color-scheme` and `(hover: hover)` (ADR-0010 §2, ADR-0013 §2). Component styles reference semantic or component tokens, never primitives. Enforced by a static guard with a sensitivity self-test (ADR-0010 §2). **v0.4 (HC3 round 2, BR-22):** `prefers-reduced-transparency` joins the allowed media features, and an `@supports` condition that tests `backdrop-filter` may hold a literal value in its condition (as breakpoints do in `@media`); `backdrop-filter` values are tokens (`var(--…)`) like every other value. | US-04-AC-01, US-04-AC-30 |
 | US-04-BR-02 | "Subtle gradients in backgrounds, headers and the primary button, making sure the text on top meets WCAG AA contrast." Rules: "AA contrast". Brief: dark near-black background, violet accent, recommended card gradient, gradient display headings, white primary buttons. | Theme: dark only (US-04-Q-01, ADR-0010 §3). Every text/background token pair used in the UI meets WCAG 2.2 AA: ≥ 4.5:1 for normal text, ≥ 3:1 for large text (≥ 24 px, or ≥ 18.66 px bold) and for UI component boundaries, focus indicators and meaningful icons against adjacent colours. Over a gradient, the ratio holds at **every** gradient stop; over the dotted texture, it holds against the background with the dot colour composited at its opacity (worst case). The 3:1 boundary minimum applies to controls and **interactive** cards (plan cards); non-interactive panels (summary sections) may use a decorative hairline below 3:1, which WCAG 1.4.11 does not require to reach 3:1 (ADR-0010 §4). Gradient text has a solid-colour fallback used under `forced-colors: active`. Palette and gradients per ADR-0010 §4; country accents per ADR-0011 (US-04-Q-03). | US-04-AC-02, US-04-AC-23 |
 | US-04-BR-03 | "Flags of Colombia and Chile in SVG (a licensed library or our own optimized SVGs), visible in the country selector/context and in the wizard header. A per-country accent color through tokens. The flag is decorative next to the country name (`aria-hidden`), never the only indicator." | The country chooser links and the wizard header show the flag SVG of the country next to its Strapi `name`. The flag is `aria-hidden="true"`, has no text content and is not focusable; the link's accessible name stays the country name ("Colombia", "Chile"). The country accent token takes the current country's value on the wizard pages; a published country with no flag or accent in the front end shows a neutral globe icon and the brand accent (US-04-Q-02). Mechanism: the presentation-only map `frontend/src/app/shared/country-visuals.ts` keyed by ISO code, returning a flag component and an accent key, never a colour (ADR-0011, which amends ADR-0001). Quoted country codes appear in production `.ts`/`.html` only in that file, and `data-country-accent` selectors only in `tokens.css`; a static guard enforces it, replacing ADR-0001's review grep (ADR-0011 *Confirmation*). No behaviour, validation, routing, guard, price, copy or request reads the map. | US-04-AC-03 |
 | US-04-BR-04 | "Icons: a single library with SVG icons imported individually … inside the inputs (document, name, date, city, plate, make, model, year), in the wizard steps, in the plans, in help, error and success messages. The input icon comes from a front-end mapping by field key, with a generic default icon for new fields … Decorative icons `aria-hidden`; icons that carry meaning have a label." | One icon library, icons imported one by one (no full-set import, no icon font, no runtime fetch): `@lucide/angular` 1.77.0, ISC (US-04-Q-09, ADR-0010 §7). Step 1: every `text`, `number`, `select` and `date` field shows the icon mapped from its `key` (§7.2), or the default icon for any other key; `checkbox` fields show none. Icons in steps, plan lists (check-circle), help, error and success messages. Every icon that sits next to text saying the same thing is decorative: `aria-hidden="true"`, not focusable, no `<title>` and no text content, so no accessible name or `textContent` of a control changes. An icon without adjacent text (an icon-only button) has an accessible name from §8.1. | US-04-AC-04, US-04-AC-20 |
@@ -140,12 +156,14 @@ Terms of the US-01..US-03 glossaries keep their meaning.
 | US-04-BR-13 | "Accessibility: visible focus everywhere, tab order intact, AA contrast, heading hierarchy per ADR-0009." | Every focusable element shows a focus indicator drawn on the focused element itself (outline or box-shadow, ≥ 3:1 against adjacent colours). The Tab order of every page is the one of US-01-AC-24, US-02-AC-16 and US-03-AC-16, plus only the "Elegir fecha" button after each date text box; ~~the wizard header and the step indicator add no Tab stop~~ **v0.3:** the step indicator adds no Tab stop; on each wizard step the country chip link (header) and then the back link (BR-21) are the first two Tab stops, before the content; the order after the `h1` is unchanged. Each page keeps exactly one `h1` (the step heading), the existing `h2`/`h3` levels and the ADR-0009 terms levels; visual size comes from tokens and never changes a heading level; header, indicator, panels and calendar add no heading element. | US-04-AC-06, US-04-AC-09, US-04-AC-20, US-04-AC-28 |
 | US-04-BR-14 | "Exact versions of any new dependency, license reviewed." | Every new dependency is added with `npm install -E`, has an exact version in `frontend/package.json`, is listed in the relevant ADR with its version, license and justification, and its license is permissive (MIT, ISC, Apache-2.0, BSD, OFL-1.1 for fonts) unless the human accepts another. Accepted additions: `@lucide/angular` 1.77.0 (ISC), `@fontsource-variable/archivo` 5.3.0 (OFL-1.1), `@fontsource-variable/atkinson-hyperlegible-next` 5.3.0 (OFL-1.1) (ADR-0010); `@angular/cdk` 22.3.0 (MIT), `@angular/aria` 22.3.0 (MIT) (ADR-0012). No animation library (ADR-0013). | US-04-AC-21 |
 | US-04-BR-15 | "Evidence in `docs/qa/US-04/`: before/after screenshots of CO and CL at the three sizes, for every wizard step, including the select and the calendar open." | `docs/qa/US-04/after/` holds the same file set as `before/` (same names) plus the country chooser, the select panel open and the calendar open, for CO and CL at the three sizes (US-04-Q-19). | US-04-AC-22 |
-| US-04-BR-16 | "Do not copy brands, logos, names or texts of any real insurer." | No logo, brand name, slogan, illustration or text of any real company appears in the code, assets or screenshots; the reference screenshots are not stored. The header shows only the existing generic product name "Cotizador de seguro de auto". | US-04-AC-23 |
+| US-04-BR-16 | "Do not copy brands, logos, names or texts of any real insurer." | No logo, brand name, slogan, illustration or text of any real company appears in the code, assets or screenshots; the reference screenshots are not stored. The header shows only the existing generic product name "Cotizador de seguro de auto". **v0.4:** plus our own decorative brand mark (BR-22), which is also the favicon (BR-23): an original drawing with no text, no real company's logo, shape or colour scheme. | US-04-AC-23, US-04-AC-30, US-04-AC-31 |
 | US-04-BR-17 | (HC3 round 1, human, 2026-11-22) "mira como se ve el calendario, deberia desplegarlo ahi abajo" (screenshot: on a wide screen the calendar opens above the field, covers the header, day cells ~80 px). | From `--breakpoint-sheet` (600 CSS px) up, the calendar dialog is a popover **directly below the date text box**: its top edge is 0–16 CSS px below the text box's bottom edge and its left edge within 8 CSS px of the text box's left edge (shifted left only as far as needed to stay inside the viewport). Before it opens, if the space between the text box's bottom and the viewport bottom is smaller than the popover's height, the page scrolls so that the date field sits just below the sticky wizard header, and the popover then opens below it. It opens **above** only as the last fallback, when the viewport height minus the header height is smaller than the text box height plus the popover height. The popover never overlaps the sticky wizard header and lies entirely inside the viewport. **Compact:** width ≤ 22rem (352 CSS px); day cells 44–48 CSS px wide and tall (the 44 × 44 minimum of BR-11, not larger); month/year header, "Elegir año", "Mes anterior", "Mes siguiente" and "Cerrar" sized to match (each ≥ 44 × 44); total height target ≤ 26rem (416 CSS px), limit 28rem (448 CSS px), with six week rows shown. Below `--breakpoint-sheet` the bottom sheet of AC-12 is unchanged. Modal dialog, keyboard, focus trap, focus return and ARIA are unchanged (AC-09). Mechanism per ADR-0014. | US-04-AC-24 |
 | US-04-BR-18 | (HC3 round 1) "si escribo la fecha mira que no me deja" (screenshot: "29/20/2001" typed, message "Ingresa tu fecha de nacimiento."). | **Mask.** The date text box accepts digits as typed; any other typed character is dropped, except a separator (`/`, `-`, `.`): typed after a one-digit day or month it pads that group with a leading zero ~~and shows `/` ("5/" → "05/")~~ ("5/" → "05"); typed right after a complete two-digit day or month it ~~shows `/` once~~ closes that group ("15/" → "15"); anywhere else it is dropped. **v0.3 alignment with ADR-0014 §2 (review US-04-R4-F04, 2026-11-22):** a `/` is never shown at the end of the text; it appears only once the next group has a digit (keys "5/" show "05"; a further "5" shows "05/5"). A `/` is inserted automatically between the day and the month and between the month and the year as soon as the next digit is typed ("150" → "15/0"; `15051990` → "15/05/1990"). At most 8 digits (`maxlength` 10). Backspace removes the character before the caret; a separator left with no digit after it goes with the digit before it ("15/05/1990" + End + 4 × Backspace → "15/05"). `inputmode="numeric"`; placeholder "dd/mm/aaaa" and hint kept. **Paste:** text that the existing typed-date parser accepts (US-04-Q-05: `d/m/yyyy` with `/`, `-` or `.`, or `ddmmyyyy`) is shown as dd/mm/aaaa ("15.05.1990" → "15/05/1990", "5/5/1990" → "05/05/1990"); other pasted text goes through the mask digit by digit. **Stored value** unchanged: ISO `YYYY-MM-DD` for a complete, existing date, else `''` (ADR-0003, ADR-0004). A complete valid date typed by hand is accepted and stored exactly as the same date chosen in the calendar. **Message.** On a field whose text is not empty but is not a complete, existing date (incomplete, such as "15/05/199" or "15/05"; impossible, such as "29/20/2001", "31/02/1990", "29/02/2001"), the error is the code-owned "Fecha no válida. Usa el formato dd/mm/aaaa.", for required **and** optional date fields (US-04-Q-24), replacing the former `badInput` message resolution (US-01-AC-09 note) for dates. An empty required field keeps `requiredMessage` ?? `errorMessage` ("Ingresa tu fecha de nacimiento."); a real date that fails a rule keeps the rule's message ("Debes ser mayor de edad (18 años o más) para cotizar."). Error timing (after leaving the field or a submit attempt) and focus on a failed "Continuar" unchanged. **v0.3 clarification (review US-04-R3-F01, 2026-11-22; edits away from the end of the text):** a `/` already shown in the box is never treated as newly typed; only a separator typed **at the end** of the text pads a one-digit group as above. Any other edit (Backspace or Delete anywhere, a digit inserted or typed over a selection in the middle) re-derives the text from the digits in their order, at most 8, with `/` after the 2nd and the 4th digit; the caret is placed after the same number of digits that preceded it once the edit is applied (immediately after that digit, before a `/` that follows it; at the start when no digit precedes it). An insertion into a text that already holds 8 digits is ignored (text and caret unchanged). So Backspace or Delete removes exactly one digit (a separator goes with its digit), and an edit never silently yields a different complete date: "15/05/1990" with the caret after the month's "5" + Backspace → "15/01/990" is not a complete date (7 digits) and shows the invalid-date message once the field is left; typing "1" over a selected day "15" → "10/51/990" (incomplete) rather than a padded "01/05/1990". **v0.3 clarification (review US-04-R4-F05, 2026-11-22; IME composition in the date box; decision relayed by the main session):** as for the profiled fields (BR-19 v0.3 clarification), while an input method composition is active in the date text box (between `compositionstart` and `compositionend`, or an `input` event with `isComposing` true), the mask is not applied and the text and caret are not rewritten; the mask runs once on the committed text when the composition ends, with the same rules as for typing (digits kept, other characters dropped, `/` placement, caret by digit count). So a composition that commits "15" into an empty box leaves "15", and one that commits "1a5" leaves "15"; the text is never duplicated and the composition is not cancelled by a rewrite. Verified under US-04-AC-25. | US-04-AC-25, US-04-AC-08 |
 | US-04-BR-19 | (HC3 round 1) "valida los inputs si son de type text, number, etcc, porque en nombre me deja escribir numero y con un maximo de caractes en cada input como lo recomiendes". | Each `text` and `number` field of step 1 takes an **input profile** from the front-end map of §7.2, by field `key`; an unmapped `number` field takes the "digits" profile; any other unmapped field has no character filter. Characters outside the profile are dropped as they are typed or pasted; the rest of the text is kept and the caret stays after the last kept character of the edit. Letter case is applied as typed where the profile says so (plate: upper case, shown and stored). The `maxlength` attribute of every `text` field is the value of its Strapi `maxLength` rule when present (so it works for new Strapi fields), else the profile's maximum, else none. `number` fields render as `<input type="text" inputmode="numeric">` (role textbox, no longer spinbutton) so the filter and `maxlength` work; the model keeps the string (ADR-0004). The filter applies to what the person types or pastes, not to values hydrated from the wizard state, which are shown as stored and validated as before (US-04-Q-26). Validation stays in the shared core with the Strapi rules as the source of truth; the filter adds no validation message. **Strapi seed content** (no schema change, contract v1 unchanged, §7.1): `fullName` (CO, CL) gains a `pattern` rule for letters, space, `'`, `.`, `-` (US-04-Q-27) and its `errorMessage` becomes "Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres)."; `documentNumber` gains `maxLength` 10 (CO) and 12 (CL, RUT); `plate` gains `maxLength` 6 (CO, CL). Mechanism per ADR-0014. **v0.3 clarification (review US-04-R3-F02, 2026-11-22; IME composition):** while an input method composition is active (between `compositionstart` and `compositionend`, or an `input` event with `isComposing` true), the filter and the letter case are not applied and the value and caret are not rewritten; the filter applies once to the committed text when the composition ends, with the same rules as for typing (characters outside the profile dropped, the rest kept, case applied, caret after the last kept character). So composing "abc" in the plate field leaves "ABC", never duplicated text, and a dead-key accent ("´" then "e" → "é") in `fullName` is not cancelled. | US-04-AC-26 |
 | US-04-BR-20 | (HC3 round 1) "El fondo si puedes hacerlo un poco mas claro y con degradado quedaria bien." "[the country chooser] esta muy simple visualmente, puedes agregarle como un texto de más un header, y lo mismo del bg para todas." | **Background.** The page background is one semantic gradient token `--gradient-page` with `--color-bg` as the solid fallback, applied to `body` on every page (country chooser, wizard steps, confirmation, unknown country). Its lightest stop is lighter (higher relative luminance) than the v0.2 background `--primitive-ink-950`, and no stop is darker than it; a violet tint near the top fades into the dark base (the country accent may tint it lightly on wizard pages). Every text and UI pair of AC-02 holds at **every** stop of `--gradient-page`, the lightest included, in `contrast-pairs.json`; input and interactive card borders keep ≥ 3:1 against every stop (surface tokens adjusted if needed, through tokens only, BR-01). The dotted texture may stay if those ratios hold with it composited. **Chooser.** The country chooser shows the app header (product name "Cotizador de seguro de auto", no country chip, no step indicator, no focusable element); then the `h1` "Elige tu país" (unchanged), the lead paragraph, the country links, and an `h2` "Cómo funciona" with an ordered list of the three steps, each with the step indicator's icon for that step (`aria-hidden`), the step name and a one-line description (§8.1; order on the page per US-04-Q-25). Country links are larger cards with the flag, the country name and a chevron (both icons `aria-hidden`), the country accent on hover and focus; their accessible names stay exactly the country names (AC-03). All new text is code-owned (§8.1); no Strapi content changes for this. CLAUDE.md §5 ("no extra sections the spec does not ask for") is satisfied because this spec now asks for exactly these. | US-04-AC-27, US-04-AC-29, US-04-AC-02 |
 | US-04-BR-21 | (HC3 round 1) "tambien agregarle flechas para regresar a un modulo anterior o si quiere cambiar quizas de colombia a chile." | **Back links.** Each wizard step shows, below the step indicator and above the `h1`, a link (`<a routerLink>`, not a button) with a left-arrow icon (Lucide `ArrowLeft`, `aria-hidden`), a 44 × 44 CSS px hit box and a visible focus indicator: step 1 "Cambiar país" → `/`; step 2 "Volver a tus datos" → `/<cc>/datos` (entered values kept, as with "Atrás" today); step 3 "Volver a planes" → `/<cc>/planes` (chosen plan kept). No back link on the payment confirmation, on the unknown-country page, on the chooser, or while the country list cannot be loaded. The existing "Atrás", "Editar mis datos" and "Cambiar plan" buttons stay. Arrival focus and title follow the existing rules of the target page. **Country chip link.** The header country chip becomes a link to `/` with the accessible name "Cambiar país (actual: {country name from Strapi})", for example "Cambiar país (actual: Colombia)"; the visible country name stays (a visible "Cambiar país" hint on wide screens is optional); the flag stays decorative. It is shown wherever the wizard header is shown for a resolved country (the three steps and the confirmation). **Change of country.** Choosing a different country on the chooser discards the other country's stored data (the existing US-01 `enterCountry` rule); choosing the same country keeps it; no confirmation dialog. **Header layout.** At every viewport the header content (product name and chip) lies inside `--size-content-max` and its padding; the chip is never clipped (its box lies inside the viewport). | US-04-AC-28, US-04-AC-13 |
+| US-04-BR-22 | (HC3 round 2, human, 2026-11-22) "al header dale un estilo mas novedoso y con tonos acorde a las pantallas" (give the header a more novel style, with tones that match the screens). Decision D8 of the main session. | Applies to the app header wherever it is shown (chooser, steps 1–3, confirmation; the unknown-country page still has none, Q-17). **Surface:** the header background is no longer `--color-surface-raised`; it is the component token `--component-header-bg`, a semi-transparent colour built from tokens over the page gradient's violet (`color-mix(in srgb, var(--primitive-violet-950) N%, transparent)` in `tokens.css`, alpha < 1), with `backdrop-filter: var(--component-header-backdrop)` (a blur and a saturate, values in tokens). **Fallbacks:** where `backdrop-filter` is not supported, and under `@media (prefers-reduced-transparency: reduce)`, the background is the opaque token `--component-header-bg-solid` and `backdrop-filter` is `none`; under `forced-colors: active` the header uses system colours (`Canvas` background, `CanvasText` text) with a visible solid bottom border of at least 1 CSS px. **Bottom edge:** the grey hairline is replaced by a 1 CSS px line painted with the semantic token `--gradient-header-edge` (violet-400 → middle stop → transparent, left to right); on a page with a resolved country the middle stop is the country accent (`--color-country-accent`), elsewhere a brand violet; the accent is decorative here and is never the colour of any text in the header. **Brand mark:** before the product name, an inline SVG mark (rounded square, violet gradient, white shield-with-check glyph; our own drawing; Lucide geometry may inspire the glyph but no third-party logo), `aria-hidden="true"`, not focusable, no `<title>`, no text content, size `--size-brand-mark` (2rem); it adds nothing to the header's accessible content or `textContent`. **Product name:** "Cotizador de seguro de auto" (unchanged copy, not a heading, not a link) in the display family (Archivo), coloured with `--gradient-display-text` (text gradient, solid fallback under `forced-colors`, BR-02) or `--color-brand`; every colour of it meets ≥ 4.5:1 against the header solid fallback and against `--component-header-bg` composited over the lightest `--gradient-page` stop (and per US-04-Q-28), as rows of `contrast-pairs.json`. **Chip:** unchanged semantics and checks of BR-21 / AC-28 (link to `/`, name "Cambiar país (actual: {país})", flag `aria-hidden`, ≥ 44 × 44, visible focus ≥ 3:1 against the header backgrounds); restyled as a pill with a subtle ring or inner glow in the country accent; no visible "Cambiar" hint (US-04-Q-29). **Size and layout:** the rendered header height equals `--size-header-height` (± 1 CSS px) at 360, 768 and 1280 (the token is updated if the height changes, since the calendar scroll padding uses it); mark, product name and chip lie inside the viewport and the header box; the product name is never clipped or ellipsised and wraps to at most two lines (narrow screens). **Motion:** none on the surface, edge or mark; chip state transitions follow BR-09/BR-10. Tokens only (BR-01), within ADR-0010, ADR-0013 and ADR-0014. | US-04-AC-30, US-04-AC-01, US-04-AC-02, US-04-AC-23 |
+| US-04-BR-23 | (HC3 round 2) "y crea un favicon" (and create a favicon). Decision D9 of the main session. | **Icons:** our own icon, the brand mark of BR-22 simplified to read at 16 × 16 (thick strokes, no thin detail), as three files in `frontend/public/`: `favicon.svg` (primary; square `viewBox`; shapes only, no `<text>`, no `<script>`, no external reference; ≤ 4 kB), `favicon-32.png` (PNG 32 × 32, fallback; US-04-Q-30) and `apple-touch-icon.png` (PNG 180 × 180, no alpha channel). PNGs are rendered from the SVG with the Playwright Chromium already in the devDependencies and committed; no new dependency (BR-14). The Angular default `frontend/public/favicon.ico` is deleted (US-04-Q-30). **`frontend/src/index.html`** has exactly: `<link rel="icon" type="image/svg+xml" href="favicon.svg">`, `<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">`, `<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">` and `<meta name="theme-color" content="#RRGGBB">` whose value equals the resolved value of `--component-header-bg-solid` in `tokens.css`; and no link to `favicon.ico` or of type `image/x-icon`. **Served:** the web container (nginx) answers `GET` of each icon URL with `200` and the matching `Content-Type` (`image/svg+xml`, `image/png`); because unknown paths fall back to `index.html` with `200 text/html`, the content type is part of the check. Same origin only (BR-12). Fictitious brand only (BR-16). | US-04-AC-31, US-04-AC-23 |
 
 ## 5. Acceptance criteria
 
@@ -1061,6 +1079,168 @@ Scenario: The country list cannot be loaded
 The card hover and focus look with the country accent is judged at HC3 (AC-23); the 44 × 44
 targets and no horizontal scroll are covered by AC-18 (chooser row).
 
+### v0.4 acceptance criteria (HC3 round 2, directed by the human, 2026-11-22)
+
+E2E checks run in Chromium (the project's Playwright browser). "Resolved value" of a token is the
+computed value of the custom property in `tokens.css` at the element.
+
+### US-04-AC-30 — A header that belongs to the page (derived from US-04-BR-22 / Q-28, Q-29)
+
+```gherkin
+Scenario Outline: Translucent surface with a gradient edge
+  Given the viewport is 1280 × 800
+  When <page> is shown
+  Then the header's computed background-color is not the resolved value of --color-surface-raised
+  And it equals the resolved value of --component-header-bg and its alpha is greater than 0 and less than 1
+  And the header's computed backdrop-filter is not "none" and equals the resolved value of --component-header-backdrop
+  And the header's bottom edge is 1 CSS px tall and painted with the resolved value of --gradient-header-edge
+  And no other bottom border of the header is visible (no grey hairline)
+  And the header stays at the top of the viewport after scrolling the page down by 400 CSS px
+
+  Examples:
+    | page |
+    | "/" (country chooser) |
+    | "/co/datos" |
+    | "/cl/planes" |
+    | "/co/resumen" |
+    | the payment confirmation in Chile |
+
+Scenario Outline: The edge carries the country accent only as decoration
+  When <page> is shown
+  Then the colour stops of the header's bottom edge include <accent>
+  And no text element inside the header has the computed colour of the Colombia or Chile accent
+
+  Examples:
+    | page          | accent                                              |
+    | "/co/datos"   | the resolved value of the Colombia accent           |
+    | "/cl/planes"  | the resolved value of the Chile accent              |
+    | "/"           | no country accent value (brand violets only)        |
+
+Scenario Outline: Brand mark and product name
+  When <page> is shown
+  Then in the header's DOM order, the first element with a rendered box is an inline svg (the brand mark), and the product name follows it
+  And the mark has aria-hidden="true", no tabindex, no <title>, no <desc> and an empty text content
+  And its rendered box is the size of --size-brand-mark (32 × 32 CSS px at the default root size, ± 1 px)
+  And the header contains no img element
+  And the header's text content, with whitespace collapsed, starts with "Cotizador de seguro de auto"
+  And the product name is not a heading and not a link
+  And the first family of its computed font-family is "Archivo"
+
+  Examples:
+    | page        |
+    | "/"         |
+    | "/co/datos" |
+
+Scenario: Product name and chip contrast
+  Given the production token file and contrast-pairs.json
+  Then contrast-pairs.json has one row per colour of the product name (each stop of --gradient-display-text, or --color-brand) against each header backdrop:
+    | header backdrop                                                                |
+    | --component-header-bg-solid                                                     |
+    | --component-header-bg composited over the lightest stop of --gradient-page      |
+    | --component-header-bg composited over --primitive-ink-50 (US-04-Q-28)            |
+  And the same backdrops have rows for the chip's text colour (minimum 4.5:1) and for the focus indicator colour (minimum 3:1)
+  And every product-name and chip-text row is at least 4.5:1
+  And every row passes its minimum
+
+Scenario: The chip keeps its link semantics
+  When "/co/datos" is shown at 1280 × 800
+  Then the header has exactly one link, named exactly "Cambiar país (actual: Colombia)", with the address "/"
+  And the link's visible text is "Colombia" and contains no "Cambiar" hint (US-04-Q-29)
+  And its hit box is at least 44 × 44 CSS px
+  And when it has keyboard focus, its focus indicator is visible on the link itself
+
+Scenario Outline: Height and no clipping
+  Given the viewport is <viewport>
+  When <page> is shown
+  Then the header's rendered height equals the resolved value of --size-header-height, ± 1 CSS px
+  And the brand mark, the product name and (where shown) the chip link each lie inside the viewport and inside the header's box
+  And the product name's scrollWidth is not greater than its clientWidth, it has no text-overflow ellipsis, and it spans at most two lines
+  And document.documentElement.scrollWidth is not greater than window.innerWidth
+
+  Examples:
+    | viewport   | page        |
+    | 360 × 740  | "/"         |
+    | 360 × 740  | "/co/datos" |
+    | 768 × 1024 | "/"         |
+    | 768 × 1024 | "/cl/planes" |
+    | 1280 × 800 | "/"         |
+    | 1280 × 800 | "/co/datos" |
+
+Scenario: Reduced transparency
+  Given the browser emulates prefers-reduced-transparency: reduce (Chromium DevTools protocol)
+  When "/co/datos" is shown
+  Then the header's computed background-color equals the resolved value of --component-header-bg-solid and its alpha is 1
+  And the header's computed backdrop-filter is "none"
+
+Scenario: No backdrop-filter support
+  Given the production header stylesheet
+  Then the translucent --component-header-bg and the backdrop-filter apply only when an @supports condition on backdrop-filter holds
+  And otherwise the header background is --component-header-bg-solid
+
+Scenario: Forced colors
+  Given the browser emulates forced-colors: active
+  When "/co/datos" is shown
+  Then the header's computed background-color equals the computed value of the system colour Canvas
+  And its bottom border is visible: style solid, width at least 1 CSS px, colour equal to the computed value of CanvasText
+  And the product name's computed color equals the computed value of CanvasText and it has no background-clip text gradient
+
+Scenario: No motion in the header
+  Given prefers-reduced-motion is no-preference
+  When "/co/datos" has finished loading
+  Then document.getAnimations() has no animation whose target is the header element, its bottom edge or the brand mark
+
+Scenario: Tokens
+  Given the production token file and the header stylesheet
+  Then tokens.css declares --component-header-bg (alpha below 1), --component-header-bg-solid (opaque), --component-header-backdrop, --gradient-header-edge and --size-brand-mark
+  And the header stylesheet passes the AC-01 guard (no loose values; prefers-reduced-transparency and the @supports backdrop-filter condition allowed, BR-01 v0.4)
+  And the header stylesheet does not use --color-surface-raised as its background
+```
+
+Clipping, height and the edge are also checked at 360 × 740 for "/co/resumen" by the existing
+AC-28 "header is not clipped" rows. The look (how "novel" it is, how it matches the screens, the
+mark at 2rem) is judged at the HC3 QA of round 2 (AC-23). The contrast of content scrolling **under**
+the blurred header is covered by the worst-case row of Q-28, not measured on blurred pixels.
+
+### US-04-AC-31 — Favicon, Apple touch icon and theme colour (derived from US-04-BR-23 / Q-30)
+
+```gherkin
+Scenario: The page declares our icons
+  Given the production index.html
+  Then it has exactly one <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  And exactly one <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  And exactly one <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  And exactly one <meta name="theme-color"> whose content, compared case-insensitively, equals the resolved value of --component-header-bg-solid in tokens.css
+  And no <link> has href "favicon.ico" or type "image/x-icon"
+
+Scenario: The icon files
+  Given the folder frontend/public
+  Then favicon.svg has a square viewBox, contains no <text>, no <script>, no "http" or "//" reference and no xlink:href or href to another file, and is at most 4 kB
+  And favicon-32.png is a PNG whose IHDR width and height are 32 and 32
+  And apple-touch-icon.png is a PNG whose IHDR width and height are 180 and 180, with colour type 2 (no alpha channel)
+  And favicon.ico does not exist (the Angular default is gone)
+
+Scenario Outline: The web container serves each icon
+  Given the stack is up (docker compose)
+  When I request GET <path> from the web container
+  Then the response status is 200
+  And its Content-Type starts with "<type>"
+  And the body is the committed file (same byte length)
+
+  Examples:
+    | path                  | type          |
+    | /favicon.svg          | image/svg+xml |
+    | /favicon-32.png       | image/png     |
+    | /apple-touch-icon.png | image/png     |
+
+Scenario: Same origin
+  When "/" is shown
+  Then the icon links resolve to the app's own origin
+  And no request for an icon goes to another origin (AC-19)
+```
+
+Whether the icon reads at 16 × 16 in a browser tab, matches the header mark, and is original
+(BR-16) is judged at the HC3 QA of round 2 (AC-23).
+
 ## 6. Gaps and open questions
 
 Gaps marked **[Blocks HC1]** change an approved rule of US-01..US-03, an accepted ADR, or the
@@ -1096,6 +1276,9 @@ does not answer. **[ADR]** marks gaps the architect resolves in an ADR (§10) in
 | US-04-Q-25 | (v0.3) Order on the chooser: is "Cómo funciona" before or after the country links? | The brief lists it under the lead text; the page's single job is choosing a country, and keyboard users reach the links sooner if they come first. | h1, lead paragraph, country links, then "Cómo funciona" (AC-29). Reviewed at the HC3 QA of this round. | |
 | US-04-Q-26 | (v0.3) Does the input-profile filter apply to values restored from the wizard state, and is the plate stored in upper case? | A stored "Ana 2" from before the change; data shown must match data stored. | The filter applies only to typing and pasting; restored values are shown as stored and validated by the Strapi rules (AC-26 "seed rules" scenario). The plate is shown and stored in upper case (the seed patterns accept both cases, so validation and the step 1 output are unaffected for valid plates; the summary shows the stored upper case). Reviewed at the HC3 QA of this round. | |
 | US-04-Q-27 | (v0.3) The seed `fullName` pattern: the validator compiles patterns without the `u` flag, so `\p{L}` cannot be used; which letters are allowed? The front-end filter allows any Unicode letter. | A name with a letter the pattern does not list would pass the filter and fail validation. | Pattern `^[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ '.-]*$` (Latin-1 letters: covers á é í ó ú ü ñ and also ç, ã, ö…; a superset of the brief's explicit Spanish class `^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ '.-]*$`). A name with a letter outside Latin-1 shows the `fullName` message. Alternative: the brief's Spanish-only class. Reviewed at the HC3 QA of this round. | |
+| US-04-Q-28 | (v0.4) The header is translucent and sticky, so any content can scroll under it. Against which backdrop is the product name's (and the chip's) AA contrast computed? The brief names the solid fallback and the lightest page stop only. | The lightest thing that can pass under the header is the white primary button (`--primitive-ink-50`); with a low header opacity a light gradient-text stop (violet-300) over it drops below 4.5:1, and blurred pixels cannot be measured by a test. | Add a worst-case row: `--component-header-bg` composited over `--primitive-ink-50` (blur ignored, so stricter than reality), for every product-name colour and the chip text (≥ 4.5:1) and the focus indicator (≥ 3:1). The header opacity in `--component-header-bg` is set (tokens only) high enough for every row to pass. Alternative: only the two rows of the brief, with content under the header judged visually at HC3. Reviewed at the HC3 QA of round 2. | |
+| US-04-Q-29 | (v0.4) Show a visible "Cambiar" hint (with a decorative `ArrowLeftRight`/`Repeat` icon) in the chip on wide screens? D8 allows it if it fits. | On step 1 the back link "Cambiar país" sits just below the header, so a second visible "Cambiar…" would duplicate it; a new hint is also new copy and changes the chip's visible label (WCAG 2.5.3 label in name). | **No hint**: the chip shows the flag and the country name only; the pill shape, the accent ring and the hover/focus states signal that it is a link; no new copy. Alternative: from 768 px up, show "Cambiar país" (existing §8.1 string) after the country name, icon `aria-hidden`, accessible name unchanged. Reviewed at the HC3 QA of round 2. | |
+| US-04-Q-30 | (v0.4) PNG or ICO for the fallback icon, and what happens to the Angular default `favicon.ico`? | ICO needs an encoder (no new dependency allowed without review); browsers still request `/favicon.ico` by default, and the nginx SPA fallback answers a missing file with `index.html` (`200 text/html`), which browsers ignore as an icon. | `favicon-32.png` as the fallback (`<link rel="icon" type="image/png" sizes="32x32">`), rendered from the SVG with the existing Playwright Chromium; delete `frontend/public/favicon.ico` and its `<link>`; accept that the implicit `/favicon.ico` request returns the SPA fallback (no visible effect: every supported browser uses the declared links). Alternative: also ship a `favicon.ico` of our mark (hand-assembled ICO wrapping the 32 × 32 PNG, no dependency). Reviewed at the HC3 QA of round 2. | |
 
 Checklist items with no gap: *country context, deep links, persistence, concurrency, draft vs
 published, formatting of prices and dates on the summary, masking, security of content access*
@@ -1142,6 +1325,10 @@ presentation and **input behaviour** only: it filters what can be typed or paste
 attributes; no validation rule or message depends on it, and it is keyed by field key, never by
 country (the RUT variant is chosen by the presence of a `rutCheckDigit` rule).
 
+**v0.4:** no map changes. The header's country accent comes from the existing country-visuals
+accent key (ADR-0011); the brand mark and the icons are static assets, not maps. No Strapi change
+(§7.1 stays as in v0.3).
+
 Input profiles (BR-19). `maxlength` = the field's Strapi `maxLength` rule value if present, else the
 fallback below.
 
@@ -1182,6 +1369,10 @@ fallback below.
 | Country chip link (v0.3) | Wizard header with a resolved country | Flag + country name (optional "Cambiar país" hint on wide screens) | Accessible name "Cambiar país (actual: {país})"; flag `aria-hidden` |
 | Chooser (v0.3) | "/" | Header with the product name; h1, lead paragraph, country cards (flag, name, chevron, accent on hover/focus), "Cómo funciona" with three numbered steps | One h1, one h2; icons `aria-hidden`; only the country links are Tab stops |
 | Page background (v0.3) | Every page | Lighter dark gradient with a violet tint near the top (`--gradient-page`), solid `--color-bg` fallback | AA at every stop (BR-20) |
+| App header (v0.4) | Chooser, steps 1–3, confirmation | Translucent violet layer, content behind softly blurred when scrolling; 1 px gradient bottom edge (country accent in the middle on wizard pages); brand mark, product name in Archivo, chip pill | Mark `aria-hidden`; one link (the chip) on wizard pages, none on the chooser; AA over the worst-case backdrop (BR-22, Q-28) |
+| App header, reduced transparency or no `backdrop-filter` (v0.4) | `prefers-reduced-transparency: reduce`, or unsupported | Opaque `--component-header-bg-solid`, no blur; edge and mark unchanged | As above |
+| App header, forced colors (v0.4) | `forced-colors: active` | System `Canvas` background, `CanvasText` text, solid bottom border | Gradient text replaced by a system colour (BR-02) |
+| Browser tab and home-screen icon (v0.4) | Any page | Our brand mark as favicon; violet browser chrome on mobile (`theme-color`); Apple touch icon | Decorative; no accessible content (BR-23) |
 
 ### 8.1 Code-owned copy added by US-04
 
@@ -1218,6 +1409,11 @@ v0.3 reused strings: "Cotizador de seguro de auto" (chooser header), "Elige tu p
 `errorMessage` "Ingresa tu nombre completo, solo letras (entre 3 y 80 caracteres)." is **Strapi
 seed content** (§7.1), not code-owned copy.
 
+**v0.4: no new copy.** The header keeps "Cotizador de seguro de auto" and the chip name "Cambiar
+país (actual: {país})"; the brand mark and the icons have no text. The optional "Cambiar" hint of
+D8 is not used (US-04-Q-29); if the human chooses the alternative at HC3, it reuses the existing
+"Cambiar país" string above, still no new string.
+
 ## 9. Non-functional requirements
 
 - **Accessibility:** WCAG 2.2 AA; WAI-ARIA APG combobox (select-only and list autocomplete) and
@@ -1228,7 +1424,11 @@ seed content** (§7.1), not code-owned copy.
   ADR-0012), the calendar, the year list and the step indicator. **v0.3:** back links and the
   chip link are real links with visible focus and 44 × 44 targets; the date mask and the input
   filters announce nothing per keystroke; the screen reader pass at HC3 also covers the chip link
-  name and the date box while typing.
+  name and the date box while typing. **v0.4:** the header brand mark is hidden from assistive
+  technology; reduced-transparency and forced-colors fallbacks for the header (BR-22).
+- **Performance (v0.4):** one `backdrop-filter` on the sticky header only; the icons are static
+  files (`favicon.svg` ≤ 4 kB) not referenced by the bundle, so the initial bundle budget is
+  unaffected beyond the inline mark.
 - **Responsive:** mobile-first CSS (`min-width` queries on the `--breakpoint-*` tokens); 320–1440
   CSS px with no horizontal scroll (verified at 360, 768, 1280); 44 × 44 px targets; bottom sheet
   below `--breakpoint-sheet` (600 px), fitting above the on-screen keyboard on phones (HC3 phone
@@ -1306,6 +1506,16 @@ seed content** (§7.1), not code-owned copy.
      of the mid-text date edits (BR-18, R3-F01) and of IME composition (BR-19, R3-F02) are recorded
      in the spec (§13, 2026-11-22 rows); whether ADR-0014 also needs an implementation note for them
      is for the architect to judge.
+- **v0.4 (HC3 round 2): no new ADR expected.** BR-22 and BR-23 stay within accepted decisions:
+  ADR-0010 (tokens only, AA contrast at every backdrop, gradients, forced-colors fallbacks, own SVG
+  artwork §8, `@lucide/angular` icons individually if any), ADR-0011 (country accent through the
+  existing accent key), ADR-0013 (no header animation; chip transitions inside
+  `prefers-reduced-motion: no-preference`) and ADR-0014 (`--gradient-page`, `SiteHeader`, chip link).
+  No new dependency (PNGs rendered with the existing Playwright Chromium, BR-14). One extension to
+  note: the ADR-0010 §2 static guard's allowed media features gain `prefers-reduced-transparency`,
+  and `@supports` conditions on `backdrop-filter` may hold a literal (BR-01 v0.4). Whether that
+  needs an implementation note in ADR-0010 or `adr/README.md` is for the architect to judge; it does
+  not change the decision.
 
 The four ADRs listed as needed in v0.1, kept for traceability (all written and Accepted at HC2,
 2026-11-21, as items 6–9 above):
@@ -1386,6 +1596,8 @@ affected; the e2e suites exercise the lazy route.
 | US-04-AC-27 | unit (static guard: `--gradient-page` semantic token, stops are tokens, lightest-stop luminance; contrast rows per stop) + e2e (computed `background-image`/`background-color` of `body` on six pages) + manual (HC3 look) | `design-guards`, `contrast`, `e2e-us04` |
 | US-04-AC-28 | component (links, names, hrefs, absence on confirmation/unknown/error, header link count, Tab stops) + e2e (navigation and data kept or discarded, focus indicator, 44 × 44, header not clipped at three viewports) | `wizard-chrome`, `quote-form-page`, `plan-list-page`, `summary-page`, `e2e-us04` |
 | US-04-AC-29 | component (structure, outline, copy, icons hidden, Tab stops, error state) + e2e (header and copy visible at three viewports) + manual (HC3 look) | `country-chooser-page`, `e2e-us04` |
+| US-04-AC-30 | unit (static: tokens declared and alpha, header stylesheet passes the AC-01 guard with the BR-01 v0.4 additions, `@supports` fallback, no `--color-surface-raised`; contrast rows of the three backdrops) + component (mark before the name, `aria-hidden`, no title/text, no img, name not heading or link, one link only on wizard pages) + e2e (computed background, alpha, `backdrop-filter`, edge image and accent stops, sticky, mark size, font family, height and clipping at three viewports, reduced transparency via CDP `Emulation.setEmulatedMedia`, `forcedColors: 'active'`, no header animation) + manual (HC3 look) | `design-guards`, `contrast`, `wizard-chrome` (or a `site-header` spec), `e2e-us04` (new file for round 2, for example `frontend/e2e/us-04-hc3-round2.spec.ts`) |
+| US-04-AC-31 | unit (static: `index.html` links and `theme-color` equals the token, file checks: SVG content and size, PNG IHDR sizes and colour type, no `favicon.ico`) + e2e (GET of each icon from the web container: status, content type, byte length; same origin) + manual (HC3: reads at 16 × 16, matches the mark) | `design-guards` (or a new `app-icons.spec.ts`), `e2e-us04` (round 2 file) |
 
 ### 11.1 Changes to existing tests (complete list; US-04-Q-06)
 
@@ -1484,6 +1696,19 @@ queries run on pages without the chip; the US-02-AC-16 / US-03-AC-16 **e2e** key
 forward from the focused `h1`, after the new stops. (The US-03-AC-16 **component** tab-order test
 does change; it is listed in the table above since review R3, US-04-R3-F06.)
 
+### 11.1.2 Changes to existing tests for v0.4 (HC3 round 2)
+
+Expected: **none**. The mark adds no text, name, focusable element, heading or image, so the
+header text, link-count, Tab-order and heading-outline assertions (AC-13, AC-28, AC-29, US-03-AC-16
+component test) hold as written, and the AC-27 body background is unchanged. The test-engineer
+confirms with a search of `frontend/e2e/**`, `frontend/src/**/*.spec.ts` and `frontend/src/testing/*`
+for `surface-raised`, `favicon`, `theme-color`, exact header `textContent` and header `svg` counts,
+and lists any hit here through the spec-writer before changing it. If `contrast-pairs.json` rows
+for the old header surface exist, they are replaced by the AC-30 rows (data, not test code).
+
+Separate, test-only: US-04-R5-F02, the stale "05/" comment in
+`frontend/src/app/shared/date-text.spec.ts` (around line 259) is aligned with BR-18 ("5/" → "05").
+
 ## 12. Traceability matrix (filled before HC3)
 
 Generated with `scripts/trace.sh US-04` and pasted here.
@@ -1500,3 +1725,5 @@ Generated with `scripts/trace.sh US-04` and pasted here.
 | 2026-11-22 | spec-writer (Claude Opus 5.5) | v0.3 | HC3 round 1 changes; status stays `Approved` (human-directed) | **Added:** BR-17 (D1, calendar compact and below the field), BR-18 (D2, date mask, "Fecha no válida. Usa el formato dd/mm/aaaa."), BR-19 (D3, input profiles, `maxlength`, `number` as text box, seed content changes), BR-20 (D4 background `--gradient-page` on every page + D6 richer chooser), BR-21 (D5, back links, chip link, change of country, header not clipped); AC-24 (calendar placement and size), AC-25 (mask, paste, message, end-to-end typed date), AC-26 (profiles, attributes, unknown fields, hydrated value, seed rows, `fullName` pattern), AC-27 (background on six pages, gradient tokens and contrast per stop), AC-28 (back links, chip link, change of country, Tab stops, header not clipped), AC-29 (chooser header, lead, links, "Cómo funciona" list); gaps Q-23 (mask details), Q-24 (message also for optional dates), Q-25 (chooser order), Q-26 (no filter on restored values; plate upper case), Q-27 (`fullName` pattern letter class), none blocking, defaults reviewed at the HC3 QA. **Amended (old text struck, not deleted):** §1 summary note; §2 in scope (v0.3 bullet), out of scope (logic/seed bullet, in-wizard switcher note, number control note); glossary (input profile, date mask, back link, chip link); BR-06 (mask and message, calendar placement), BR-07 (explicit HC3 exception list (a)–(e); only `backend/src/seed/form-fields.ts` may change under `backend/`), BR-13 (two new Tab stops at the top of each step; covered by AC-28); AC-02 note (every stop of `--gradient-page`); AC-08 four error cells and the optional-date message, note rewritten; AC-09 note; AC-11 Strapi scenario exception and note; AC-12 1280 row and note; AC-13 header focusability line; Q-05, Q-07, Q-17 v0.3 notes in the proposed-default column (*Human answer* cells untouched); §7.1 seed changes table (no schema change); §7.2 input-profile map and profile table; §8 eight new state rows; §8.1 new strings (listed exactly) and reused strings; §9 accessibility and multi-country notes; §10 ADR-0014 needed (amends ADR-0012 and ADR-0010); §11 rows AC-24..AC-29; new §11.1.1 with the complete list of existing tests that change. No ID renumbered or retired. Counts: 21 BR, 29 AC (0 original, 29 derived), 27 Q (Q-23..Q-27 open, non-blocking). |
 | 2026-11-22 | spec-writer (Claude Opus 5.5) | v0.3 clarifications (review R3, step 7) | Clarifications; version stays 0.3, status stays `Approved` | Decisions relayed by the main session for the findings of [review R3](../../reviews/US-04-review-R3.md); for the human to confirm at the HC3 QA of this round. **(1) US-04-R3-F01, mid-text edits of the typed date:** BR-18 gains a "v0.3 clarification" paragraph and Q-23 a note in its proposed-default column (*Human answer* cell untouched): an on-screen `/` is never treated as newly typed; only a `/` typed at the end pads; any other edit re-derives the text from the digits in order (max 8) with `/` after the 2nd and 4th digit, caret placed after the same number of digits; an insertion into a full 8-digit text is ignored; so an edit never silently yields a different complete date (examples "15/05/1990" → Backspace after the month's "5" → "15/01/990"; "1" over a selected day → "10/51/990"). **(2) US-04-R3-F02, IME composition:** BR-19 gains a "v0.3 clarification": no filtering, case change or value/caret rewrite while a composition is active; the filter applies once to the committed text at `compositionend` (composing "abc" in the plate → "ABC"; a dead-key "é" is kept). **(3) US-04-R3-F06:** §11.1.1 component table gains the US-03-AC-16 tab-order row (`summary-dom.ts` `tabStops()` names links; the expected order now starts with "Cambiar país (actual: Colombia)", "Volver a planes"; commit `84e17aa`), and the "Not affected" note now says it covers only the e2e keyboard tests. **(4) Editorial:** metadata and §10 record ADR-0014 as Accepted by the human, 2026-11-22 (`6b52ac2`). **(5) US-04-R3-F05 (other files):** `specs/US-01/seed-fields.md` updated to the seed of `bd2fe3e`; US-01 spec Review log row pointing to v0.3 / ADR-0014; T-40 done; `tasks.md` Status block brought up to date and fix tasks T-41..T-48 added for R3-F01..F08. AC-25 and AC-26 Gherkin unchanged: the clarifications are verified under those AC IDs (unit rows for mid-text Backspace, Delete and select-and-replace of day and month plus one e2e, as R3-F01 asks; a component test that dispatches composition events, as R3-F02 asks). No ID added, renumbered or retired. Counts unchanged: 21 BR, 29 AC (0 original, 29 derived), 27 Q. |
 | 2026-11-22 | spec-writer (Claude Opus 5.5) | v0.3 alignment and clarification (review R4, step 7) | Editorial alignment with an accepted ADR (F04) and a clarification (F05); version stays 0.3, status stays `Approved` | [Review R4](../../reviews/US-04-review-R4.md) finding **US-04-R4-F04** (nit): BR-18 said a separator typed after a one-digit group shows "05/" and that one typed after a complete group "shows `/` once", which contradicts ADR-0014 §2 (Accepted; precedence per CLAUDE.md §1): a `/` is shown only once the next group has a digit and never trails. The code and the unit tests already follow the ADR. **BR-18:** "and shows `/` ("5/" → "05/")" and "shows `/` once" struck; now "5/" → "05" and "15/" → "15", plus an alignment sentence (keys "5/" show "05"; a further "5" shows "05/5"). **Q-23** proposed-default column: same strike and replacement (*Human answer* cell untouched). AC-25 needs no change: its rows only show full texts ("5/5/1990" → "05/05/1990", "150" → "15/0"), which agree with both wordings. The matching comment in `frontend/src/app/shared/date-text.spec.ts` (around line 259) is test code, outside the spec-writer's scope (test-engineer). **US-04-R4-F05** (nit; decision relayed by the main session, for the human to confirm at the HC3 QA of this round): BR-18 gains a "v0.3 clarification" for IME composition in the date text box, mirroring BR-19's: no mask, text or caret rewrite while a composition is active; one mask pass on the committed text at `compositionend` (examples: committed "15" → "15", "1a5" → "15"). This specifies behaviour the code already has (`DateField`, `ac8c0a1`) and that R4 found untested; it is verified under US-04-AC-25 (task T-54), AC-25 Gherkin unchanged. No ID added, renumbered or retired. Counts unchanged: 21 BR, 29 AC (0 original, 29 derived), 27 Q. |
+| 2026-11-22 | Felipe Sabogal (human) | HC3 round 2 | **Changes requested** (explicit instruction, CLAUDE.md §1) | After reviewing HC3 round 1 on the local stack (review R5 APPROVED, `af831aa`), the human asked (Spanish, verbatim): "al header dale un estilo mas novedoso y con tonos acorde a las pantallas, y crea un favicon." The main session turned this into decisions D8 (header) and D9 (favicon and app icons); their concrete values are its recommendation, reviewed by the human in the HC3 QA of round 2. |
+| 2026-11-22 | spec-writer (Claude Opus 5.5) | v0.4 | HC3 round 2 changes; status stays `Approved` (human-directed) | **Added:** BR-22 (D8: translucent token header with `backdrop-filter`, solid / reduced-transparency / forced-colors fallbacks, `--gradient-header-edge` bottom edge with the country accent as decoration only, decorative brand mark, product name in Archivo with AA over the backdrops, chip semantics of BR-21 kept, height = `--size-header-height`, no clipping, no motion), BR-23 (D9: `favicon.svg`, `favicon-32.png`, `apple-touch-icon.png` 180 × 180, `theme-color` = header solid token, Angular `favicon.ico` removed, served by the web container with the right content type); AC-30 (surface, edge, accent, mark, name, contrast rows, chip, height and clipping at three viewports, reduced transparency, no-support fallback, forced colors, no motion, tokens), AC-31 (index.html links and meta, file checks, GET from the web container with status, content type and length, same origin); gaps Q-28 (worst-case contrast under the translucent header), Q-29 (no "Cambiar" hint), Q-30 (PNG fallback, delete `favicon.ico`), none blocking, defaults reviewed at the HC3 QA of round 2. **Amended:** metadata; §1 summary note; §2 in-scope v0.4 bullet; glossary (app header, brand mark, header solid fallback); BR-01 (`prefers-reduced-transparency` and `@supports` on `backdrop-filter` allowed by the guard; covered also by AC-30); BR-16 (original brand mark allowed; covered also by AC-30, AC-31); §7.2 note (no map change); §8 four state rows; §8.1 "no new copy"; §9 accessibility and performance notes; §10 "no new ADR expected" (within ADR-0010, 0011, 0013, 0014; guard-list extension noted for the architect); §11 rows AC-30, AC-31; new §11.1.2 (no existing test expected to change; R5-F02 comment fix). No ID renumbered or retired. Counts: 23 BR, 31 AC (0 original, 31 derived), 30 Q (Q-23..Q-30 open, non-blocking). |
