@@ -61,7 +61,6 @@
 .mark__check {
   fill: none;
   stroke: var(--component-brand-mark-check);
-  stroke-width: 2.6;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
