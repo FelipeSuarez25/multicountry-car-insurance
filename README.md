@@ -5,8 +5,10 @@ Form fields, plans and terms are managed per country in **Strapi** by the busine
 deploys needed. It is built through an **AI-driven development flow** with Claude Code.
 
 > **Status:** all four stories are **Ready for QA**: US-01 (policyholder and vehicle data form),
-> US-02 (plan list), US-03 (summary and payment) and US-04 (design system and visual redesign,
-> the human's own request). Reflection: [FLOW.md §7](FLOW.md#7-reflection).
+> US-02 (plan list), US-03 (summary and payment) and US-04 (design system and visual redesign).
+> US-04 was not in the assessment: it is the human's own request, run through the same flow to show
+> that the flow absorbs a new requirement and two rounds of human change requests at HC3 without
+> skipping a checkpoint. Reflection: [FLOW.md §7](FLOW.md#7-reflection).
 
 ## Where to look
 
