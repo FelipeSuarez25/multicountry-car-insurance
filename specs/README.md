@@ -17,7 +17,9 @@ Templates: `.claude/skills/sdd-spec/templates/`.
 | US-01 | Policyholder and vehicle data form | **Ready for QA** (merged in PR #3, 2026-11-21) |
 | US-02 | Plan list | **Ready for QA** (merged in PR #5, 2026-11-21) |
 | US-03 | Summary and payment | **Ready for QA** (merged in PR #7, 2026-11-21) |
+| US-04 | Design system and visual redesign | **Ready for QA** (merged in PR #9, 2026-11-23) |
 
 Stories US-01..03 were transcribed from the assessment PDF by the orchestrator, at the human's
 request, and verified word by word against the source (see the provenance header in each
-`story.md` and FLOW.md §3, H0).
+`story.md` and FLOW.md §3, H0). US-04 is not in the PDF: it is the human's own request, translated into
+English by the orchestrator (provenance header in `specs/US-04/story.md`).
