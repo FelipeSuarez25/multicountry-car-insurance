@@ -6,7 +6,7 @@ deploys needed. It is built through an **AI-driven development flow** with Claud
 
 > **Status:** all four stories are **Ready for QA**: US-01 (policyholder and vehicle data form),
 > US-02 (plan list), US-03 (summary and payment) and US-04 (design system and visual redesign,
-> the human's own request). Results in numbers and the reflection: [FLOW.md §7](FLOW.md#7-reflection).
+> the human's own request). Reflection: [FLOW.md §7](FLOW.md#7-reflection).
 
 ## Where to look
 
