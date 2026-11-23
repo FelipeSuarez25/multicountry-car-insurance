@@ -43,6 +43,9 @@ function textureBase(file: TokenFile): RGB {
 
 function bgColours(file: TokenFile, name: string): { label: string; rgb: RGB }[] {
   const page = coloursOf(file, '--color-bg')[0].rgb;
+  // US-04-AC-30 / Q-28: the translucent header composited over the lightest page-gradient stop, and over the lightest thing that can scroll under it
+  if (name === 'header-bg-over-page-lightest') return coloursOf(file, '--component-header-bg').map((c) => ({ label: name, rgb: composite(c, textureBase(file)) }));
+  if (name === 'header-bg-over-ink-50') return coloursOf(file, '--component-header-bg').map((c) => ({ label: name, rgb: composite(c, hexToRgb(file.resolve('--primitive-ink-50'))) }));
   if (name === 'texture-worst') return [{ label: 'texture-worst', rgb: composite(textureDot(file), textureBase(file)) }];
   return coloursOf(file, name).map((c, i, all) => ({ label: all.length > 1 ? `${name}[stop ${i + 1}]` : name, rgb: composite(c, page) }));
 }
@@ -184,7 +187,7 @@ describe('US-04-AC-02 the list of pairs is complete and the thresholds are the W
     expect(byFg('--color-country-accent').flatMap((r) => r.bg), 'accent on the header surface').toContain('--color-surface-raised');
 
     // text on a gradient (primary button, recommended card): at least two rows over a multi-stop background, minimum 4.5
-    const onGradient = rows.filter((r) => r.bg.some((b) => b !== 'texture-worst' && coloursOf(file, b).length > 1));
+    const onGradient = rows.filter((r) => r.bg.some((b) => b !== 'texture-worst' && !b.startsWith('header-bg-over-') && coloursOf(file, b).length > 1));
     expect(onGradient.length, 'rows over a gradient background').toBeGreaterThanOrEqual(2);
     expect(onGradient.filter((r) => r.min >= 4.5).length, 'text rows over a gradient (primary button, recommended card)').toBeGreaterThanOrEqual(2);
 
@@ -297,5 +300,83 @@ describe('US-04-AC-27 the page gradient is part of the contrast proof (ADR-0014 
     expect(results.map((r) => r.bg)).toEqual(['--gradient-page[stop 1]', '--gradient-page[stop 2]']);
     expect(results[0].ratio).toBeLessThan(4.5);
     expect(results[1].ratio).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe('US-04-AC-30 / US-04-Q-28 the header text and focus ring over the three header backdrops', () => {
+  const BACKDROPS = ['--component-header-bg-solid', 'header-bg-over-page-lightest', 'header-bg-over-ink-50'];
+
+  /** The colours of the product name: each stop of --gradient-display-text, or --color-brand (BR-22), whichever the header stylesheet uses. */
+  function productNameTokens(): string[] {
+    const css = readFileSync(join(process.cwd(), 'src', 'app', 'shared', 'site-header.css'), 'utf8');
+    const used = ['--gradient-display-text', '--color-brand'].filter((t) => css.includes(`var(${t})`));
+    expect(used.length, 'the header stylesheet colours the product name with --gradient-display-text or --color-brand').toBeGreaterThan(0);
+    return used;
+  }
+
+  function ratios(file: TokenFile, fgToken: string, backdrop: string): number[] {
+    const [bg] = bgColours(file, backdrop);
+    return coloursOf(file, fgToken).map((fg) => contrastRatio(composite(fg, bg.rgb), bg.rgb));
+  }
+
+  it('US-04-AC-30 computed from tokens.css: every colour of the product name and the chip text (--color-text) is at least 4.5:1 on each of the three backdrops', () => {
+    const file = tokens();
+    const failing: string[] = [];
+    for (const fg of [...productNameTokens(), '--color-text']) {
+      for (const backdrop of BACKDROPS) {
+        ratios(file, fg, backdrop).forEach((ratio, i) => {
+          if (ratio < 4.5) failing.push(`${fg}[${i + 1}] on ${backdrop} is ${ratio.toFixed(2)}:1`);
+        });
+      }
+    }
+    expect(failing).toEqual([]);
+  });
+
+  it('US-04-AC-30 computed from tokens.css: the focus ring (--color-focus) is at least 3:1 on each of the three backdrops', () => {
+    const file = tokens();
+    const failing = BACKDROPS.flatMap((b) => ratios(file, '--color-focus', b).filter((r) => r < 3).map((r) => `${b} ${r.toFixed(2)}:1`));
+    expect(failing).toEqual([]);
+  });
+
+  it('US-04-AC-30 the header backdrops are real: the solid one is opaque, the translucent one is composited over a lighter base than the page background', () => {
+    const file = tokens();
+    expect(coloursOf(file, '--component-header-bg-solid')[0].alpha).toBe(1);
+    const [lightest] = bgColours(file, 'header-bg-over-page-lightest');
+    const [ink] = bgColours(file, 'header-bg-over-ink-50');
+    expect(relativeLuminance(ink.rgb)).toBeGreaterThan(relativeLuminance(lightest.rgb));
+  });
+
+  it('US-04-AC-30 contrast-pairs.json has rows (names: --component-header-bg-solid, header-bg-over-page-lightest, header-bg-over-ink-50) for each product-name colour and the chip text at 4.5, and for --color-focus at 3', () => {
+    const rows = pairs();
+    for (const backdrop of BACKDROPS) {
+      const onBackdrop = rows.filter((r) => r.bg.includes(backdrop));
+      expect(onBackdrop.length, `rows over ${backdrop}`).toBeGreaterThan(0);
+      for (const fg of [...productNameTokens(), '--color-text']) {
+        const hit = onBackdrop.filter((r) => r.fg === fg);
+        expect(hit.length, `a row ${fg} on ${backdrop}`).toBeGreaterThan(0);
+        for (const row of hit) expect(row.min, `${row.id}`).toBeGreaterThanOrEqual(4.5);
+      }
+      const focus = onBackdrop.filter((r) => r.fg === '--color-focus');
+      expect(focus.length, `a focus row on ${backdrop}`).toBeGreaterThan(0);
+      for (const row of focus) expect(row.min, `${row.id}`).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('US-04-AC-30 every header row of contrast-pairs.json passes at every stop (the same evaluator as AC-02)', () => {
+    const file = tokens();
+    const rows = pairs().filter((r) => r.bg.some((b) => BACKDROPS.includes(b)));
+    expect(rows.length, 'header rows').toBeGreaterThan(0);
+    const failing = evaluate(file, rows)
+      .filter((r) => r.ratio < r.min)
+      .map((r) => `${r.id}: ${r.fg} on ${r.bg} is ${r.ratio.toFixed(2)}:1, needs ${r.min}:1`);
+    expect(failing).toEqual([]);
+  });
+
+  it('US-04-AC-30 sensitivity: a light stop on a translucent header over --primitive-ink-50 is reported below 4.5', () => {
+    const file = new TokenFile(
+      ':root { --color-bg: #000000; --primitive-ink-50: #F6F6FB; --gradient-page: linear-gradient(180deg, #231541 0%, #000000 100%); --component-header-bg: color-mix(in srgb, #231541 40%, transparent); --light: #C4B5FD; }',
+    );
+    const [row] = evaluate(file, [{ id: 'bad', fg: '--light', bg: ['header-bg-over-ink-50'], min: 4.5, ac: 'US-04-AC-30' }]);
+    expect(row.ratio).toBeLessThan(4.5);
   });
 });

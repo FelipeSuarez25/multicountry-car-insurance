@@ -134,7 +134,7 @@ describe('US-04 wizard header and step indicator (component tests through the re
     it.each(rows)('US-04-AC-03 at %s the header flag is an svg with aria-hidden="true", focusable="false", no text and no title', async (address) => {
       await start(address.startsWith('/co') ? co() : cl());
       await app.open(address);
-      const flag = (wizardHeader(app.root) as HTMLElement).querySelector('svg');
+      const flag = (wizardHeader(app.root) as HTMLElement).querySelector('a svg');
       expect(flag, 'a flag in the header').not.toBeNull();
       expect(flag?.getAttribute('aria-hidden')).toBe('true');
       expect(flag?.getAttribute('focusable')).toBe('false');
@@ -152,13 +152,13 @@ describe('US-04 wizard header and step indicator (component tests through the re
     it('US-04-AC-03 the flag of Colombia and the flag of Chile in the header are different drawings', async () => {
       await start(co());
       await app.open('/co/datos');
-      const colombia = (wizardHeader(app.root) as HTMLElement).querySelector('svg')?.innerHTML ?? '';
+      const colombia = (wizardHeader(app.root) as HTMLElement).querySelector('a svg')?.innerHTML ?? '';
       // Chile is another page load (a country is never switched inside the wizard)
       TestBed.resetTestingModule();
       configureAppTest({ today: TODAY });
       await start(cl());
       await app.open('/cl/datos');
-      const chile = (wizardHeader(app.root) as HTMLElement).querySelector('svg')?.innerHTML ?? '';
+      const chile = (wizardHeader(app.root) as HTMLElement).querySelector('a svg')?.innerHTML ?? '';
       expect(colombia).not.toBe('');
       expect(chile).not.toBe('');
       expect(colombia).not.toBe(chile);
@@ -174,7 +174,7 @@ describe('US-04 wizard header and step indicator (component tests through the re
       await app.open('/pe/datos');
       const header = wizardHeader(app.root) as HTMLElement;
       expect(normalise(header.textContent)).toContain('Perú');
-      const icon = header.querySelector('svg');
+      const icon = header.querySelector('a svg');
       expect(icon, 'the neutral globe icon').not.toBeNull();
       expect(icon?.getAttribute('aria-hidden')).toBe('true');
       expect(document.querySelector('[data-country-accent]')).toBeNull();

@@ -67,8 +67,8 @@ const NAMED_COLOURS = new Set(
   ).split(' '),
 );
 
-/** Features allowed in a media or container condition besides a `min-width` equal to a breakpoint token (BR-01). */
-const FEATURES = /^(prefers-reduced-motion\s*:\s*(reduce|no-preference)|forced-colors\s*:\s*(active|none)|prefers-color-scheme\s*:\s*(dark|light)|hover\s*:\s*hover)$/;
+/** Features allowed in a media or container condition besides a `min-width` equal to a breakpoint token (BR-01; v0.4 adds prefers-reduced-transparency, BR-22). */
+const FEATURES = /^(prefers-reduced-motion\s*:\s*(reduce|no-preference)|forced-colors\s*:\s*(active|none)|prefers-color-scheme\s*:\s*(dark|light)|hover\s*:\s*hover|prefers-reduced-transparency\s*:\s*(reduce|no-preference))$/;
 
 /** The value of a declaration with `var()`, `url()` and quoted strings removed. */
 function bare(value: string): string {

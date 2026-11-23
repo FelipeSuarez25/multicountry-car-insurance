@@ -256,7 +256,7 @@ describe('US-04-AC-25 the message for an unreadable date is code-owned copy (spe
  * US-04-R3-F01 (review round 3): edits away from the end of the text. The contract of
  * `maskDateDigits(raw, caret)` when `caret < raw.length` (an edit in place, not typing or pasting at
  * the end): the digits are re-flowed in order into dd/mm/aaaa. A `/` that is already shown never pads
- * a group (only a separator typed at the end of the text pads, "5/" -> "05/"), so no digit is
+ * a group (only a separator typed at the end of the text pads, "5/" -> "05"), so no digit is
  * invented, no group becomes "0d" and the year never shifts into a different valid date. Rules of the
  * main session for this fix where BR-18 / Q-23 / ADR-0014 section 2 are silent.
  * The Backspace-over-a-separator and select-and-type cases need the edit kind, so they are
