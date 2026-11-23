@@ -152,71 +152,64 @@ and the end procedure includes exporting the unedited session logs to `logs/sess
 
 ## 7. Reflection
 
-### Results in numbers
-
-Session `067ab97b…`, 2026-11-20 → 2026-11-23, one orchestrator session (resumed after a restart and
-several context compactions). Counted from the repository, GitHub and the exported transcripts; the
-commands are reproducible.
-
-| What | Count |
-|---|---|
-| User stories delivered | 4 (US-01..03 from the PDF, US-04 the human's redesign request), all **Ready for QA** |
-| Pull requests merged by the human | 10 (#1 flow setup, #2 intake, then one feature PR and one closure PR per story) |
-| Commits on `main` (no merges) | 222: 88 docs, 46 fix, 41 feat, 34 test, 11 chore, 1 build |
-| Acceptance criteria / gaps found in the stories | 97 AC / 95 gaps (`US-NN-Q-NN`), each gap with a proposed default and a human answer |
-| ADRs | 14 (0001..0014, all Accepted by the human; 5 of them amend earlier ones) plus 1 spike (SPIKE-01) |
-| Review rounds | 14 (US-01: 4, US-02: 2, US-03: 2, US-04: 6); verdicts 8 APPROVED, 6 CHANGES REQUESTED |
-| New review findings | 75: 1 blocker, 9 major, 35 minor, 30 nit (all fixed or justified; none open) |
-| Automated gate runs recorded in `tasks.md` | US-01: 3, US-02: 2, US-03: 2, US-04: 7 |
-| Tests at the end | 1509 frontend unit/component, 119 backend, 307 e2e (run twice per gate) |
-| Human checkpoints | HC1, HC2, HC3 for every story, plus two HC3 change rounds and one loop-limit escalation in US-04 |
-| Subagent runs | 100: 22 test-engineer, 20 spec-writer, 18 frontend-developer, 14 code-reviewer, 13 strapi-developer, 11 architect, 2 others |
-| Output tokens | ≈ 0.84 M orchestrator + ≈ 3.70 M subagents (cached context re-reads are much larger and not counted) |
-
-What the numbers say:
-- **Review earned its cost.** The only blocker (US-01-R1-F01, drafts readable on Strapi's port) and
-  8 of the 9 majors were product or test-coverage defects that the automated gate had let through.
-  The ninth, US-04-R4-F01, was the reviewer's root cause for a gate failure: defects in new e2e
-  tests.
-- **The gate caught what reviews could not.** It caught flaky and environment-dependent behaviour,
-  and it forced two consecutive green e2e runs.
-- **The human caught what both missed.** In US-04 the HC3 QA found real usability defects on a
-  branch that had passed the gate and an APPROVED review: the calendar opened above the field, a
-  misleading message for a mistyped date, and digits accepted in a name. See the first new row of
-  the next table.
-- **US-04 cost more than US-01..03 together** in gate attempts and review rounds. Visual and
-  interaction work produces many more "correct but not right" outcomes than business rules do.
+The assessment asks three questions; they are answered briefly here. The full record of issues and
+the results in numbers follow as evidence.
 
 ### What we would do differently with a team of 5 developers
 
-- **Story-level parallelism with clear ownership.** One person owns each story through the flow,
-  and the HC1/HC2 approvers rotate, so nobody approves their own spec or ADR.
-- **Move the controls to the server.** Branch protection on `main` (required reviews, required
-  checks), CODEOWNERS for `adr/`, `.claude/` and `CLAUDE.md`, and the automated gate (step 5)
-  in CI rather than locally. Local hooks become a convenience, not the control.
-- **Shared contracts first.** The Strapi content contract and the `FieldConfig` type would become
-  a versioned package or a generated schema, because with five people the frontend and backend
-  drift faster than one orchestrator can catch.
-- **Changes to the flow go through PRs** with their own review. Changing an agent definition or
-  a skill changes everybody's output.
-- **A real secret scanner** (for example, gitleaks) in pre-commit and CI, replacing our minimal script.
-- **Shared, short-lived sessions**: one session per story, with mandatory handoff, so that
-  context never lives in one person's terminal.
-- **One worktree per agent.** Parallel agents in one checkout collided twice: a polluted shared
-  stack in US-01, and a `git stash` of everyone's edits in US-04. With five people and their
-  agents, each agent runs in its own worktree (`isolation: worktree`), and only the orchestrator
-  merges into the story branch.
-- **A designer at HC1 for UI stories, with something to click.** The HC1 answer "no input mask"
-  (US-04-Q-05) looked right on paper and was reversed at HC3, once the human typed a date. For
-  stories that change interaction, HC1 reviews a throwaway clickable prototype, or the running
-  stack, not only text.
-- **CI on the platforms the users have.** Two e2e test defects depended on macOS key semantics
-  (`End` does not move the caret). Running e2e on Linux CI and on a macOS runner surfaces these
-  before review.
-- **A token and time budget per story**, tracked like the gate attempts. US-04 used about as much
-  as US-01..03 together. A team needs to see that early and decide whether to split the story.
+- **One owner per story, rotating approvers.** Each person takes one story through the whole flow;
+  HC1 and HC2 are approved by someone else, so nobody approves their own spec or ADR.
+- **Controls on the server, not on each machine.** Branch protection on `main` (required review and
+  checks), CODEOWNERS for `CLAUDE.md`, `adr/` and `.claude/`, and the automated gate (lint, build,
+  tests, traceability, secret scan) in CI. Local hooks become a convenience, not the control.
+- **Isolation between people and agents.** Each one works in its own worktree, and only the story
+  owner integrates into the story branch. With one developer we already had two collisions in the
+  shared tree.
+- **Shared, versioned contracts.** The Strapi content contract and the `FieldConfig` type become a
+  package or a generated schema: with five people, frontend and backend drift faster than one
+  orchestrator can catch.
+- **Changes to the flow go through PRs.** Changing an agent, a skill or `CLAUDE.md` changes
+  everybody's output, so it is reviewed like code.
 
 ### What did not work as expected, and how we adjusted
+
+- **Approving UI on paper.** At US-04 HC1 the human chose "no input mask" for the date; in writing it
+  looked right. At HC3, using the app, the human found defects that neither the gate nor the review
+  had seen: the calendar opened above the field, a mistyped date showed the wrong message, and the
+  name accepted digits. *Adjustment:* the feedback went through the full flow (spec v0.3, ADR-0014,
+  tests, implementation, gate, review); for UI stories, HC1 is done on the running stack or a
+  prototype.
+- **Tests pushing the design.** Twice an agent changed the design so that a test would pass (US-03 and
+  US-04). *Adjustment:* the human's rule: the approved design wins and the test adapts; the reviewer
+  checks that no behaviour change was driven by a test.
+- **Parallel agents in one environment.** In US-01 two agents polluted the shared stack; in US-04 an
+  agent ran `git stash` on the shared tree and for a few minutes removed the others' uncommitted work
+  (nothing was lost); and a gate run under load gave inconclusive results. *Adjustment:* agents run in
+  parallel only when their files do not overlap, subagents run no git write commands, and the gate
+  runs on a quiet machine.
+- **Trusting "green" without verifying.** In US-01 the unit tests were green while the real browser
+  failed; the orchestrator once truncated a control's output and reported a false "clean"; and US-04
+  reached the 3-round review limit, mostly because of badly written e2e tests. *Adjustment:* a
+  control's output is never truncated, e2e runs twice in a row on a clean stack, and at the limit the
+  orchestrator stops and asks the human, as it did.
+
+### Where we decided not to use AI, and why
+
+| Point | Why not AI |
+|---|---|
+| HC1, HC2 and HC3 approvals, and the merge | Accountability: the person who signs off must be a person. Agents are technically blocked from merging, pushing to `main` and force-pushing. |
+| Answers to the spec's gaps (`Q-NN`) | The AI proposes a default; the business decision is made by the person. |
+| Story intake (H0) | The input must be the real requirement, not a paraphrase. **Exception:** US-01..03 were transcribed by the agent at the human's request, and a script compared them word by word with the PDF (0 differences). |
+| Accepting third-party skills | A supply-chain trust decision. |
+| Automated gate and traceability matrix | Deterministic checks are cheaper and more reliable than AI judgement, and cannot be talked out of a failure. The matrix is generated by `scripts/trace.sh`, so it cannot be invented. |
+| Manual QA: keyboard, visual, screen reader and phone | Real interaction quality is what automation approximates worst; US-04 confirmed it. |
+| Secrets and cleaning the git history | No agent reads `.env`. How to clean the history is the human's decision. |
+| Exporting the logs (`/export`) | A CLI command run by the human; the agent only copies the raw JSONL, unedited. |
+
+### Record of issues, in detail
+
+Every issue met while building the flow and the four stories, in the order it was recorded.
+
 
 | Issue | What happened | Adjustment |
 |---|---|---|
@@ -246,17 +239,20 @@ What the numbers say:
 | The review loop limit was reached, mostly by test defects | In US-04 the review failed in R1, R3 and R4. R3 found 3 real product majors (mid-text date edits, IME composition, seed rules untested), but R4's only major was in new e2e tests: they left the field with one Tab (which lands on the field's own calendar button) and used `End`, which does not move the caret on macOS. The orchestrator first sent the frontend-developer to fix a "product bug", then stopped it when the reviewer traced the cause. | CLAUDE.md §8 worked as designed: the orchestrator stopped and asked, and the human chose "Seguir: arreglar y R5". Test helpers now place the caret with `setSelectionRange` and leave a field by focusing the next one. The orchestrator waits for the reviewer's root cause before routing a failing e2e to a developer. |
 | Tests and implementation ran in parallel once | For the small, precise HC3 round 2 (header style, favicon), the test-engineer and the frontend-developer worked at the same time from the spec's Then lines, to save the human's time. It worked: both used the same names, and all 37 new e2e tests passed on the first full gate. But the test-engineer changed three existing tests without first routing them through the spec (US-04-R6-F04). | Accepted only for small changes with exact Then lines, and recorded in `tasks.md`. Test-first in sequence stays the default. |
 
-*(Rows follow the order in which the issues were recorded, across US-01..US-04.)*
+### Results in numbers
 
-### Where we decided not to use AI, and why
+Counted from the repository, GitHub and the exported transcripts (session `067ab97b…`, 2026-11-20 → 2026-11-23).
 
-| Point | Why not AI |
+| What | Count |
 |---|---|
-| H0 intake of stories (default) | The input must be the real requirement, not a model's paraphrase of it. **Exception, US-01..03:** the human (Felipe Sabogal, 2026-11-20) asked the agent to transcribe them from the PDF. We accepted the exception because the risk (a paraphrase) is removed mechanically: the transcription is compared word by word with the `pdftotext` output of the source file (SHA-256 recorded in each `story.md`), and that comparison found 0 differences. |
-| HC1 / HC2 / HC3 approvals and the PR merge | Accountability: the person who signs off must be a person. Agents are technically prevented from merging. |
-| Accepting third-party skills | Supply-chain trust decision. |
-| Step 5 automated gate | Deterministic checks are cheaper and more reliable than AI judgement, and they cannot be talked out of a failure. |
-| Traceability matrix | Generated by `scripts/trace.sh`, so it cannot be invented. |
-| Manual keyboard and visual QA | Real interaction quality is what automation approximates worst. |
-| Secrets handling | No agent reads `.env`; real secrets are managed by the human. |
-| Exporting logs with `/export` | It is a CLI command; the agent copies the raw JSONL. |
+| User stories delivered | 4 (US-01..03 from the PDF, US-04 the human's redesign request), all **Ready for QA** |
+| Pull requests merged by the human | 10 (#1 flow setup, #2 intake, then one feature PR and one closure PR per story) |
+| Commits on `main` (no merges) | 222: 88 docs, 46 fix, 41 feat, 34 test, 11 chore, 1 build |
+| Acceptance criteria / gaps found in the stories | 97 AC / 95 gaps (`US-NN-Q-NN`), each gap with a proposed default and a human answer |
+| ADRs | 14 (0001..0014, all Accepted by the human; 5 of them amend earlier ones) plus 1 spike (SPIKE-01) |
+| Review rounds | 14 (US-01: 4, US-02: 2, US-03: 2, US-04: 6); verdicts 8 APPROVED, 6 CHANGES REQUESTED |
+| New review findings | 75: 1 blocker, 9 major, 35 minor, 30 nit (all fixed or justified; none open) |
+| Automated gate runs recorded in `tasks.md` | US-01: 3, US-02: 2, US-03: 2, US-04: 7 |
+| Tests at the end | 1509 frontend unit/component, 119 backend, 307 e2e (run twice per gate) |
+| Human checkpoints | HC1, HC2, HC3 for every story, plus two HC3 change rounds and one loop-limit escalation in US-04 |
+| Subagent runs | 100: 22 test-engineer, 20 spec-writer, 18 frontend-developer, 14 code-reviewer, 13 strapi-developer, 11 architect, 2 others |
