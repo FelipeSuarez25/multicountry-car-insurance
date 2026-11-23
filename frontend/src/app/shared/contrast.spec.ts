@@ -45,7 +45,8 @@ function bgColours(file: TokenFile, name: string): { label: string; rgb: RGB }[]
   const page = coloursOf(file, '--color-bg')[0].rgb;
   // US-04-AC-30 / Q-28: the translucent header composited over the lightest page-gradient stop, and over the lightest thing that can scroll under it
   if (name === 'header-bg-over-page-lightest') return coloursOf(file, '--component-header-bg').map((c) => ({ label: name, rgb: composite(c, textureBase(file)) }));
-  if (name === 'header-bg-over-ink-50') return coloursOf(file, '--component-header-bg').map((c) => ({ label: name, rgb: composite(c, hexToRgb(file.resolve('--primitive-ink-50'))) }));
+  // US-04-R6-F01: the lightest thing that can scroll under the header is pure white (--primitive-white), not ink-50
+  if (name === 'header-bg-over-white') return coloursOf(file, '--component-header-bg').map((c) => ({ label: name, rgb: composite(c, hexToRgb(file.resolve('--primitive-white'))) }));
   if (name === 'texture-worst') return [{ label: 'texture-worst', rgb: composite(textureDot(file), textureBase(file)) }];
   return coloursOf(file, name).map((c, i, all) => ({ label: all.length > 1 ? `${name}[stop ${i + 1}]` : name, rgb: composite(c, page) }));
 }
@@ -184,7 +185,7 @@ describe('US-04-AC-02 the list of pairs is complete and the thresholds are the W
       expect(bgs, name).toContain('--color-bg');
       expect(bgs, name).toContain('--color-surface');
     }
-    expect(byFg('--color-country-accent').flatMap((r) => r.bg), 'accent on the header surface').toContain('--color-surface-raised');
+    expect(byFg('--color-country-accent').flatMap((r) => r.bg), 'accent on the raised surface (step indicator and summary; the header no longer uses it)').toContain('--color-surface-raised');
 
     // text on a gradient (primary button, recommended card): at least two rows over a multi-stop background, minimum 4.5
     const onGradient = rows.filter((r) => r.bg.some((b) => b !== 'texture-worst' && !b.startsWith('header-bg-over-') && coloursOf(file, b).length > 1));
@@ -303,8 +304,8 @@ describe('US-04-AC-27 the page gradient is part of the contrast proof (ADR-0014 
   });
 });
 
-describe('US-04-AC-30 / US-04-Q-28 the header text and focus ring over the three header backdrops', () => {
-  const BACKDROPS = ['--component-header-bg-solid', 'header-bg-over-page-lightest', 'header-bg-over-ink-50'];
+describe('US-04-AC-30 / US-04-Q-28 the header text and focus ring over the three header backdrops (US-04-R6-F01)', () => {
+  const BACKDROPS = ['--component-header-bg-solid', 'header-bg-over-page-lightest', 'header-bg-over-white'];
 
   /** The colours of the product name: each stop of --gradient-display-text, or --color-brand (BR-22), whichever the header stylesheet uses. */
   function productNameTokens(): string[] {
@@ -342,11 +343,11 @@ describe('US-04-AC-30 / US-04-Q-28 the header text and focus ring over the three
     const file = tokens();
     expect(coloursOf(file, '--component-header-bg-solid')[0].alpha).toBe(1);
     const [lightest] = bgColours(file, 'header-bg-over-page-lightest');
-    const [ink] = bgColours(file, 'header-bg-over-ink-50');
+    const [ink] = bgColours(file, 'header-bg-over-white');
     expect(relativeLuminance(ink.rgb)).toBeGreaterThan(relativeLuminance(lightest.rgb));
   });
 
-  it('US-04-AC-30 contrast-pairs.json has rows (names: --component-header-bg-solid, header-bg-over-page-lightest, header-bg-over-ink-50) for each product-name colour and the chip text at 4.5, and for --color-focus at 3', () => {
+  it('US-04-AC-30 contrast-pairs.json has rows (names: --component-header-bg-solid, header-bg-over-page-lightest, header-bg-over-white) for each product-name colour and the chip text at 4.5, and for --color-focus at 3', () => {
     const rows = pairs();
     for (const backdrop of BACKDROPS) {
       const onBackdrop = rows.filter((r) => r.bg.includes(backdrop));
@@ -372,11 +373,19 @@ describe('US-04-AC-30 / US-04-Q-28 the header text and focus ring over the three
     expect(failing).toEqual([]);
   });
 
-  it('US-04-AC-30 sensitivity: a light stop on a translucent header over --primitive-ink-50 is reported below 4.5', () => {
+  it('US-04-AC-30 sensitivity: a light stop on a translucent header over --primitive-white is reported below 4.5', () => {
     const file = new TokenFile(
-      ':root { --color-bg: #000000; --primitive-ink-50: #F6F6FB; --gradient-page: linear-gradient(180deg, #231541 0%, #000000 100%); --component-header-bg: color-mix(in srgb, #231541 40%, transparent); --light: #C4B5FD; }',
+      ':root { --color-bg: #000000; --primitive-white: #FFFFFF; --gradient-page: linear-gradient(180deg, #231541 0%, #000000 100%); --component-header-bg: color-mix(in srgb, #231541 40%, transparent); --light: #C4B5FD; }',
     );
-    const [row] = evaluate(file, [{ id: 'bad', fg: '--light', bg: ['header-bg-over-ink-50'], min: 4.5, ac: 'US-04-AC-30' }]);
+    const [row] = evaluate(file, [{ id: 'bad', fg: '--light', bg: ['header-bg-over-white'], min: 4.5, ac: 'US-04-AC-30' }]);
     expect(row.ratio).toBeLessThan(4.5);
+  });
+
+  it('US-04-AC-30 / US-04-R6-F01 sensitivity: a header alpha of 0.79 fails AA for violet-300 over --primitive-white, 0.82 passes', () => {
+    const css = (pct: number): string =>
+      `:root { --color-bg: #0B0B14; --primitive-white: #FFFFFF; --component-header-bg: color-mix(in srgb, #231541 ${pct}%, transparent); --light: #C0B0FE; }`;
+    const row = { id: 'alpha', fg: '--light', bg: ['header-bg-over-white'], min: 4.5, ac: 'US-04-AC-30' };
+    expect(evaluate(new TokenFile(css(79)), [row])[0].ratio).toBeLessThan(4.5);
+    expect(evaluate(new TokenFile(css(82)), [row])[0].ratio).toBeGreaterThanOrEqual(4.5);
   });
 });

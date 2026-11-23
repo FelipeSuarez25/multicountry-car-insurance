@@ -54,6 +54,18 @@ describe('US-04-AC-30 the tokens of the header (US-04-BR-22)', () => {
     expect(fade, 'transparent as the last stop').toBeGreaterThan(accent);
   });
 
+  it('US-04-AC-30 / US-04-R6-F03 --gradient-header-edge and --shadow-chip-glow have identical values in :root and in [data-country-accent]', () => {
+    const { decls } = parseCss(tokensCss());
+    for (const name of ['--gradient-header-edge', '--shadow-chip-glow']) {
+      const own = decls.filter((d) => d.prop === name && !d.stack.some((s) => /^@/.test(s)));
+      const root = own.filter((d) => d.stack.some((s) => /^:root$/.test(s.trim())));
+      const accent = own.filter((d) => d.stack.some((s) => /^\[data-country-accent\]$/.test(s.trim())));
+      expect(root.length, `${name} declared in :root`).toBe(1);
+      expect(accent.length, `${name} declared in [data-country-accent]`).toBe(1);
+      expect(accent[0].value.replace(/\s+/g, ' ').trim(), name).toBe(root[0].value.replace(/\s+/g, ' ').trim());
+    }
+  });
+
   it('US-04-AC-30 --size-brand-mark is declared as 2rem and the header height token is still declared', () => {
     expect(tokens().rawValue('--size-brand-mark')?.trim()).toBe('2rem');
     expect(tokens().rawValue('--size-header-height')).toBeDefined();
