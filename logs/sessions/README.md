@@ -22,7 +22,7 @@ assessment. Procedure: the `session-handoff` skill.
 
 | Date | Session | Stories / steps covered | Notes |
 |---|---|---|---|
-| 2026-11-20 → 2026-11-21 | `2026-11-21-067ab97b/` (session `067ab97b…`): `main-session.jsonl` (orchestrator, one session resumed after a Claude Code restart and after context compactions) and `subagents/` (70 subagent transcripts) | Flow setup; third-party skill evaluation; H0 intake US-01..03; **US-01, US-02 and US-03 end to end** (specs, ADR-0001..0009, SPIKE-01, tests first, implementation, gates, review rounds, HC3 merges of PRs #3, #5 and #7); the human's request for US-04 (design system and visual redesign) | Exported at the US-03 closure. It **supersedes** the snapshot taken after the US-01 merge. The session continues with US-04, so a final export at the end of US-04 will supersede this one and add the readable `/export` text (human decision, 2026-11-21). Redactions below. |
+| 2026-11-20 → 2026-11-23 | `2026-11-21-067ab97b/` (session `067ab97b…`): `main-session.jsonl` (orchestrator, one session resumed after a Claude Code restart and after context compactions) and `subagents/` (100 subagent transcripts); `2026-11-21-067ab97b.txt` (the human's readable `/export` of the same session) | Flow setup; third-party skill evaluation; H0 intake US-01..03; **US-01, US-02 and US-03 end to end** (specs, ADR-0001..0009, SPIKE-01, tests first, implementation, gates, review rounds, HC3 merges of PRs #3, #5 and #7); **US-04 end to end** (skills EVAL-003..005, spec v0.2→v0.4, ADR-0010..0014, tests first, implementation, gates 1–7, reviews R1–R6, HC3 rounds 1 and 2 with the human's feedback, the loop-limit escalation, merge of PR #9); the personal-data policy (PR #8) | Final export, taken at the US-04 closure. It **supersedes** the US-03 closure export and the earlier US-01 snapshot. The `.txt` is the human's `/export`, also redacted (personal-data policy). Redactions below. |
 
 ## Personal data (redaction policy)
 
@@ -56,6 +56,9 @@ rule, separate from the secret rule: a secret can be rotated, personal data cann
 | US-01 snapshot (superseded; marker `[redacted-email]`) | `main-session.jsonl` | 3 addresses + 4 local parts |
 | US-03 closure (supersedes the snapshot) | `2026-11-21-067ab97b/main-session.jsonl` | 161 |
 | same | `2026-11-21-067ab97b/subagents/agent-a6dbd418bd7886c8d.jsonl` | 3 (the domain, as a plugin name) |
+| US-04 closure, final (supersedes the US-03 closure export) | `2026-11-21-067ab97b/main-session.jsonl` | 174 |
+| same | `2026-11-21-067ab97b/subagents/agent-a6dbd418bd7886c8d.jsonl` | 3 (the domain, as a plugin name) |
+| same | `2026-11-21-067ab97b.txt` (the human's `/export`) | 14 |
 
 Verification after redaction: the hash check reports no personal data in any exported file, and every
 JSONL line still parses. Counts are exact: each occurrence is counted once (the first version of the

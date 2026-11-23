@@ -137,4 +137,4 @@ T-16..T-23 depend on the ADRs (T-02..T-05); T-12 and T-13 depend on US-04-Q-04 a
 
 | Date | Session export | Summary |
 |---|---|---|
-| 2026-11-21 → 2026-11-23 | `logs/sessions/2026-11-21-067ab97b/` (main transcript + subagent transcripts; final export at US-04 closure) and `logs/sessions/2026-11-21-067ab97b.txt` (readable `/export` by the human); both redacted per the personal-data policy | US-04 from intake to HC3 (two HC3 change rounds, reviews R1..R6, PR #9 merged); see logs/sessions/README.md. Pending at the time of writing: the final export itself (Next action) |
+| 2026-11-21 → 2026-11-23 | `logs/sessions/2026-11-21-067ab97b/` (main transcript + subagent transcripts; final export at US-04 closure) and `logs/sessions/2026-11-21-067ab97b.txt` (readable `/export` by the human); both redacted per the personal-data policy | US-04 from intake to HC3 (two HC3 change rounds, reviews R1..R6, PR #9 merged); see logs/sessions/README.md. Exported 2026-11-23 (orchestrator): 101 transcripts plus the `/export` text; 191 personal-data occurrences redacted; scan-logs 23 = 23, 0 files with personal data. |
